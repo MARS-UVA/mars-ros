@@ -58,6 +58,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     }
 
     sensor_msgs::Image pubMsg;
+    pubMsg.header = msg->header; // same time stamp
     // allocate msg storage
     pubMsg.data.resize(width * height);
 
