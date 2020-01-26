@@ -124,3 +124,5 @@ Libopencv-photo.so.3.2.0 not found:
 ```bash
 sudo apt install libopencv3.2
 ```
+
+If have Serialization Error when loading TensorRT models, try removing the engine cache and reload
