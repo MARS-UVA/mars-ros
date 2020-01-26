@@ -88,6 +88,8 @@ git clone --recursive https://github.com/hanzhi713/jetson-inference
 
 Open CMakeLists.txt and replace `aarch64-linux-gnu` with `x86_64-linux-gnu`.
 
+Additionally, find the CUDA_NVCC_FLAGS and add `-gencode arch=compute_xx,code=sm_xx` where `xx` is your graphic cards' compute compatibility
+
 6. Build and install
 
 ```bash
