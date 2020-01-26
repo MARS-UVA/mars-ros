@@ -9,39 +9,50 @@
 
 segNet* net;
 
-uint8_t* imgMask;
+uint8_t* cudaImgMask;
 uchar4* cudaImgRGB;
 float* cudaImgRGBA;
 
-const int width = 640;
-const int height = 480;
+int width = 640;
+int height = 480;
 
 image_transport::Publisher pub;
 
 void initializeNet() {
     net = segNet::Create(segNet::FCN_RESNET18_CITYSCAPES_1024x512, 1);
-
     if (!net) {
-        ROS_ERROR("failed to initialize imageNet");
+        ROS_ERROR("failed to initialize segNet");
         return;
     }
     net->SetOverlayAlpha(255);
+    ROS_INFO("Network initialzed");
+}
 
-    bool r = cudaAllocMapped((void**)&imgMask, width * height);
+void allocateImgMemory() {
+    if (cudaImgMask != NULL) cudaFreeHost(cudaImgMask);
+    if (cudaImgRGB != NULL) cudaFreeHost(cudaImgRGB);
+    if (cudaImgRGBA != NULL) cudaFreeHost(cudaImgRGBA);
+
+    bool r = cudaAllocMapped((void**)&cudaImgMask, width * height);
     r = r && cudaAllocMapped((void**)&cudaImgRGB, width * height * sizeof(uchar4));
     r = r && cudaAllocMapped((void**)&cudaImgRGBA, width * height * sizeof(float4));
 
     if (!r) {
-        ROS_ERROR("failed to allocate CUDA memory for mask image");
+        ROS_ERROR("failed to allocate CUDA memory");
         return;
     }
     ROS_INFO("Memory allocated!");
 }
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
-    assert(msg->width == width);
-    assert(msg->height == height);
     assert(msg->encoding == "rgb8");
+    if (msg->width != width || msg->height != height) { // if msg has different 
+        ROS_INFO("Reallocating cuda memory due to change in image size");
+        width = msg->width;
+        height = msg->height;
+        allocateImgMemory();
+    }
+
 
     memcpy(cudaImgRGB, msg->data.data(), width * height * sizeof(uchar3));
     if (CUDA_FAILED(cudaRGB8ToRGBA32((uchar3*)cudaImgRGB, (float4*)cudaImgRGBA, width, height))) {
@@ -52,7 +63,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
         ROS_ERROR("fail to process image");
         return;
     }
-    if (!net->Mask(imgMask, width, height)) {
+    if (!net->Mask(cudaImgMask, width, height)) {
         ROS_ERROR("fail to mask image");
         return;
     }
@@ -63,7 +74,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     pubMsg.data.resize(width * height);
 
     // copy the mask image into the msg
-    memcpy(pubMsg.data.data(), imgMask, width * height);
+    memcpy(pubMsg.data.data(), cudaImgMask, width * height);
 
     pubMsg.width = width;
     pubMsg.height = height;
@@ -77,17 +88,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
 int main(int argc, char** argv) {
     initializeNet();
-
     ros::init(argc, argv, "image_listener");
 
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
-
     pub = it.advertise("seg", 1);
     image_transport::Subscriber sub = it.subscribe("camera/color/image_raw", 1, imageCallback);
 
     ros::spin();
-
     ROS_INFO("shutting down...");
     SAFE_DELETE(net);
 }
