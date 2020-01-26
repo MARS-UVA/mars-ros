@@ -4,3 +4,5 @@ build
 devel
 build_isolated
 devel_isolated
+.catkin_tools
+logs

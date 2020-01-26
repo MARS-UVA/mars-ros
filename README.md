@@ -42,10 +42,14 @@ will ignore the `apriltag`, `apriltag_ros` and `segmentation` packages.
 
 > Note: a lot of packages have native dependencies, so it may be cumbersome to make them compile
 
-You'll need jetson-inference and librealsense2 installed (see sections below) on your computer before proceed. Then, you can just run
+You'll need jetson-inference and librealsense2 installed (see sections below) on your computer before proceed. Also, make sure you have catkin_tools installed.
+
+> use `sudo apt install python-catkin-tools` to install catkin_tools
+
+To compile, run
 
 ```bash
-catkin_make_isolated
+catkin build
 ```
 
 ### Librealsense2
