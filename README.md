@@ -54,9 +54,19 @@ catkin build
 
 ### Librealsense2
 
-On host, can just install .deb packages from https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+**On host:**
 
-On jetson, need to build from source. Run buildLibrealsense.sh from https://github.com/JetsonHacksNano/installLibrealsense
+With Ubuntu LTS kernel < 5.0, can just install .deb packages from https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+
+With the latest Ubuntu 18.04.3 kernels (>=5.0), need to build from source and bypass libuvc. Specifically, add `-DFORCE_RSUSB_BACKEND=true` flag when invoking cmake.
+
+```bash
+cmake ../ -DFORCE_RSUSB_BACKEND=true -DCMAKE_BUILD_TYPE=release -DBUILD_EXAMPLES=true -DBUILD_GRAPHICAL_EXAMPLES=true
+```
+
+**On jetson:**
+
+Need to build from source. Run buildLibrealsense.sh from https://github.com/JetsonHacksNano/installLibrealsense
 
 ### jetson-inference on jetson
 
