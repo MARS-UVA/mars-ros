@@ -70,19 +70,16 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
     sensor_msgs::Image pubMsg;
     pubMsg.header = msg->header; // same time stamp
-    // allocate msg storage
-    pubMsg.data.resize(width * height);
 
-    // copy the mask image into the msg
-    memcpy(pubMsg.data.data(), cudaImgMask, width * height);
-
-    pubMsg.width = width;
     pubMsg.height = height;
-    pubMsg.step = width * 1;  // single channel
-
+    pubMsg.width = width;
     pubMsg.encoding = sensor_msgs::image_encodings::MONO8;
     pubMsg.is_bigendian = false;
 
+    pubMsg.step = width * 1;  // single channel
+    pubMsg.data.resize(width * height); // allocate msg storage
+    // copy the mask image into the msg
+    memcpy(pubMsg.data.data(), cudaImgMask, width * height);
     pub.publish(pubMsg);
 }
 

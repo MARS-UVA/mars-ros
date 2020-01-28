@@ -140,3 +140,32 @@ sudo apt install libopencv3.2
 ```
 
 If have Serialization Error when loading TensorRT models, try removing the engine cache and reload
+
+## Compiling gRPC
+
+```bash
+git clone https://github.com/grpc/grpc
+cd grpc
+git checkout v1.27.x
+git submodule update --init
+```
+
+If compiling on jetson, (please skip this if on host)
+
+```bash
+cd third_party/boringssl
+git checkout master # latest boringssl fixes a compile error on arm64 (about alignment)
+cd ..
+cd abseil-cpp/
+git checkout master # latest abseil fixes a compile error on arm64
+cd ../..
+```
+
+Finally, invoke CMake and make
+
+```bash
+mkdir -p cmake/build
+cmake ../.. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARE_LIBS=ON -DgRPC_INSTALL=ON
+make -j4
+sudo make install
+```
