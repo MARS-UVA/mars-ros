@@ -1,7 +1,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
-#include <opencv2/highgui/highgui.hpp>
 
 #include <segNet.h>
 #include "cudaMappedMemory.h"
@@ -52,7 +51,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
         height = msg->height;
         allocateImgMemory();
     }
-
 
     memcpy(cudaImgRGB, msg->data.data(), width * height * sizeof(uchar3));
     if (CUDA_FAILED(cudaRGB8ToRGBA32((uchar3*)cudaImgRGB, (float4*)cudaImgRGBA, width, height))) {

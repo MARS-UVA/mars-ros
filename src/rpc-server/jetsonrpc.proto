@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package jetsonrpc;
+
+// The greeting service definition.
+service JetsonRPC {
+  // Sends a greeting
+  rpc SendMotorCmd (stream MotorCmd) returns (Void) {}
+  rpc EndIMU (Void) returns (Void) {}
+  rpc StreamIMU (Void) returns (stream IMUData);
+  rpc StreamImage (Void) returns (stream Image);
+}
+
+message Void {}
+
+// The response message containing the greetings
+message MotorCmd {
+  int32 m1 = 1;
+  int32 m2 = 2;
+}
+
+message IMUData {
+  float m1 = 1;
+}
+
+message Image {
+    string encoding = 1;
+    bytes data = 2;
+}
