@@ -29,24 +29,44 @@ For more information about git submodules, refer to the git handbook: https://gi
 
 ## Note for development
 
-When developing for specific packages, you do not need to compile all other packages. You can use the `-DCATKIN_BLACKLIST_PACKAGES` option to blacklist packages you don't want to compile.
-For example,
+You need to have catkin_tools installed. You can use `sudo apt install python-catkin-tools` to install catkin_tools
+
+When developing for specific packages, you do not need to compile all other packages. You can specify the name of the packages you want to build as arguments to `catkin build`. For example, 
 
 ```bash
-catkin_make -DCATKIN_BLACKLIST_PACKAGES="apriltag;apriltag_ros;segmentation"
+catkin build segmentation processing
 ```
 
-will ignore the `apriltag`, `apriltag_ros` and `segmentation` packages. 
+will only build `processing` and `segmentation` packages. For other advanced build options, refer to the documentation: https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html
+
+### VSCode Remote Development on Jetson
+
+[VSCode remote development](https://code.visualstudio.com/docs/remote/ssh) works well. However, for the Python/C++ language extension to work, you need to tweak some settings.
+
+#### Python:
+
+Microsoft Python Language Server does not support arm64. Therefore, you need to add `"python.jediEnabled": true` to the workspace settings
+
+#### C++:
+
+Microsoft C++ extension does not support arm64. You need to install the `vscode-clangd` plugin from llvm instead. Follow the plugin README to get started. 
+
+However, it currently limits to providing intellisense etc. for one package at a time. To create `compile_commands.json`, run 
+
+```bash
+catkin build packagename -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+ln -s devel/packagename/compile_commands.json compile_commands.json
+```
+
+reload window to activate the extension
 
 ## Compile all packages
 
 > Note: a lot of packages have native dependencies, so it may be cumbersome to make them compile
 
-You'll need jetson-inference and librealsense2 installed (see sections below) on your computer before proceed. Also, make sure you have catkin_tools installed.
+You'll need jetson-inference, librealsense2 and gRPC installed (see sections below) on your computer before proceeding to `catkin build`. 
 
-> use `sudo apt install python-catkin-tools` to install catkin_tools
-
-To compile, run
+To compile all packages, run
 
 ```bash
 catkin build
@@ -58,7 +78,7 @@ catkin build
 
 With Ubuntu LTS kernel < 5.0, can just install .deb packages from https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
-With the latest Ubuntu 18.04.3 kernels (>=5.0), need to build from source and bypass libuvc. Specifically, add `-DFORCE_RSUSB_BACKEND=true` flag when invoking cmake.
+With the latest Ubuntu 18.04.3 kernels (>=5.0), need to build from source and bypass libuvc. Follow the instructions available at https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md, but skip kernel patches (skip `./scripts/patch-realsense-ubuntu-lts.sh`) and add `-DFORCE_RSUSB_BACKEND=true` flag when invoking cmake.
 
 ```bash
 cmake ../ -DFORCE_RSUSB_BACKEND=true -DCMAKE_BUILD_TYPE=release -DBUILD_EXAMPLES=true -DBUILD_GRAPHICAL_EXAMPLES=true
@@ -78,9 +98,7 @@ Can just follow instructions on https://github.com/hanzhi713/jetson-inference/bl
 
 1. Install CUDA-10.0/10.1, you can follow instructions on https://www.tensorflow.org/install/gpu#ubuntu_1804_cuda_101
 
-2. Make sure it is in your path, see
-
-https://docs.nvidia.com/cuda/archive/10.1/cuda-installation-guide-linux/index.html#post-installation-actions
+2. Make sure it is in your path, see https://docs.nvidia.com/cuda/archive/10.1/cuda-installation-guide-linux/index.html#post-installation-actions
 
 3. Download TensorRT 6.0.1 (tar ball), and copy headers and shared libraries to system include path
 
@@ -116,32 +134,9 @@ sudo make install
 sudo ldconfig
 ```
 
----
+### Compiling gRPC
 
-### Misc
-
-If you have OpenCV4 but encounter an error: OpenCV not found, then try
-
-```bash
-cd /usr/include
-sudo ln -s opencv4 opencv
-```
-
-ddnynamic reconfigure:
-
-```bash
-sudo apt install ros-melodic-ddynamic-reconfigure
-```
-
-Libopencv-photo.so.3.2.0 not found:
-
-```bash
-sudo apt install libopencv3.2
-```
-
-If have Serialization Error when loading TensorRT models, try removing the engine cache and reload
-
-## Compiling gRPC
+First, clone the gRPC repository and initialize submodules
 
 ```bash
 git clone https://github.com/grpc/grpc
@@ -169,3 +164,28 @@ cmake ../.. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARE_LIBS=ON -DgRPC_INSTALL=ON
 make -j4
 sudo make install
 ```
+
+---
+
+### Misc
+
+If you have OpenCV4 but encounter an error: OpenCV not found, then try
+
+```bash
+cd /usr/include
+sudo ln -s opencv4 opencv
+```
+
+ddnynamic reconfigure:
+
+```bash
+sudo apt install ros-melodic-ddynamic-reconfigure
+```
+
+Libopencv-photo.so.3.2.0 not found:
+
+```bash
+sudo apt install libopencv3.2
+```
+
+If have Serialization Error when loading TensorRT models, try removing the engine cache and reload
