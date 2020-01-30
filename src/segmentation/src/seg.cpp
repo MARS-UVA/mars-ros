@@ -20,11 +20,11 @@ image_transport::Publisher pub;
 void initializeNet() {
     net = segNet::Create(segNet::FCN_RESNET18_CITYSCAPES_1024x512, 1);
     if (!net) {
-        ROS_ERROR("failed to initialize segNet");
+        ROS_ERROR("Failed to initialize segNet!");
         return;
     }
     net->SetOverlayAlpha(255);
-    ROS_INFO("Network initialzed");
+    ROS_INFO("Network initialzed!");
 }
 
 void allocateImgMemory() {
@@ -37,7 +37,7 @@ void allocateImgMemory() {
     r = r && cudaAllocMapped((void**)&cudaImgRGBA, width * height * sizeof(float4));
 
     if (!r) {
-        ROS_ERROR("failed to allocate CUDA memory");
+        ROS_ERROR("Failed to allocate CUDA memory!");
         return;
     }
     ROS_INFO("Memory allocated!");
@@ -46,7 +46,7 @@ void allocateImgMemory() {
 void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     assert(msg->encoding == "rgb8");
     if (msg->width != width || msg->height != height) { // if msg has different 
-        ROS_INFO("Reallocating cuda memory due to change in image size");
+        ROS_INFO("Reallocating cuda memory due to change in image size (from %dx%d to %dx%d)", width, height, msg->width, msg->height);
         width = msg->width;
         height = msg->height;
         allocateImgMemory();
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
-    pub = it.advertise("seg", 1);
+    pub = it.advertise("seg/raw", 1);
     image_transport::Subscriber sub = it.subscribe("camera/color/image_raw", 1, imageCallback);
 
     ros::spin();
