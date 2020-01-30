@@ -4,9 +4,10 @@ package jetsonrpc;
 
 service JetsonRPC {
   rpc SendMotorCmd (stream MotorCmd) returns (Void) {}
-  rpc EndIMU (Void) returns (Void) {}
   rpc StreamIMU (Void) returns (stream IMUData);
+  rpc EndIMU (Void) returns (Void) {}
   rpc StreamImage (Void) returns (stream Image);
+  rpc EndImage (Void) returns (Void) {}
 }
 
 message Void {}

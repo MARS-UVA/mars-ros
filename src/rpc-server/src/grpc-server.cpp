@@ -30,65 +30,60 @@ void processImage(const sensor_msgs::CompressedImagePtr& image) {
 }
 
 class GreeterServiceImpl final : public JetsonRPC::Service {
-    Status SendMotorCmd(ServerContext* context, ServerReader<MotorCmd>* reader,
-                        Void* summary) override {
-        MotorCmd current;
-        while (reader->Read(&current)) {
+    Status SendMotorCmd(ServerContext* context, ServerReader<MotorCmd>* reader, Void* _) override {
+        // --------------
+        // some ros service calls...
+        //
+        // --------------
+        MotorCmd cmd;
+        while (reader->Read(&cmd)) {
         }
         return Status::OK;
     }
     Status StreamIMU(ServerContext* context, const Void* _, ServerWriter<IMUData>* writer) override {
-        while (true) {
-            {
-                unique_lock<std::mutex> lock(mu_);
-                if (!IMUFlag) break;
-            }
+        IMUFlag = true;
+        IMUData msg;
+        while (IMUFlag) {
+            msg.set_m1(1.0);  // just a dummy value
+            if (!writer->Write(msg))
+                break;
 
-            auto img = ros::topic::waitForMessage<sensor_msgs::Image>("/camera/color/image_raw", (*nh));
-
-            IMUData msg;
-            msg.set_m1(static_cast<float>(img->width));
-            writer->Write(msg);
             this_thread::sleep_for(chrono::milliseconds(100));
         }
         return Status::OK;
     }
-    Status EndIMU(ServerContext* context, const Void* msg, Void* feature) override {
-        unique_lock<std::mutex> lock(mu_);
+    Status EndIMU(ServerContext* context, const Void* _, Void* __) override {
         IMUFlag = false;
         return Status::OK;
     }
     Status StreamImage(ServerContext* context, const Void* _, ServerWriter<Image>* writer) override {
+        ImageFlag = true;
         Image msg;
 
         auto sub = nh->subscribe("/camera/color/image_raw/compressed", 1, processImage);
-        while (true) {
-            // auto start = chrono::high_resolution_clock::now();
-            // cout << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count() << endl;
-            
-            ros::spinOnce(); // note: spinOnce is called within the same thread
-            if (imgPtr == NULL) {
+        while (ImageFlag) {
+            ros::spinOnce();  // note: spinOnce is called within the same thread
+            if (imgPtr == NULL)
                 continue;
-            }
 
             msg.set_encoding(imgPtr->format);
             msg.set_data({reinterpret_cast<const char*>(imgPtr->data.data()), imgPtr->data.size()});
-            if (!writer->Write(msg)) break;
-            
+            if (!writer->Write(msg))  // break if client closes the connection
+                break;
+
             imgPtr = NULL;
         }
         return Status::OK;
     }
+    Status EndImage(ServerContext* context, const Void* _, Void* __) override {
+        ImageFlag = false;
+        return Status::OK;
+    }
 
    private:
-    bool IMUFlag = true;
-    mutex mu_;
+    atomic<bool> IMUFlag;
+    atomic<bool> ImageFlag;
 };
-
-void signalHandler( int signum ) {
-   cout << "Keyboard Interrupt" << endl;
-   exit(signum);  
-}
 
 void RunServer() {
     std::string server_address("0.0.0.0:50051");
@@ -106,7 +101,10 @@ void RunServer() {
 
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
-    signal(SIGINT, signalHandler);
+    signal(SIGINT, [](int signum) {
+        cout << "Keyboard Interrupt" << endl;
+        exit(signum);
+    });
     server->Wait();
 }
 
