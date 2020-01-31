@@ -44,6 +44,9 @@ void allocateImgMemory() {
 }
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
+    // don't do anything if there're no subscribers
+    if (pub.getNumSubscribers() == 0) return;
+
     assert(msg->encoding == "rgb8");
     if (msg->width != width || msg->height != height) { // if msg has different 
         ROS_INFO("Reallocating cuda memory due to change in image size (from %dx%d to %dx%d)", width, height, msg->width, msg->height);

@@ -36,8 +36,8 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         //
         // --------------
         MotorCmd cmd;
-        union MCmdUnpacked { // for unpacking the motor values from raw
-            unsigned long long raw;
+        union { // for unpacking the motor values from raw
+            uint64_t raw;
             uint8_t values[8];
         } cmdUnpacked;
         while (reader->Read(&cmd)) {
