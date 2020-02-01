@@ -50,7 +50,7 @@ def listener():
     
     # synchronize three streams
     image_sub = message_filters.Subscriber('/camera/color/image_raw', Image)
-    depth_sub = message_filters.Subscriber('/camera/depth/image_rect_raw', Image)
+    depth_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image)
     cls_sub = message_filters.Subscriber('/seg/raw', Image)
 
     ts = message_filters.TimeSynchronizer([image_sub, depth_sub, cls_sub], 30)

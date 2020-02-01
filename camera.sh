@@ -10,4 +10,4 @@ color_width:=$WIDTH color_height:=$HEIGHT \
 depth_width:=$WIDTH depth_height:=$HEIGHT \
 infra_width:=$WIDTH infra_height:=$HEIGHT \
 enable_infra1:=$INFRA enable_infra2:=$INFRA \
-unite_imu_method:=copy enable_sync:=true
+unite_imu_method:=copy enable_sync:=true align_depth:=true

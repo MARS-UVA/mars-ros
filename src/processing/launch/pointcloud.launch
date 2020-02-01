@@ -1,0 +1,25 @@
+<launch>
+    <!-- Nodelet manager for this pipeline -->
+    <node pkg="nodelet" type="nodelet" args="manager" name="pc_manager" output="screen"/>
+    <arg name="rgb_pc" default="false"/>
+
+    <!-- Convert it into a point cloud -->
+
+    <group if="$(eval not rgb_pc)">
+        <node pkg="nodelet" type="nodelet" name="points_xyz" args="load depth_image_proc/point_cloud_xyz pc_manager --no-bond">
+            <remap from="image_rect" to="/camera/depth/image_rect_raw"/>
+            <remap from="camera_info" to="/camera/depth/camera_info"/>
+            <remap from="points" to="/camera/points" />
+        </node>
+    </group>
+
+    <group if="$(eval rgb_pc)">
+        <node pkg="nodelet" type="nodelet" name="points_xyzrgb" args="load depth_image_proc/point_cloud_xyzrgb pc_manager --no-bond">
+            <remap from="rgb/image_rect_color" to="/camera/color/image_raw" />
+            <remap from="rgb/camera_info" to="/camera/color/camera_info" />
+            <remap from="depth_registered/image_rect" to="/camera/aligned_depth_to_color/image_raw" />
+            <remap from="depth_registered/points" to="/camera/points" />
+        </node>
+    </group>
+</launch>
+
