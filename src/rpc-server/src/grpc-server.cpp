@@ -37,13 +37,19 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         // --------------
         MotorCmd cmd;
         union { // for unpacking the motor values from raw
-            uint64_t raw;
-            uint8_t values[8];
+            uint32_t raw;
+            uint8_t values[4];
         } cmdUnpacked;
+        uint8_t motor_values[7];
         while (reader->Read(&cmd)) {
             cmdUnpacked.raw = cmd.values();
+            motor_values[0] = motor_values[1] = cmdUnpacked.values[0];
+            motor_values[2] = motor_values[3] = cmdUnpacked.values[1];
+            motor_values[4] = (cmdUnpacked.values[3] & 0b11) * 100; // 0, 100, or 200
+            motor_values[5] = cmdUnpacked.values[2];
+            motor_values[6] = cmdUnpacked.values[3] & 0b11111100;
             for (int i = 0; i < 7; i++) {
-                cout << (int) cmdUnpacked.values[i] << " ";
+                cout << (int) motor_values[i] << " ";
             }
             cout << endl;
         }

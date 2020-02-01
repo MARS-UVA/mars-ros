@@ -13,7 +13,7 @@ service JetsonRPC {
 message Void {}
 
 message MotorCmd {
-  fixed64 values = 1;
+  fixed32 values = 1;
 }
 
 // dummy IMU data
