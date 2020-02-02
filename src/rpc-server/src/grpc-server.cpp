@@ -8,10 +8,10 @@
 #include "jetsonrpc.grpc.pb.h"
 
 #include <cv_bridge/cv_bridge.h>
+#include <hero_board/MotorVal.h>
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
-#include <hero_board/MotorVal.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -25,9 +25,13 @@ using namespace std;
 
 ros::NodeHandlePtr nh;
 sensor_msgs::CompressedImagePtr imgPtr;
+hero_board::MotorValConstPtr currentPtr;
 
-void processImage(const sensor_msgs::CompressedImagePtr& image) {
-    imgPtr = image;
+void processImage(const decltype(imgPtr)& ptr) {
+    imgPtr = ptr;
+}
+void processMotorVal(const decltype(currentPtr)& ptr) {
+    currentPtr = ptr;
 }
 
 class GreeterServiceImpl final : public JetsonRPC::Service {
@@ -38,25 +42,29 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         // --------------
         MotorCmd cmd;
         // definitions see hero-serial/Program.cs
-        uint8_t motor_values[8];
+        hero_board::MotorVal msg;
+        auto pub = nh->advertise<hero_board::MotorVal>("/motor_pub", 1);
         while (reader->Read(&cmd)) {
+            // decode motor values
             uint32_t raw = cmd.values();
-            motor_values[7] = (raw & 0b11) * 100; // 0, 100, or 200
+            msg.motorval[7] = (raw & 0b11) * 100;  // 0, 100, or 200
             raw >>= 2;
-            motor_values[6] = (raw & 0b111111) << 2;
+            msg.motorval[6] = (raw & 0b111111) << 2;
             raw >>= 6;
-            motor_values[5] = (raw & 0b111111) << 2;
+            msg.motorval[5] = (raw & 0b111111) << 2;
             raw >>= 6;
-            motor_values[4] = (raw & 0b111111) << 2;
+            msg.motorval[4] = (raw & 0b111111) << 2;
             raw >>= 6;
-            motor_values[3] = motor_values[2] = (raw & 0b111111) << 2;
-            raw >>= 6; 
-            motor_values[1] = motor_values[0] = raw << 2;
-            
+            msg.motorval[3] = msg.motorval[2] = (raw & 0b111111) << 2;
+            raw >>= 6;
+            msg.motorval[1] = msg.motorval[0] = raw << 2;
+
             for (int i = 0; i < 8; i++) {
-                cout << (int) motor_values[i] << " ";
+                cout << (int)msg.motorval[i] << " ";
             }
             cout << endl;
+            // publish message
+            pub.publish(msg);
         }
         cout << "Client closes motor command stream" << endl;
         return Status::OK;
@@ -100,10 +108,34 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         ImageFlag = false;
         return Status::OK;
     }
+    Status StreamMotorCurrent(ServerContext* context, const Void* _, ServerWriter<MotorCurrent>* writer) {
+        CurrentFlag = true;
+        MotorCurrent current;
+
+        auto sub = nh->subscribe("/topic", 1, processMotorVal);
+        while (CurrentFlag) {
+            ros::spinOnce();  // note: spinOnce is called within the same thread
+            if (currentPtr == NULL)
+                continue;
+
+            // reinterpret 8 packed uint8 as uint64
+            current.set_values(*reinterpret_cast<const uint64_t*>(currentPtr->motorval.data()));
+            if (!writer->Write(current))  // break if client closes the connection
+                break;
+
+            currentPtr = NULL;
+        }
+        return Status::OK;
+    }
+    Status EndMotorCurrent(ServerContext* context, const Void* _, Void* __) override {
+        CurrentFlag = false;
+        return Status::OK;
+    }
 
    private:
     atomic<bool> IMUFlag;
     atomic<bool> ImageFlag;
+    atomic<bool> CurrentFlag;
 };
 
 void RunServer() {
