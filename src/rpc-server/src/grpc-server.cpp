@@ -11,6 +11,7 @@
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
+#include <hero_board/MotorVal.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -36,6 +37,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         //
         // --------------
         MotorCmd cmd;
+        // definitions see hero-serial/Program.cs
         uint8_t motor_values[8];
         while (reader->Read(&cmd)) {
             uint32_t raw = cmd.values();

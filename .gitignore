@@ -9,3 +9,4 @@ logs
 temp
 compile_commands.json
 *.bag
+install
