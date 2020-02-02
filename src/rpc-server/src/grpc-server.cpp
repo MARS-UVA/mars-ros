@@ -36,23 +36,27 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         //
         // --------------
         MotorCmd cmd;
-        union { // for unpacking the motor values from raw
-            uint32_t raw;
-            uint8_t values[4];
-        } cmdUnpacked;
-        uint8_t motor_values[7];
+        uint8_t motor_values[8];
         while (reader->Read(&cmd)) {
-            cmdUnpacked.raw = cmd.values();
-            motor_values[0] = motor_values[1] = cmdUnpacked.values[0];
-            motor_values[2] = motor_values[3] = cmdUnpacked.values[1];
-            motor_values[4] = (cmdUnpacked.values[3] & 0b11) * 100; // 0, 100, or 200
-            motor_values[5] = cmdUnpacked.values[2];
-            motor_values[6] = cmdUnpacked.values[3] & 0b11111100;
-            for (int i = 0; i < 7; i++) {
+            uint32_t raw = cmd.values();
+            motor_values[7] = (raw & 0b11) * 100; // 0, 100, or 200
+            raw >>= 2;
+            motor_values[6] = (raw & 0b111111) << 2;
+            raw >>= 6;
+            motor_values[5] = (raw & 0b111111) << 2;
+            raw >>= 6;
+            motor_values[4] = (raw & 0b111111) << 2;
+            raw >>= 6;
+            motor_values[3] = motor_values[2] = (raw & 0b111111) << 2;
+            raw >>= 6; 
+            motor_values[1] = motor_values[0] = raw << 2;
+            
+            for (int i = 0; i < 8; i++) {
                 cout << (int) motor_values[i] << " ";
             }
             cout << endl;
         }
+        cout << "Client closes motor command stream" << endl;
         return Status::OK;
     }
     Status StreamIMU(ServerContext* context, const Void* _, ServerWriter<IMUData>* writer) override {

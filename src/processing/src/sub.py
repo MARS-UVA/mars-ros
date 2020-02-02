@@ -28,11 +28,13 @@ def callback(pc, seg):
 
     ground = pc_arr[mask]
     ground = ground[np.count_nonzero(np.isnan(ground), axis=1) == 0]
+    # ground = ground[:200, :]
 
     A = np.c_[ground[:, 0], ground[:, 1], np.ones(ground.shape[0])]
     C, _, _, _ = np.linalg.lstsq(A, ground[:, 2])    # coefficients
 
     t = time.clock()
+    # print(ground)
     queue.put((C, ground))
     print(C, time.clock() - t)
 
@@ -43,10 +45,10 @@ def listener():
     pc_sub = message_filters.Subscriber('/camera/points', PointCloud2)
     seg_sub = message_filters.Subscriber('/seg/raw', Image)
 
-    ts = message_filters.TimeSynchronizer([pc_sub, seg_sub], 30)
+    ts = message_filters.TimeSynchronizer([pc_sub, seg_sub], 15)
     ts.registerCallback(callback)
 
-    X, Y = np.meshgrid(np.arange(-3.0, 3.0, 0.5), np.arange(-3.0, 3.0, 0.5))
+    X, Y = np.meshgrid(np.arange(0, 0.5, 0.1), np.arange(0.0, 0.5, 0.1))
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
@@ -62,7 +64,7 @@ def listener():
 
         ax.clear()
         ax.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.2)
-        ax.scatter(ground[:100, 0], ground[:100, 1], ground[:100, 2], c='r', s=10)
+        ax.scatter(ground[:200, 0], ground[:200, 1], ground[:200, 2], c='r', s=10)
 
         fig.canvas.draw_idle()
         fig.canvas.start_event_loop(0.001)
