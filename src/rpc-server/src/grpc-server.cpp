@@ -12,6 +12,7 @@
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
+#include <sensor_msgs/Imu.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -24,26 +25,38 @@ using namespace jetsonrpc;
 using namespace std;
 
 ros::NodeHandlePtr nh;
-sensor_msgs::CompressedImagePtr imgPtr;
-hero_board::MotorValConstPtr currentPtr;
 
-void processImage(const decltype(imgPtr)& ptr) {
-    imgPtr = ptr;
-}
-void processMotorVal(const decltype(currentPtr)& ptr) {
-    currentPtr = ptr;
-}
+// convenient pointer holder and updator
+template <typename T>
+class PtrHolder {
+    public:
+    T ptr;
+    inline T& operator=(T newPtr) {
+        ptr = newPtr;
+    }
+    inline void update(T newPtr) {
+        ptr = newPtr;
+    }
+    inline bool operator==(T other) {
+        return ptr == other;
+    }
+    inline T operator->() {
+        return ptr;
+    }
+};
 
 class GreeterServiceImpl final : public JetsonRPC::Service {
+    /**
+     * publish motor commands send from the client, disable autonomy
+     */
     Status SendMotorCmd(ServerContext* context, ServerReader<MotorCmd>* reader, Void* _) override {
         // --------------
         // some ros service calls...
         //
         // --------------
         MotorCmd cmd;
-        // definitions see hero-serial/Program.cs
-        hero_board::MotorVal msg;
-        auto pub = nh->advertise<hero_board::MotorVal>("/motor_pub", 1);
+        hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
+        auto pub = nh->advertise<decltype(msg)>("/motor_pub", 1);
         while (reader->Read(&cmd)) {
             // decode motor values
             uint32_t raw = cmd.values();
@@ -66,18 +79,33 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
             // publish message
             pub.publish(msg);
         }
-        cout << "Client closes motor command stream" << endl;
+        ROS_INFO("Client closes motor command stream");
         return Status::OK;
     }
     Status StreamIMU(ServerContext* context, const Void* _, ServerWriter<IMUData>* writer) override {
         IMUFlag = true;
+
         IMUData msg;
+        msg.mutable_values()->Resize(6, 0); // allocate memory for the underlying buffer
+
+        PtrHolder<sensor_msgs::ImuConstPtr> imuPtr;
+        auto sub = nh->subscribe("/camera/imu", 5, &decltype(imuPtr)::update, &imuPtr);
         while (IMUFlag) {
-            msg.set_m1(1.0);  // just a dummy value
+            ros::spinOnce();
+            if (imuPtr == NULL) 
+                continue;
+
+            msg.set_values(0, imuPtr->angular_velocity.x);
+            msg.set_values(1, imuPtr->angular_velocity.y);
+            msg.set_values(2, imuPtr->angular_velocity.z);
+
+            msg.set_values(3, imuPtr->linear_acceleration.x);
+            msg.set_values(4, imuPtr->linear_acceleration.y);
+            msg.set_values(5, imuPtr->linear_acceleration.z);
+
+            imuPtr = NULL;
             if (!writer->Write(msg))
                 break;
-
-            this_thread::sleep_for(chrono::milliseconds(100));
         }
         return Status::OK;
     }
@@ -86,10 +114,13 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         return Status::OK;
     }
     Status StreamImage(ServerContext* context, const Void* _, ServerWriter<Image>* writer) override {
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+
         ImageFlag = true;
         Image msg;
 
-        auto sub = nh->subscribe("/camera/color/image_raw/compressed", 1, processImage);
+        PtrHolder<sensor_msgs::CompressedImageConstPtr> imgPtr;
+        auto sub = nh->subscribe("/camera/color/image_raw/compressed", 5, &decltype(imgPtr)::update, &imgPtr);
         while (ImageFlag) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
             if (imgPtr == NULL)
@@ -112,7 +143,8 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         CurrentFlag = true;
         MotorCurrent current;
 
-        auto sub = nh->subscribe("/topic", 1, processMotorVal);
+        PtrHolder<hero_board::MotorValConstPtr> currentPtr;
+        auto sub = nh->subscribe("/topic", 5, &decltype(currentPtr)::update, &currentPtr);
         while (CurrentFlag) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
             if (currentPtr == NULL)
@@ -143,6 +175,10 @@ void RunServer() {
     GreeterServiceImpl service;
 
     ServerBuilder builder;
+
+    // no compression by default
+    // builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
+
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     // Register "service" as the instance through which we'll communicate with

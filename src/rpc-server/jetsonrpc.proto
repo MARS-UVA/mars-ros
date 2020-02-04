@@ -20,13 +20,14 @@ message Void {}
 message MotorCmd {
   fixed32 values = 1;
 }
+
 message MotorCurrent {
+  // 8 bytes packed in values
   fixed64 values = 1;
 }
 
-// dummy IMU data
 message IMUData {
-  float m1 = 1;
+  repeated float values = 1;
 }
 
 message Image {
