@@ -33,6 +33,7 @@ class PtrHolder {
     T ptr;
     inline T& operator=(T newPtr) {
         ptr = newPtr;
+        return ptr;
     }
     inline void update(T newPtr) {
         ptr = newPtr;
@@ -56,7 +57,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         // --------------
         MotorCmd cmd;
         hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
-        auto pub = nh->advertise<decltype(msg)>("/motor_pub", 1);
+        auto pub = nh->advertise<decltype(msg)>("/motor/output", 1);
         while (reader->Read(&cmd)) {
             // decode motor values
             uint32_t raw = cmd.values();
@@ -72,6 +73,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
             raw >>= 6;
             msg.motorval[1] = msg.motorval[0] = raw << 2;
 
+            cout << "Client send motor command (decoded): ";
             for (int i = 0; i < 8; i++) {
                 cout << (int)msg.motorval[i] << " ";
             }
@@ -139,12 +141,12 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         ImageFlag = false;
         return Status::OK;
     }
-    Status StreamMotorCurrent(ServerContext* context, const Void* _, ServerWriter<MotorCurrent>* writer) {
+    Status StreamMotorCurrent(ServerContext* context, const Void* _, ServerWriter<MotorCurrent>* writer) override {
         CurrentFlag = true;
         MotorCurrent current;
 
         PtrHolder<hero_board::MotorValConstPtr> currentPtr;
-        auto sub = nh->subscribe("/topic", 5, &decltype(currentPtr)::update, &currentPtr);
+        auto sub = nh->subscribe("/motor/current", 5, &decltype(currentPtr)::update, &currentPtr);
         while (CurrentFlag) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
             if (currentPtr == NULL)
@@ -157,6 +159,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
 
             currentPtr = NULL;
         }
+        ROS_INFO("Client closes motor current stream");
         return Status::OK;
     }
     Status EndMotorCurrent(ServerContext* context, const Void* _, Void* __) override {
