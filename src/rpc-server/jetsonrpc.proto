@@ -6,13 +6,8 @@ service JetsonRPC {
   rpc SendMotorCmd (stream MotorCmd) returns (Void);
   
   rpc StreamIMU (Void) returns (stream IMUData);
-  rpc EndIMU (Void) returns (Void);
-
   rpc StreamImage (Void) returns (stream Image);
-  rpc EndImage (Void) returns (Void);
-
   rpc StreamMotorCurrent (Void) returns (stream MotorCurrent);
-  rpc EndMotorCurrent (Void) returns (Void);
 }
 
 message Void {}
