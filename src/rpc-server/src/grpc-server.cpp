@@ -84,13 +84,13 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         ROS_INFO("Client closes motor command stream");
         return Status::OK;
     }
-    Status StreamIMU(ServerContext* context, const Void* _, ServerWriter<IMUData>* writer) override {
-
+    Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
         IMUData msg;
         msg.mutable_values()->Resize(6, 0); // allocate memory for the underlying buffer
 
         PtrHolder<sensor_msgs::ImuConstPtr> imuPtr;
-        auto sub = nh->subscribe("/camera/imu", 5, &decltype(imuPtr)::update, &imuPtr);
+        auto sub = nh->subscribe("/camera/imu", 1, &decltype(imuPtr)::update, &imuPtr);
+        ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();
             if (imuPtr == NULL) 
@@ -107,17 +107,19 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
             imuPtr = NULL;
             if (!writer->Write(msg))
                 break;
+            rate.sleep();
         }
         ROS_INFO("Client closes IMU stream");
         return Status::OK;
     }
-    Status StreamImage(ServerContext* context, const Void* _, ServerWriter<Image>* writer) override {
+    Status StreamImage(ServerContext* context, const Rate* _rate, ServerWriter<Image>* writer) override {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
 
         Image msg;
 
         PtrHolder<sensor_msgs::CompressedImageConstPtr> imgPtr;
-        auto sub = nh->subscribe("/camera/color/image_raw/compressed", 5, &decltype(imgPtr)::update, &imgPtr);
+        auto sub = nh->subscribe("/camera/color/image_raw/compressed", 1, &decltype(imgPtr)::update, &imgPtr);
+        ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
             if (imgPtr == NULL)
@@ -129,15 +131,17 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
                 break;
 
             imgPtr = NULL;
+            rate.sleep();
         }
         ROS_INFO("Client closes image stream");
         return Status::OK;
     }
-    Status StreamMotorCurrent(ServerContext* context, const Void* _, ServerWriter<MotorCurrent>* writer) override {
+    Status StreamMotorCurrent(ServerContext* context, const Rate* _rate, ServerWriter<MotorCurrent>* writer) override {
         MotorCurrent current;
 
         PtrHolder<hero_board::MotorValConstPtr> currentPtr;
-        auto sub = nh->subscribe("/motor/current", 5, &decltype(currentPtr)::update, &currentPtr);
+        auto sub = nh->subscribe("/motor/current", 1, &decltype(currentPtr)::update, &currentPtr);
+        ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
             if (currentPtr == NULL)
@@ -149,6 +153,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
                 break;
 
             currentPtr = NULL;
+            rate.sleep();
         }
         ROS_INFO("Client closes motor current stream");
         return Status::OK;

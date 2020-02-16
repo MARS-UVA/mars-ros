@@ -5,9 +5,9 @@ package jetsonrpc;
 service JetsonRPC {
   rpc SendMotorCmd (stream MotorCmd) returns (Void);
   
-  rpc StreamIMU (Void) returns (stream IMUData);
-  rpc StreamImage (Void) returns (stream Image);
-  rpc StreamMotorCurrent (Void) returns (stream MotorCurrent);
+  rpc StreamIMU (Rate) returns (stream IMUData);
+  rpc StreamImage (Rate) returns (stream Image);
+  rpc StreamMotorCurrent (Rate) returns (stream MotorCurrent);
 }
 
 message Void {}
@@ -23,6 +23,10 @@ message MotorCurrent {
 
 message IMUData {
   repeated float values = 1;
+}
+
+message Rate {
+  int32 rate = 1;
 }
 
 message Image {
