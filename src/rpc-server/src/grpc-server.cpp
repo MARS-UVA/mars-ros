@@ -57,6 +57,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         // --------------
         MotorCmd cmd;
         hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
+        msg.motorval.resize(8);
         auto pub = nh->advertise<decltype(msg)>("/motor/output", 1);
         while (reader->Read(&cmd)) {
             // decode motor values
@@ -82,6 +83,25 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
             pub.publish(msg);
         }
         ROS_INFO("Client closes motor command stream");
+        return Status::OK;
+    }
+    Status SendTwist(ServerContext* context, ServerReader<Twist>* reader, Void* _) override {
+        Twist twist;
+
+        hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
+        msg.motorval.resize(12);
+        // reinterpret 12 bytes as 3 floats
+        auto raw_data = reinterpret_cast<float*>(msg.motorval.data());
+
+        auto pub = nh->advertise<decltype(msg)>("/motor/output", 1);
+        while (reader->Read(&twist)) {
+            raw_data[0] = twist.values(0);
+            raw_data[1] = twist.values(1);
+            raw_data[2] = twist.values(2);
+
+            pub.publish(msg);
+        }
+        ROS_INFO("Client closes twist stream");
         return Status::OK;
     }
     Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
