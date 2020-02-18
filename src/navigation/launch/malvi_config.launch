@@ -18,6 +18,9 @@
             <arg name="tf_prefix" value="camera"/>
         </include>
     </group>
+    <include file="$(find processing)/launch/pointcloud.launch">
+        <arg name="rgb_pc" value="false"/>
+    </include>
     <!-- <node pkg="odom_node_pkg" type="odom_node_type" name="odom_node" output="screen">
         <param name="odom_param" value="param_value" />
     </node> -->
