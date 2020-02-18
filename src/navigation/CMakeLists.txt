@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   tf2
   tf2_ros
+  nav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -136,6 +137,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(static_tf_node src/static_tf.cpp)
+add_executable(fake_odom_node src/fake_odom.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,6 +151,9 @@ add_executable(static_tf_node src/static_tf.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(static_tf_node
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(fake_odom_node
   ${catkin_LIBRARIES}
 )
 

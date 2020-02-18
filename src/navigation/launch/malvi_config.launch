@@ -21,9 +21,9 @@
     <include file="$(find processing)/launch/pointcloud.launch">
         <arg name="rgb_pc" value="false"/>
     </include>
-    <!-- <node pkg="odom_node_pkg" type="odom_node_type" name="odom_node" output="screen">
-        <param name="odom_param" value="param_value" />
-    </node> -->
+    <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen">
+        <!-- <param name="odom_param" value="param_value" /> -->
+    </node>
     <node pkg="navigation" type="static_tf_node" name="static_tf" output="screen">
         <!-- <param name="transform_configuration_param" value="param_value" /> -->
     </node>
