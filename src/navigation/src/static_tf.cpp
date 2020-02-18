@@ -10,8 +10,8 @@ int main(int argc, char** argv) {
     geometry_msgs::TransformStamped static_transformStamped;
 
     static_transformStamped.header.stamp = ros::Time::now();
-    static_transformStamped.header.frame_id = "camera_link";
-    static_transformStamped.child_frame_id = "base_link";
+    static_transformStamped.header.frame_id = "base_link";
+    static_transformStamped.child_frame_id = "camera_link";
 
     auto& trans = static_transformStamped.transform.translation;
     trans.x = 0;
