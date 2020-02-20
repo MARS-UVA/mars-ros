@@ -1,4 +1,5 @@
 <launch>
+    <!-- d435i camera -->
     <group ns="camera">
         <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
             <!-- <arg name="serial_no" value="$(arg serial_no)"/> -->
@@ -18,9 +19,20 @@
             <arg name="tf_prefix" value="camera"/>
         </include>
     </group>
+
+    <!-- depth to point cloud -->
     <include file="$(find processing)/launch/pointcloud.launch">
         <arg name="rgb_pc" value="false"/>
     </include>
+
+    <!-- apriltag detection -->
+    <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+        <arg name="camera_name" value="/camera/color" />
+        <arg name="camera_frame" value="camera_link" />
+        <arg name="image_topic" value="image_raw" />
+    </include>
+
+    
     <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen">
         <!-- <param name="odom_param" value="param_value" /> -->
     </node>
