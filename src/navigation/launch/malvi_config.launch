@@ -1,6 +1,9 @@
 <launch>
+    <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}"/>
+
+    <arg name="autonomy" default="false"/>
     <!-- d435i camera -->
-    <group ns="camera">
+    <group ns="camera" if="$(eval autonomy)">
         <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
             <!-- <arg name="serial_no" value="$(arg serial_no)"/> -->
             <!-- <arg name="json_file_path" value="$(arg json_file_path)"/> -->
@@ -20,23 +23,31 @@
         </include>
     </group>
 
-    <!-- depth to point cloud -->
-    <include file="$(find processing)/launch/pointcloud.launch">
-        <arg name="rgb_pc" value="false"/>
-    </include>
+    <!-- rpc server -->
+    <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen"/>
 
-    <!-- apriltag detection -->
-    <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
-        <arg name="camera_name" value="/camera/color" />
-        <arg name="camera_frame" value="camera_link" />
-        <arg name="image_topic" value="image_raw" />
-    </include>
+    <!-- hero communication node -->
+    <node name="hero_permission" pkg="hero_board" type="permission.sh"/>
+    <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen"/>
 
-    
-    <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen">
-        <!-- <param name="odom_param" value="param_value" /> -->
-    </node>
-    <node pkg="navigation" type="static_tf_node" name="static_tf" output="screen">
-        <!-- <param name="transform_configuration_param" value="param_value" /> -->
-    </node>
+    <group if="$(eval autonomy)">
+        <!-- depth to point cloud -->
+        <include file="$(find processing)/launch/pointcloud.launch">
+            <arg name="rgb_pc" value="false"/>
+        </include>
+
+        <!-- apriltag detection -->
+        <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+            <arg name="camera_name" value="/camera/color" />
+            <arg name="camera_frame" value="camera_link" />
+            <arg name="image_topic" value="image_raw" />
+        </include>
+
+        <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen">
+            <!-- <param name="odom_param" value="param_value" /> -->
+        </node>
+        <node pkg="navigation" type="static_tf_node" name="static_tf" output="screen">
+            <!-- <param name="transform_configuration_param" value="param_value" /> -->
+        </node>
+    </group>
 </launch> 

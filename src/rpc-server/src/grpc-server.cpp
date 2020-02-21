@@ -8,7 +8,13 @@
 #include "jetsonrpc.grpc.pb.h"
 
 #include <cv_bridge/cv_bridge.h>
+
 #include <hero_board/MotorVal.h>
+#include <hero_board/SetState.h>
+#include <hero_board/SetStateResponse.h>
+#include <hero_board/GetState.h>
+#include <hero_board/GetStateResponse.h>
+
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
@@ -46,15 +52,43 @@ class PtrHolder {
     }
 };
 
+bool SwitchControl(bool state) {
+    hero_board::SetStateRequest req;
+    req.state = state;
+
+    hero_board::SetStateResponse res;
+    bool status = ros::service::call("/set_state", req, res);
+    ROS_INFO("%s", res.controlResponse.c_str());
+    return status;
+}
+
+pair<bool, bool> GetControlState() {
+    hero_board::GetStateRequest req;
+    hero_board::GetStateResponse res;
+
+    bool status = ros::service::call("/get_state", req, res);
+    return {res.state, status};
+}
+
 class GreeterServiceImpl final : public JetsonRPC::Service {
     /**
      * publish motor commands send from the client, disable autonomy
      */
     Status SendMotorCmd(ServerContext* context, ServerReader<MotorCmd>* reader, Void* _) override {
-        // --------------
-        // some ros service calls...
-        //
-        // --------------
+        auto state = GetControlState();
+        if (!state.second) {
+            ROS_ERROR("Failed to get control state");
+            return Status::OK;
+        }
+
+        auto stateStr = state.first == hero_board::GetStateResponse::MANUAL ? "manual" : "autonomy";
+        ROS_INFO("Switching from %s to %s", stateStr, "manual");
+
+        if (!SwitchControl(hero_board::SetStateRequest::MANUAL)) {
+            ROS_ERROR("Failed to switch to manual control");
+            return Status::OK; 
+        }
+
         MotorCmd cmd;
         hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
         msg.motorval.resize(8);
@@ -82,7 +116,13 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
             // publish message
             pub.publish(msg);
         }
-        ROS_INFO("Client closes motor command stream");
+
+        ROS_INFO("Client closes motor command stream, switching to previous control state %s", stateStr);
+
+        if (!SwitchControl(state.first)) {
+            ROS_ERROR("Failed to switch to %s", stateStr);
+            return Status::OK; 
+        }
         return Status::OK;
     }
     Status SendTwist(ServerContext* context, ServerReader<Twist>* reader, Void* _) override {
