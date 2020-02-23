@@ -218,6 +218,27 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         ROS_INFO("Client closes motor current stream");
         return Status::OK;
     }
+    Status StreamAngle(ServerContext* context, const Rate* _rate, ServerWriter<ArmAngle>* writer) override {
+        ArmAngle angle;
+
+        PtrHolder<hero_board::MotorValConstPtr> currentPtr;
+        auto sub = nh->subscribe("/motor/current", 1, &decltype(currentPtr)::update, &currentPtr);
+        ros::Rate rate(_rate->rate());
+        while (true) {
+            ros::spinOnce();  // note: spinOnce is called within the same thread
+            if (currentPtr == NULL)
+                continue;
+
+            angle.set_angle(currentPtr->motorval.back());
+            if (!writer->Write(angle))  // break if client closes the connection
+                break;
+
+            currentPtr = NULL;
+            rate.sleep();
+        }
+        ROS_INFO("Client closes angle stream");
+        return Status::OK;
+    }
 
    private:
 };
