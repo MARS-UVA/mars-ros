@@ -28,7 +28,7 @@ message MotorCurrent {
 }
 
 message ArmAngle {
-  int32 angle = 1;
+  float angle = 1;
 }
 
 message IMUData {

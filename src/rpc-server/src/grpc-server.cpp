@@ -199,20 +199,20 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
     Status StreamMotorCurrent(ServerContext* context, const Rate* _rate, ServerWriter<MotorCurrent>* writer) override {
         MotorCurrent current;
 
-        PtrHolder<hero_board::MotorValConstPtr> currentPtr;
-        auto sub = nh->subscribe("/motor/current", 1, &decltype(currentPtr)::update, &currentPtr);
+        PtrHolder<hero_board::MotorValConstPtr> valPtr;
+        auto sub = nh->subscribe("/motor/status", 1, &decltype(valPtr)::update, &valPtr);
         ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
-            if (currentPtr == NULL)
+            if (valPtr == NULL)
                 continue;
 
             // reinterpret 8 packed uint8 as uint64
-            current.set_values(*reinterpret_cast<const uint64_t*>(currentPtr->motorval.data()));
+            current.set_values(*reinterpret_cast<const uint64_t*>(valPtr->motorval.data()));
             if (!writer->Write(current))  // break if client closes the connection
                 break;
 
-            currentPtr = NULL;
+            valPtr = NULL;
             rate.sleep();
         }
         ROS_INFO("Client closes motor current stream");
@@ -221,19 +221,19 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
     Status StreamAngle(ServerContext* context, const Rate* _rate, ServerWriter<ArmAngle>* writer) override {
         ArmAngle angle;
 
-        PtrHolder<hero_board::MotorValConstPtr> currentPtr;
-        auto sub = nh->subscribe("/motor/current", 1, &decltype(currentPtr)::update, &currentPtr);
+        PtrHolder<hero_board::MotorValConstPtr> valPtr;
+        auto sub = nh->subscribe("/motor/status", 1, &decltype(valPtr)::update, &valPtr);
         ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
-            if (currentPtr == NULL)
+            if (valPtr == NULL)
                 continue;
 
-            angle.set_angle(currentPtr->motorval.back());
+            angle.set_angle(valPtr->angle);
             if (!writer->Write(angle))  // break if client closes the connection
                 break;
 
-            currentPtr = NULL;
+            valPtr = NULL;
             rate.sleep();
         }
         ROS_INFO("Client closes angle stream");

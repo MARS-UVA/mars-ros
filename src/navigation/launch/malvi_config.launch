@@ -27,7 +27,7 @@
     <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen"/>
 
     <!-- hero communication node -->
-    <node name="hero_permission" pkg="hero_board" type="permission.sh"/>
+    <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen"/>
     <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen"/>
 
     <group if="$(eval autonomy)">
