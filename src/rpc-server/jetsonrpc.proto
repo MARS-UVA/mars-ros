@@ -9,12 +9,13 @@ service JetsonRPC {
   rpc StreamIMU (Rate) returns (stream IMUData);
   rpc StreamImage (Rate) returns (stream Image);
   rpc StreamMotorCurrent (Rate) returns (stream MotorCurrent);
-  rpc StreamAngle (Rate) returns (stream ArmAngle);
+  rpc StreamArmStatus (Rate) returns (stream ArmStatus);
 }
 
 message Void {}
 
 message MotorCmd {
+  // 8 motor commands packed
   fixed32 values = 1;
 }
 
@@ -27,8 +28,9 @@ message MotorCurrent {
   fixed64 values = 1;
 }
 
-message ArmAngle {
+message ArmStatus {
   float angle = 1;
+  float translation = 2;
 }
 
 message IMUData {
