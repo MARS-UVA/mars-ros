@@ -50,7 +50,7 @@ pair<bool, bool> GetControlState() {
     return {res.state, status};
 }
 
-class GreeterServiceImpl final : public JetsonRPC::Service {
+class JetsonServiceImpl final : public JetsonRPC::Service {
     /**
      * publish motor commands send from the client, disable autonomy
      */
@@ -205,7 +205,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
 
 void RunServer() {
     std::string server_address("0.0.0.0:50051");
-    GreeterServiceImpl service;
+    JetsonServiceImpl service;
 
     ServerBuilder builder;
 
