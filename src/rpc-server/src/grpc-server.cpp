@@ -32,26 +32,6 @@ using namespace std;
 
 ros::NodeHandlePtr nh;
 
-// convenient pointer holder and updator
-template <typename T>
-class PtrHolder {
-    public:
-    T ptr;
-    inline T& operator=(T newPtr) {
-        ptr = newPtr;
-        return ptr;
-    }
-    inline void update(T newPtr) {
-        ptr = newPtr;
-    }
-    inline bool operator==(T other) {
-        return ptr == other;
-    }
-    inline T operator->() {
-        return ptr;
-    }
-};
-
 bool SwitchControl(bool state) {
     hero_board::SetStateRequest req;
     req.state = state;
@@ -125,6 +105,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         }
         return Status::OK;
     }
+
     Status SendTwist(ServerContext* context, ServerReader<Twist>* reader, Void* _) override {
         Twist twist;
 
@@ -133,7 +114,7 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         // reinterpret 12 bytes as 3 floats
         auto raw_data = reinterpret_cast<float*>(msg.motorval.data());
 
-        auto pub = nh->advertise<decltype(msg)>("/motor/output", 1);
+        auto pub = nh->advertise<hero_board::MotorVal>("/motor/output", 1);
         while (reader->Read(&twist)) {
             raw_data[0] = twist.values(0);
             raw_data[1] = twist.values(1);
@@ -144,103 +125,81 @@ class GreeterServiceImpl final : public JetsonRPC::Service {
         ROS_INFO("Client closes twist stream");
         return Status::OK;
     }
+
     Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
-        IMUData msg;
-        msg.mutable_values()->Resize(6, 0); // allocate memory for the underlying buffer
+        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
+            rpc_val.set_values(0, ros_msg_ptr->angular_velocity.x);
+            rpc_val.set_values(1, ros_msg_ptr->angular_velocity.y);
+            rpc_val.set_values(2, ros_msg_ptr->angular_velocity.z);
 
-        PtrHolder<sensor_msgs::ImuConstPtr> imuPtr;
-        auto sub = nh->subscribe("/camera/imu", 1, &decltype(imuPtr)::update, &imuPtr);
-        ros::Rate rate(_rate->rate());
-        while (true) {
-            ros::spinOnce();
-            if (imuPtr == NULL) 
-                continue;
-
-            msg.set_values(0, imuPtr->angular_velocity.x);
-            msg.set_values(1, imuPtr->angular_velocity.y);
-            msg.set_values(2, imuPtr->angular_velocity.z);
-
-            msg.set_values(3, imuPtr->linear_acceleration.x);
-            msg.set_values(4, imuPtr->linear_acceleration.y);
-            msg.set_values(5, imuPtr->linear_acceleration.z);
-
-            imuPtr = NULL;
-            if (!writer->Write(msg))
-                break;
-            rate.sleep();
-        }
-        ROS_INFO("Client closes IMU stream");
-        return Status::OK;
+            rpc_val.set_values(3, ros_msg_ptr->linear_acceleration.x);
+            rpc_val.set_values(4, ros_msg_ptr->linear_acceleration.y);
+            rpc_val.set_values(5, ros_msg_ptr->linear_acceleration.z);
+        };
+        return StreamToClient<IMUData, sensor_msgs::ImuConstPtr, decltype(process)>(
+            context, _rate, writer, process, "/camera/imu", "Client closes IMU stream"
+        );
     }
-    Status StreamImage(ServerContext* context, const Rate* _rate, ServerWriter<Image>* writer) override {
-        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
 
-        Image msg;
-
-        PtrHolder<sensor_msgs::CompressedImageConstPtr> imgPtr;
-        auto sub = nh->subscribe("/camera/color/image_raw/compressed", 1, &decltype(imgPtr)::update, &imgPtr);
-        ros::Rate rate(_rate->rate());
-        while (true) {
-            ros::spinOnce();  // note: spinOnce is called within the same thread
-            if (imgPtr == NULL)
-                continue;
-
-            msg.set_encoding(imgPtr->format);
-            msg.set_data({reinterpret_cast<const char*>(imgPtr->data.data()), imgPtr->data.size()});
-            if (!writer->Write(msg))  // break if client closes the connection
-                break;
-
-            imgPtr = NULL;
-            rate.sleep();
-        }
-        ROS_INFO("Client closes image stream");
-        return Status::OK;
+    Status StreamImage(ServerContext* context, const Rate* _rate, ServerWriter<Image>* writer) override { 
+        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
+            rpc_val.set_data({reinterpret_cast<const char*>(ros_msg_ptr->data.data()), ros_msg_ptr->data.size()});
+        };
+        return StreamToClient<Image, sensor_msgs::CompressedImageConstPtr, decltype(process)>(
+            context, _rate, writer, process, "/camera/color/image_raw/compressed", "Client closes image stream"
+        );
     }
+
     Status StreamMotorCurrent(ServerContext* context, const Rate* _rate, ServerWriter<MotorCurrent>* writer) override {
-        MotorCurrent current;
-
-        PtrHolder<hero_board::MotorValConstPtr> valPtr;
-        auto sub = nh->subscribe("/motor/status", 1, &decltype(valPtr)::update, &valPtr);
-        ros::Rate rate(_rate->rate());
-        while (true) {
-            ros::spinOnce();  // note: spinOnce is called within the same thread
-            if (valPtr == NULL)
-                continue;
-
-            // reinterpret 8 packed uint8 as uint64
-            current.set_values(*reinterpret_cast<const uint64_t*>(valPtr->motorval.data()));
-            if (!writer->Write(current))  // break if client closes the connection
-                break;
-
-            valPtr = NULL;
-            rate.sleep();
-        }
-        ROS_INFO("Client closes motor current stream");
-        return Status::OK;
+        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
+            // reinterpret 8 motor current bytes as uint64
+            rpc_val.set_values(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->motorval.data()));
+        };
+        return StreamToClient<MotorCurrent, hero_board::MotorValConstPtr, decltype(process)>(
+            context, _rate, writer, process, "/motor/status", "Client closes motor current stream"
+        );
     }
+
     Status StreamArmStatus(ServerContext* context, const Rate* _rate, ServerWriter<ArmStatus>* writer) override {
-        ArmStatus status;
+        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
+            rpc_val.set_angle(ros_msg_ptr->angle);
+            rpc_val.set_translation(ros_msg_ptr->translation);
+        };
+        return StreamToClient<ArmStatus, hero_board::MotorValConstPtr, decltype(process)>(
+            context, _rate, writer, process, "/motor/status", "Client closes angle stream"
+        );
+    }
+    
+    // a template function for streaming data from jetson (server) to laptop (client)
+    template <typename RPCMsg, typename ROSMsgPtr, typename Process>
+    Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, 
+    Process process, const char* topic, const char* message) {
+        RPCMsg rpc_val;
 
-        PtrHolder<hero_board::MotorValConstPtr> valPtr;
-        auto sub = nh->subscribe("/motor/status", 1, &decltype(valPtr)::update, &valPtr);
+        static ROSMsgPtr ros_msg_ptr;
+        struct X {
+            static void update(ROSMsgPtr newPtr) { // method for updating the current ros message (pointer)
+                ros_msg_ptr = newPtr;
+            }
+        };
+
+        auto sub = nh->subscribe(topic, 1, X::update);
         ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
-            if (valPtr == NULL)
+            if (ros_msg_ptr == NULL)
                 continue;
-
-            status.set_angle(valPtr->angle);
-            status.set_translation(valPtr->translation);
-            if (!writer->Write(status))  // break if client closes the connection
+            
+            process(ros_msg_ptr, rpc_val);
+            if (!writer->Write(rpc_val))  // break if client closes the connection
                 break;
 
-            valPtr = NULL;
+            ros_msg_ptr = NULL;
             rate.sleep();
         }
-        ROS_INFO("Client closes angle stream");
+        ROS_INFO("%s", message);
         return Status::OK;
     }
-
    private:
 };
 

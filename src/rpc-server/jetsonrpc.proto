@@ -42,6 +42,5 @@ message Rate {
 }
 
 message Image {
-    string encoding = 1;
-    bytes data = 2;
+    bytes data = 1;
 }
