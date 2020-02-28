@@ -1,39 +1,24 @@
 <launch>
-    <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}"/>
+    <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="autonomy" default="false"/>
+    <arg name="autonomy" default="false" />
     <!-- d435i camera -->
     <group ns="camera" if="$(eval autonomy)">
-        <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
-            <!-- <arg name="serial_no" value="$(arg serial_no)"/> -->
-            <!-- <arg name="json_file_path" value="$(arg json_file_path)"/> -->
-            <arg name="depth_width" value="848"/>
-            <arg name="depth_height" value="480"/>
-            <arg name="depth_fps" value="30"/>
-            <arg name="color_width" value="848"/>
-            <arg name="color_height" value="480"/>
-            <arg name="color_fps" value="30"/>
-            <arg name="enable_infra1" value="false"/>
-            <arg name="enable_infra2" value="false"/>
-            <arg name="enable_fisheye" value="false"/>
-            <arg name="align_depth" value="true"/>
-            <arg name="enable_sync" value="true"/>
-            <arg name="unite_imu_method" value="linear_interpolation"/>
-            <arg name="tf_prefix" value="camera"/>
-        </include>
+        <include file="$(find navigation)/launch/d435_camera.launch"></include>
+        <include file="$(find navigation)/launch/t265_camera.launch"></include>
     </group>
-
+    
     <!-- rpc server -->
-    <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen"/>
+    <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
 
     <!-- hero communication node -->
-    <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen"/>
-    <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen"/>
+    <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
+    <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
 
     <group if="$(eval autonomy)">
         <!-- depth to point cloud -->
         <include file="$(find processing)/launch/pointcloud.launch">
-            <arg name="rgb_pc" value="false"/>
+            <arg name="rgb_pc" value="false" />
         </include>
 
         <!-- apriltag detection -->
@@ -43,11 +28,11 @@
             <arg name="image_topic" value="image_raw" />
         </include>
 
-        <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen">
+        <!-- <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen"> -->
             <!-- <param name="odom_param" value="param_value" /> -->
-        </node>
+        <!-- </node> -->
         <node pkg="navigation" type="static_tf_node" name="static_tf" output="screen">
             <!-- <param name="transform_configuration_param" value="param_value" /> -->
         </node>
     </group>
-</launch> 
+</launch>
