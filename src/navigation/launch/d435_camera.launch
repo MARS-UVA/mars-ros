@@ -1,7 +1,6 @@
 <launch>
     <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
         <!-- <arg name="serial_no" value="$(arg serial_no)"/> -->
-        <!-- <arg name="json_file_path" value="$(arg json_file_path)"/> -->
         <arg name="depth_width" value="848" />
         <arg name="depth_height" value="480" />
         <arg name="depth_fps" value="30" />
@@ -14,6 +13,7 @@
         <arg name="align_depth" value="true" />
         <arg name="enable_sync" value="true" />
         <arg name="unite_imu_method" value="linear_interpolation" />
-        <arg name="tf_prefix" value="camera_d435" />
+        <arg name="tf_prefix" value="d435" />
+        <arg name="camera" value="d435"/>
     </include>
 </launch>

@@ -5,6 +5,6 @@
         <arg name="enable_fisheye2" default="false" />
         <arg name="enable_gyro" default="false" />
         <arg name="enable_accel" default="false" />
-        <arg name="tf_prefix" value="camera_t265" />
+        <arg name="tf_prefix" value="t265" />
     </include>
 </launch>

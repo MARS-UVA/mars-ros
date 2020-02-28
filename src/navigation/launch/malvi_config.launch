@@ -2,9 +2,13 @@
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
     <arg name="autonomy" default="false" />
+    <arg name="hero" default="false" />
+
     <!-- d435i camera -->
-    <group ns="camera" if="$(eval autonomy)">
+    <group ns="d435" if="$(eval autonomy and false)">
         <include file="$(find navigation)/launch/d435_camera.launch"></include>
+    </group>
+    <group ns="t265">
         <include file="$(find navigation)/launch/t265_camera.launch"></include>
     </group>
     
@@ -12,8 +16,13 @@
     <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
 
     <!-- hero communication node -->
-    <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
-    <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
+    <group if="$(eval hero)">
+        <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
+        <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
+    </group>
+
+    <!-- static transforms -->
+    <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node>
 
     <group if="$(eval autonomy)">
         <!-- depth to point cloud -->
@@ -28,11 +37,8 @@
             <arg name="image_topic" value="image_raw" />
         </include>
 
-        <!-- <node pkg="navigation" type="fake_odom_node" name="odom_node" output="screen"> -->
+        <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen"> -->
             <!-- <param name="odom_param" value="param_value" /> -->
         <!-- </node> -->
-        <node pkg="navigation" type="static_tf_node" name="static_tf" output="screen">
-            <!-- <param name="transform_configuration_param" value="param_value" /> -->
-        </node>
     </group>
 </launch>
