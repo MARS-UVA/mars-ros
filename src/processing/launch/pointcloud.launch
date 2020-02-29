@@ -7,9 +7,9 @@
 
     <group if="$(eval not rgb_pc)">
         <node pkg="nodelet" type="nodelet" name="points_xyz" args="load depth_image_proc/point_cloud_xyz pc_manager --no-bond">
-            <remap from="image_rect" to="/camera/depth/image_rect_raw"/>
-            <remap from="camera_info" to="/camera/depth/camera_info"/>
-            <remap from="points" to="/camera/points" />
+            <remap from="image_rect" to="/d435/depth/image_rect_raw"/>
+            <remap from="camera_info" to="/d435/depth/camera_info"/>
+            <remap from="points" to="/d435/points" />
         </node>
     </group>
 

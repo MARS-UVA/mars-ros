@@ -1,3 +1,3 @@
 #!/bin/bash
-sleep 3
+sleep 4
 roslaunch navigation t265_camera.launch

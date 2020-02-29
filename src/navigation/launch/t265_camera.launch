@@ -1,7 +1,7 @@
 <launch>
     <group ns="t265">
         <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
-            <arg name="serial_no" value="0000943222110285" />
+            <arg name="serial_no" value="943222110285" />
             <arg name="enable_fisheye1" default="false" />
             <arg name="enable_fisheye2" default="false" />
             <arg name="enable_gyro" default="false" />

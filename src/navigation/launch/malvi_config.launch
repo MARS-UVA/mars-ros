@@ -30,8 +30,8 @@
 
         <!-- apriltag detection -->
         <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
-            <arg name="camera_name" value="/camera/color" />
-            <arg name="camera_frame" value="camera_link" />
+            <arg name="camera_name" value="/d435/color" />
+            <arg name="camera_frame" value="d435_link" />
             <arg name="image_topic" value="image_raw" />
         </include>
 
