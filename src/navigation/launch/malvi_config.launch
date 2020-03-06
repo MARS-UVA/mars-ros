@@ -3,12 +3,15 @@
 
     <arg name="autonomy" default="false" />
     <arg name="hero" default="false" />
+    <arg name="camera" default="false" />
 
-    <!-- d435i camera -->
-    <include file="$(find navigation)/launch/d435_camera.launch"></include>
-    <!-- use a bash script to delay t265 launch -->
-    <node pkg="navigation" name="t265_script" type="t265_camera.sh" output="screen"></node>
-    <!-- <include file="$(find navigation)/launch/t265_camera.launch"></include> -->
+    <group if="$(eval camera)">
+        <!-- d435i camera -->
+        <include file="$(find navigation)/launch/d435_camera.launch"></include>
+        <!-- use a bash script to delay t265 launch -->
+        <node pkg="navigation" name="t265_script" type="t265_camera.sh" output="screen"></node>
+        <!-- <include file="$(find navigation)/launch/t265_camera.launch"></include> -->
+    </group>
     
     <!-- rpc server -->
     <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />

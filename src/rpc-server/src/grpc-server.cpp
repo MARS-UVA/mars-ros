@@ -50,6 +50,7 @@ pair<bool, bool> GetControlState() {
     return {res.state, status};
 }
 
+
 class JetsonServiceImpl final : public JetsonRPC::Service {
     /**
      * publish motor commands send from the client, disable autonomy
@@ -71,8 +72,10 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
 
         MotorCmd cmd;
         hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
+        // publisher is only initialized once
+        static auto motor_pub = nh->advertise<hero_board::MotorVal>("/motor/output", 1);
+
         msg.motorval.resize(8);
-        auto pub = nh->advertise<decltype(msg)>("/motor/output", 1);
         while (reader->Read(&cmd)) {
             // decode motor values
             uint32_t raw = cmd.values();
@@ -94,7 +97,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             }
             cout << endl;
             // publish message
-            pub.publish(msg);
+            motor_pub.publish(msg);
         }
 
         ROS_INFO("Client closes motor command stream, switching to previous control state %s", stateStr);
@@ -171,22 +174,24 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
     }
     
     // a template function for streaming data from jetson (server) to laptop (client)
-    template <typename RPCMsg, typename ROSMsgPtr, typename Process>
+    template <typename RPCMsg, typename ROSMsgPtr, typename Process, int queue_size = 1>
     Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, 
     Process process, const char* topic, const char* message) {
         RPCMsg rpc_val;
 
         static ROSMsgPtr ros_msg_ptr;
-        struct X {
+        struct X { // use a nested struct because it can access variable at the parent scope
             static void update(ROSMsgPtr newPtr) { // method for updating the current ros message (pointer)
                 ros_msg_ptr = newPtr;
             }
         };
 
-        auto sub = nh->subscribe(topic, 1, X::update);
+        auto sub = nh->subscribe(topic, queue_size, X::update);
         ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
+                              // so reading ros_msg_ptr does not require a lock
+                              // it updates the ros_msg_ptr in the local scope if there are new messages
             if (ros_msg_ptr == NULL)
                 continue;
             
