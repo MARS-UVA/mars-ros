@@ -2,6 +2,25 @@
 
 ROS packages for the MARS club
 
+## Package Description
+
+- apriltag/apriltag_ros: packages for recognizing apriltags
+- hero_board: packages responsible for communication between the hero board and the jetson
+- navigation: used for autonomous navigation
+- processing: ROS nodes for processing sensors data
+- realsense-ros: ROS nodes for publishing data from Intel Realsense cameras
+- rpc-server: RPC server for communication with the remote control station (the laptop)
+
+## Launch files
+
+> this part is still working in progress
+
+Under navigation/launch, there's malvi_config.launch that can be used to launch most of the nodes. Refer to the launch file for possible parameters. 
+
+```bash
+roslaunch navigation malvi_config.launch
+```
+
 ## Cloning and Pulling
 
 > Because this repository uses submodules, care must be taken when pulling/pushing 
