@@ -50,6 +50,10 @@ pair<bool, bool> GetControlState() {
     return {res.state, status};
 }
 
+template <typename ROSMsgPtr>
+void update_ptr(ROSMsgPtr* ptr, ROSMsgPtr newPtr) {
+    *ptr = newPtr;
+}
 
 class JetsonServiceImpl final : public JetsonRPC::Service {
     /**
@@ -139,7 +143,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             rpc_val.set_values(4, ros_msg_ptr->linear_acceleration.y);
             rpc_val.set_values(5, ros_msg_ptr->linear_acceleration.z);
         };
-        return StreamToClient<IMUData, sensor_msgs::ImuConstPtr, decltype(process)>(
+        return StreamToClient<IMUData, sensor_msgs::Imu, sensor_msgs::ImuConstPtr, decltype(process)>(
             context, _rate, writer, process, "/camera/imu", "Client closes IMU stream"
         );
     }
@@ -148,7 +152,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_data({reinterpret_cast<const char*>(ros_msg_ptr->data.data()), ros_msg_ptr->data.size()});
         };
-        return StreamToClient<Image, sensor_msgs::CompressedImageConstPtr, decltype(process)>(
+        return StreamToClient<Image, sensor_msgs::CompressedImage, sensor_msgs::CompressedImageConstPtr, decltype(process)>(
             context, _rate, writer, process, "/camera/color/image_raw/compressed", "Client closes image stream"
         );
     }
@@ -158,7 +162,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             // reinterpret 8 motor current bytes as uint64
             rpc_val.set_values(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->motorval.data()));
         };
-        return StreamToClient<MotorCurrent, hero_board::MotorValConstPtr, decltype(process)>(
+        return StreamToClient<MotorCurrent, hero_board::MotorVal, hero_board::MotorValConstPtr, decltype(process)>(
             context, _rate, writer, process, "/motor/status", "Client closes motor current stream"
         );
     }
@@ -168,25 +172,19 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             rpc_val.set_angle(ros_msg_ptr->angle);
             rpc_val.set_translation(ros_msg_ptr->translation);
         };
-        return StreamToClient<ArmStatus, hero_board::MotorValConstPtr, decltype(process)>(
+        return StreamToClient<ArmStatus, hero_board::MotorVal, hero_board::MotorValConstPtr, decltype(process)>(
             context, _rate, writer, process, "/motor/status", "Client closes angle stream"
         );
     }
     
     // a template function for streaming data from jetson (server) to laptop (client)
-    template <typename RPCMsg, typename ROSMsgPtr, typename Process, int queue_size = 1>
+    template <typename RPCMsg, typename ROSMsg, typename ROSMsgPtr, typename Process, int queue_size = 1>
     Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, 
     Process process, const char* topic, const char* message) {
         RPCMsg rpc_val;
 
-        static ROSMsgPtr ros_msg_ptr;
-        struct X { // use a nested struct because it can access variable at the parent scope
-            static void update(ROSMsgPtr newPtr) { // method for updating the current ros message (pointer)
-                ros_msg_ptr = newPtr;
-            }
-        };
-
-        auto sub = nh->subscribe(topic, queue_size, X::update);
+        ROSMsgPtr ros_msg_ptr;
+        auto sub = nh->subscribe<ROSMsg>(topic, queue_size, boost::bind(&update_ptr<ROSMsgPtr>, &ros_msg_ptr, _1));
         ros::Rate rate(_rate->rate());
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
