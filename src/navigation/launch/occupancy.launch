@@ -1,0 +1,11 @@
+<!-- Copied from ~/mars-ros/src/realsense-ros/occupancy/launch/occupancy.launch -->
+
+<launch>
+  <param name="resolution" value="0.03"/>
+  <param name="HeightOfInterestMin" value="-0.05"/>
+  <param name="HeightOfInterestMax" value="0.05"/>
+  <param name="DepthOfInterestMin" value="0.2"/>
+  <param name="DepthOfInterestMax" value="2.0"/>
+
+  <node name="occupancy_node" pkg="occupancy" type="occupancy_node" output="screen"></node>
+</launch>

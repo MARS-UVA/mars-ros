@@ -4,9 +4,10 @@
             <arg name="serial_no" value="943222110285" />
             <arg name="enable_fisheye1" default="false" />
             <arg name="enable_fisheye2" default="false" />
+            <arg name="tf_prefix" value="t265" />
+
             <arg name="enable_gyro" default="false" />
             <arg name="enable_accel" default="false" />
-            <arg name="tf_prefix" value="t265" />
         </include>
     </group>
 </launch>
