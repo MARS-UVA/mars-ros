@@ -7,6 +7,3 @@
 [submodule "src/apriltag_ros"]
 	path = src/apriltag_ros
 	url = https://github.com/hanzhi713/apriltag_ros
-[submodule "src/hero_board"]
-	path = src/hero_board
-	url = https://github.com/ddimm/hero_board
