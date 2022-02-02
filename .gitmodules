@@ -3,7 +3,8 @@
 	url = https://github.com/AprilRobotics/apriltag.git
 [submodule "src/realsense-ros"]
 	path = src/realsense-ros
-	url = https://github.com/IntelRealSense/realsense-ros
+	url = https://github.com/MARS-UVA/realsense-ros
+	branch = mars-target
 [submodule "src/apriltag_ros"]
 	path = src/apriltag_ros
-	url = https://github.com/hanzhi713/apriltag_ros
+	url = https://github.com/MARS-UVA/apriltag_ros
