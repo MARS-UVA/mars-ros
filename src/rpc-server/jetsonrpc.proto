@@ -10,6 +10,7 @@ service JetsonRPC {
   rpc StreamImage (Rate) returns (stream Image);
   rpc StreamMotorCurrent (Rate) returns (stream MotorCurrent);
   rpc StreamArmStatus (Rate) returns (stream ArmStatus);
+  rpc EmergencyStop (void) returns (void);
 }
 
 message Void {}
