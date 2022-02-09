@@ -17,7 +17,7 @@ manual_sub = None
 auto_sub = None
 current_state = SetStateRequest.MANUAL
 
-
+rospy.loginfo("[DUMMY] starting serial connection...")
 
 def handle_state_request(req):
     global current_state
@@ -30,13 +30,16 @@ def process_motor_values(motor_vals):
     to serial
     '''
     m_val = motor_vals.motorval
-    rospy.loginfo("motor value manual: %s", m_val)
-    
+    # rospy.loginfo("motor value manual: %s", m_val)
+    rospy.loginfo("[DUMMY] serial sending MANUAL motor values to hero: %s", m_val)
+    # ser.write(var_len_proto_send(m_val))
+
 
 def process_auto_motor_values(motor_vals):
     m_val = motor_vals.motorval
-    rospy.loginfo('motor value autonomy: %s', m_val)
-    
+    # rospy.loginfo('motor value autonomy: %s', m_val)
+    rospy.loginfo("[DUMMY] serial sending AUTONOMOUS motor values to hero: %s", m_val)
+    # ser.write(var_len_proto_send(m_val))
 
 
 def change_control(req):
@@ -84,19 +87,26 @@ if __name__ == "__main__":
         # ros publisher queue can be used to limit the number of messages
         pub = rospy.Publisher(MOTOR_VOLT_NAME, MotorVal, queue_size=5)
         while not rospy.is_shutdown():
-            motor_vals = ser.read(ser.inWaiting())
+            # motor_vals = ser.read(ser.inWaiting())
             if pub.get_num_connections() == 0: # don't publish if there're subscribers
                 time.sleep(0.01)
                 continue
-            to_send = var_len_proto_recv(motor_vals)
+
+            # to_send = var_len_proto_recv(motor_vals)
             val = MotorVal()
-            for x in to_send:
-                val.motorval = x[:-8]
-                val.angle, val.translation = struct.unpack("2f", x[-8:])
-                pub.publish(val)
+            # for x in to_send:
+            #     val.motorval = x[:-8]
+            #     val.angle, val.translation = struct.unpack("2f", x[-8:])
+            #     pub.publish(val)
+
+            # Fake data: (the format matches what would ordinarily be sent)
+            val.motorval = [1,2,3,4,5,6,7]
+            val.angle = 1.1
+            val.translation = 2.2
+            pub.publish(val)
         
     except KeyboardInterrupt as k:
         traceback.print_exc()
     finally:
-       
+        # ser.close()
         exit(-1)
