@@ -3,9 +3,10 @@
 
     <arg name="autonomy" default="false" />
     <arg name="hero" default="false" />
-    <arg name="camera" default="false" />
+    <arg name="hero_dummy" default="false" />
+    <arg name="cameras" default="false" />
 
-    <group if="$(eval camera)">
+    <group if="$(eval cameras)">
         <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
         <!-- use a bash script to delay t265 launch -->
         <!-- <node pkg="navigation" name="t265_script" type="t265_camera.sh" output="screen"></node> -->
@@ -22,6 +23,9 @@
         <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
         <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
         <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
+    </group>
+    <group if="$(eval hero_dummy)">
+        <node name="hero_comm" pkg="hero_board" type="send_recv_dummy.py" output="screen" />
     </group>
 
     <!-- static transforms -->
