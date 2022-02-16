@@ -5,9 +5,9 @@ from enum import Enum
 
 # All the possible opcodes stored as bytes
 class Opcode(Enum):
-    STOP = 0b00000000,
-    DIRECT_DRIVE = 0b01000000,
-    PID = 0b10000000,
+    STOP = 0b00000000
+    DIRECT_DRIVE = 0b01000000
+    PID = 0b10000000
     RESERVED = 0b11000000
 
 

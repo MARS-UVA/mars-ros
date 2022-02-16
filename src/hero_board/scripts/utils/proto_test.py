@@ -2,9 +2,9 @@ from protocol import var_len_proto_recv, var_len_proto_send, Opcode
 from random import randint
 
 
-def gen_var_send_test(data: list):
+def gen_var_send_test(opcode: Opcode, data: list):
     count = len(data)
-    count = count | 0b11000000
+    count = count | opcode.value
 
     buffer = [0xff, count]
     buffer.extend(data)
@@ -13,11 +13,11 @@ def gen_var_send_test(data: list):
 
 
 # ---- client test -----------------
-assert var_len_proto_send(Opcode.DIRECT_DRIVE, [1, 2, 3]) == bytes([255, 195, 1, 2, 3, 200])
+assert var_len_proto_send(Opcode.DIRECT_DRIVE, [1, 2, 3]) == bytes([255, 67, 1, 2, 3, 72])
 for i in range(50):
     count = randint(1, 16)
     data = [randint(0, 255) for i in range(count)]
-    assert var_len_proto_send(Opcode.DIRECT_DRIVE, data) == gen_var_send_test(data)
+    assert var_len_proto_send(Opcode.DIRECT_DRIVE, data) == gen_var_send_test(Opcode.DIRECT_DRIVE, data)
 
 
 # ----- server test
@@ -25,7 +25,7 @@ assert var_len_proto_recv(bytes([255, 195, 1, 2, 3, 200])) == [bytes([1, 2, 3])]
 for i in range(50):
     count = randint(1, 16)
     data = [randint(0, 255) for i in range(count)]
-    assert var_len_proto_recv(gen_var_send_test(data)) == [bytes(data)]
+    assert var_len_proto_recv(gen_var_send_test(Opcode.RESERVED, data)) == [bytes(data)]
 
 # --- incomplete data test
 assert var_len_proto_recv(bytes([254])) == []
