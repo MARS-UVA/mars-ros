@@ -1,11 +1,20 @@
 import socket
 import typing
+from enum import Enum
 
 
-def var_len_proto_send(data: list) -> bytes:
+# All the possible opcodes stored as bytes
+class Opcode(Enum):
+    STOP = 0b00000000,
+    DIRECT_DRIVE = 0b01000000,
+    PID = 0b10000000,
+    RESERVED = 0b11000000
+
+
+def var_len_proto_send(opcode: Opcode, data: list) -> bytes:
     buffer = bytearray()
     buffer.append(0xff)
-    buffer.append(len(data) | 0b11000000)
+    buffer.append(len(data) | opcode.value)
     buffer.extend(data)
     buffer.append(sum(buffer) % 256)
     return buffer

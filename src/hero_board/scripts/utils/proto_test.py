@@ -1,4 +1,4 @@
-from protocol import var_len_proto_recv, var_len_proto_send
+from protocol import var_len_proto_recv, var_len_proto_send, Opcode
 from random import randint
 
 
@@ -13,11 +13,11 @@ def gen_var_send_test(data: list):
 
 
 # ---- client test -----------------
-assert var_len_proto_send([1, 2, 3]) == bytes([255, 195, 1, 2, 3, 200])
+assert var_len_proto_send(Opcode.DIRECT_DRIVE, [1, 2, 3]) == bytes([255, 195, 1, 2, 3, 200])
 for i in range(50):
     count = randint(1, 16)
     data = [randint(0, 255) for i in range(count)]
-    assert var_len_proto_send(data) == gen_var_send_test(data)
+    assert var_len_proto_send(Opcode.DIRECT_DRIVE, data) == gen_var_send_test(data)
 
 
 # ----- server test

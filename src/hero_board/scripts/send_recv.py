@@ -4,7 +4,7 @@ import serial
 import traceback
 from hero_board.msg import MotorVal
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
-from utils.protocol import var_len_proto_recv, var_len_proto_send
+from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 import time
 import struct
 from math import pi
@@ -37,13 +37,13 @@ def process_motor_values(motor_vals):
     '''
     m_val = motor_vals.motorval
     rospy.loginfo("motor value manual: %s", m_val)
-    ser.write(var_len_proto_send(m_val))
+    ser.write(var_len_proto_send(Opcode.DIRECT_DRIVE, motor_vals))
 
 
 def process_auto_motor_values(motor_vals):
     m_val = motor_vals.motorval
     rospy.loginfo('motor value autonomy: %s', m_val)
-    ser.write(var_len_proto_send(m_val))
+    ser.write(var_len_proto_send(Opcode.PID, m_val))
 
 
 def change_control(req):
