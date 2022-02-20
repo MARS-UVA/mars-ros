@@ -14,6 +14,8 @@ def gen_var_send_test(opcode: Opcode, data: list):
 
 # ---- client test -----------------
 assert var_len_proto_send(Opcode.DIRECT_DRIVE, [1, 2, 3]) == bytes([255, 67, 1, 2, 3, 72])
+assert var_len_proto_send(Opcode.DIRECT_DRIVE, [0, 0, 0]) == bytes([255, 67, 0, 0, 0, 66])
+assert var_len_proto_send(Opcode.PID, [1, 2, 3]) == bytes([255, 67+64, 1, 2, 3, 72+64])
 for i in range(50):
     count = randint(1, 16)
     data = [randint(0, 255) for i in range(count)]
