@@ -133,6 +133,11 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return Status::OK;
     }
 
+    Status EmergencyStop(ServerContext* context, const Void* _void, Void* _) override {
+        ROS_INFO("Emergency Stop RPC call!");
+        return Status::OK;
+    }
+
     Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_values(0, ros_msg_ptr->angular_velocity.x);
