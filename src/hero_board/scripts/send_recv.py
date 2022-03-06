@@ -37,7 +37,7 @@ def process_motor_values(motor_vals):
     '''
     m_val = motor_vals.motorval
     rospy.loginfo("motor value manual: %s", m_val)
-    ser.write(var_len_proto_send(Opcode.DIRECT_DRIVE, motor_vals))
+    ser.write(var_len_proto_send(Opcode.DIRECT_DRIVE, m_val))
 
 
 def process_auto_motor_values(motor_vals):
