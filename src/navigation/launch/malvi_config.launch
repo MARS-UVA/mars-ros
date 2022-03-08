@@ -3,7 +3,6 @@
 
     <arg name="autonomy" default="false" />
     <arg name="hero" default="false" />
-    <arg name="hero_dummy" default="false" />
     <arg name="cameras" default="false" />
 
     <group if="$(eval cameras)">
@@ -23,9 +22,6 @@
         <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
         <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
         <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
-    </group>
-    <group if="$(eval hero_dummy)">
-        <node name="hero_comm" pkg="hero_board" type="send_recv_dummy.py" output="screen" />
     </group>
 
     <!-- static transforms -->
