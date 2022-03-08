@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import rospy
-import serial
+from serial_manager import SerialManager
 import traceback
 from hero_board.msg import MotorVal
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
@@ -18,11 +18,7 @@ manual_sub = None
 auto_sub = None
 current_state = SetStateRequest.MANUAL
 
-try:
-    ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=None)
-except Exception as e:
-    traceback.print_exc()
-    exit(-1)
+serial_manager = None
 
 
 def handle_state_request(req):
@@ -37,13 +33,13 @@ def process_motor_values(motor_vals):
     '''
     m_val = motor_vals.motorval
     rospy.loginfo("motor value manual: %s", m_val)
-    ser.write(var_len_proto_send(Opcode.DIRECT_DRIVE, m_val))
+    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, m_val))
 
 
 def process_auto_motor_values(motor_vals):
     m_val = motor_vals.motorval
     rospy.loginfo('motor value autonomy: %s', m_val)
-    ser.write(var_len_proto_send(Opcode.PID, m_val))
+    serial_manager.write(var_len_proto_send(Opcode.PID, m_val))
 
 
 def change_control(req):
@@ -82,6 +78,7 @@ if __name__ == "__main__":
         subscribes to the motor command publisher and passes the MotorVal
         message to the callback
         '''
+        serial_manager = SerialManager(is_dummy=False)
         control_server()
         rospy.init_node(MOTOR_REC_NAME, anonymous=True)
         manual_sub = rospy.Subscriber(MOTOR_COMMAND_PUB, MotorVal, process_motor_values, queue_size=1)
@@ -91,19 +88,22 @@ if __name__ == "__main__":
         # ros publisher queue can be used to limit the number of messages
         pub = rospy.Publisher(MOTOR_VOLT_NAME, MotorVal, queue_size=5)
         while not rospy.is_shutdown():
-            motor_vals = ser.read(ser.inWaiting())
+            # motor_vals = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
             if pub.get_num_connections() == 0: # don't publish if there're subscribers
                 time.sleep(0.01)
                 continue
+            motor_vals = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(motor_vals)
             val = MotorVal()
             for x in to_send:
-                val.motorval = x[:-8]
-                val.angle, val.translation = struct.unpack("2f", x[-8:])
+                val.motorval = x[:-8] # everything except last 8
+                val.angle, val.translation = struct.unpack("2f", x[-8:]) # last 8 (these values get reinterpreted as 2 floats)
                 pub.publish(val)
         
     except KeyboardInterrupt as k:
         traceback.print_exc()
+    except Exception as e:
+        traceback.print_exc()
     finally:
-        ser.close()
+        serial_manager.close()
         exit(-1)
