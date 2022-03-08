@@ -24,18 +24,18 @@ class SerialManager:
                 # exit(-1)
                 # TODO would it make more sense to crash everything instead of switching to dummy mode?
                 print(e)
-                rospy.logfatal("ERROR: could not open serial connection /dev/ttyUSB0 in serial_manager.py. Maybe the file permissions aren't right? (see permission.sh). Switching to dummy output mode. ")
+                rospy.logfatal("Could not open serial connection /dev/ttyUSB0 in serial_manager.py. Maybe the file permissions aren't right? (see permission.sh). Switching to dummy output mode. ")
                 self.is_dummy = True
                 self.ser = None
         
     def write(self, data):
         if self.is_dummy:
-            rospy.loginfo("[DUMMY] serial_manager writing data: {}".format(data))
+            # rospy.loginfo("[DUMMY] serial_manager writing data: {}".format(data))
+            pass
         else:
             self.ser.write(data)
 
     def read_in_waiting(self):
-        print("sm read")
         if self.is_dummy:
             time.sleep(1)
             # emulate data received from the hero board. This data will get passed into var_len_proto_recv

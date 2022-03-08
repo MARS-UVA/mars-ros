@@ -7,12 +7,12 @@ from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 import time
 import struct
-from math import pi
 
-MOTOR_REC_NAME = "motor_commands"
-MOTOR_COMMAND_PUB = "/motor/output"
-MOTOR_VOLT_NAME = "/motor/status"
-AI_MOTOR_CONTROL = "/motor/cmd_vel"
+
+NODE_NAME = "hero_send_recv"
+MANUAL_CONTROL_TOPIC = "/motor/output" # subscribing
+AUTO_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
+HERO_STATUS_TOPIC = "/motor/status" # publishing
 
 manual_sub = None
 auto_sub = None
@@ -21,28 +21,22 @@ current_state = SetStateRequest.MANUAL
 serial_manager = None
 
 
-def handle_state_request(req):
-    global current_state
-    return GetStateResponse(current_state)
-
-    
-def process_motor_values(motor_vals):
-    '''
-    takes in the MotorVal message as a parameter and sends the bytes
-    to serial
-    '''
+def process_manual_motor_values(motor_vals):
     m_val = motor_vals.motorval
-    rospy.loginfo("motor value manual: %s", m_val)
+    rospy.loginfo("writing motor value manual: %s", list(m_val))
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, m_val))
-
 
 def process_auto_motor_values(motor_vals):
     m_val = motor_vals.motorval
-    rospy.loginfo('motor value autonomy: %s', m_val)
+    rospy.loginfo('writing motor value autonomy: %s', list(m_val))
     serial_manager.write(var_len_proto_send(Opcode.PID, m_val))
 
 
-def change_control(req):
+def get_state_service(req):
+    global current_state
+    return GetStateResponse(current_state)
+
+def set_state_service(req):
     global auto_sub, manual_sub, current_state
 
     to_change = req.state
@@ -50,50 +44,45 @@ def change_control(req):
         return SetStateResponse("no change in state")
 
     if to_change == SetStateRequest.MANUAL:
-        print('changing to manual control')
+        rospy.loginfo('changing to manual control')
         if auto_sub:
             auto_sub.unregister()
             auto_sub = None
-        manual_sub = rospy.Subscriber(MOTOR_COMMAND_PUB, MotorVal, process_motor_values)
+        manual_sub = rospy.Subscriber(MANUAL_CONTROL_TOPIC, MotorVal, process_manual_motor_values)
         return SetStateResponse('changing to manual control')
 
     elif to_change == SetStateRequest.AUTONOMY:
-        print('changing to autonomy')
+        rospy.loginfo('changing to autonomy control')
         if manual_sub:
             manual_sub.unregister()
             manual_sub = None
-        
-        auto_sub = rospy.Subscriber(AI_MOTOR_CONTROL, MotorVal, process_auto_motor_values)
+        auto_sub = rospy.Subscriber(AUTO_CONTROL_TOPIC, MotorVal, process_auto_motor_values)
         return SetStateResponse('changing to autonomy control')
 
     current_state = to_change
 
-def control_server():
-    serv = rospy.Service("/set_state", SetState, change_control)
-    state_serv = rospy.Service("/get_state", GetState, handle_state_request)
 
 if __name__ == "__main__":
     try:
-        '''
-        subscribes to the motor command publisher and passes the MotorVal
-        message to the callback
-        '''
+        rospy.init_node(NODE_NAME, anonymous=True)
         serial_manager = SerialManager(is_dummy=False)
-        control_server()
-        rospy.init_node(MOTOR_REC_NAME, anonymous=True)
-        manual_sub = rospy.Subscriber(MOTOR_COMMAND_PUB, MotorVal, process_motor_values, queue_size=1)
+
+        s_s_serv = rospy.Service("/set_state", SetState, set_state_service)
+        g_s_serv = rospy.Service("/get_state", GetState, get_state_service)
+
+        manual_sub = rospy.Subscriber(MANUAL_CONTROL_TOPIC, MotorVal, process_manual_motor_values, queue_size=1) # initialize the manual control subscriber because that's the state we start in
         
-        rospy.loginfo("starting publisher")
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages
-        pub = rospy.Publisher(MOTOR_VOLT_NAME, MotorVal, queue_size=5)
+        rospy.loginfo("starting hero status publisher")
+        pub = rospy.Publisher(HERO_STATUS_TOPIC, MotorVal, queue_size=5)
         while not rospy.is_shutdown():
-            # motor_vals = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
-            if pub.get_num_connections() == 0: # don't publish if there're subscribers
+            # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
+            if pub.get_num_connections() == 0: # don't publish if there are no subscribers
                 time.sleep(0.01)
                 continue
-            motor_vals = serial_manager.read_in_waiting()
-            to_send = var_len_proto_recv(motor_vals)
+            to_send_raw = serial_manager.read_in_waiting()
+            to_send = var_len_proto_recv(to_send_raw)
             val = MotorVal()
             for x in to_send:
                 val.motorval = x[:-8] # everything except last 8
