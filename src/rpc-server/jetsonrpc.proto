@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package jetsonrpc;
 
+// Message type documentation here: https://developers.google.com/protocol-buffers/docs/proto3
+
 service JetsonRPC {
   rpc SendMotorCmd (stream MotorCmd) returns (Void);
   rpc SendTwist (stream Twist) returns (Void);
@@ -11,6 +13,8 @@ service JetsonRPC {
   rpc StreamMotorCurrent (Rate) returns (stream MotorCurrent);
   rpc StreamArmStatus (Rate) returns (stream ArmStatus);
   rpc EmergencyStop (Void) returns (Void);
+
+  rpc ChangeDriveState (DriveState) returns (Void);
 }
 
 message Void {}
@@ -44,4 +48,12 @@ message Rate {
 
 message Image {
     bytes data = 1;
+}
+
+message DriveState {
+  enum DriveStateEnum {
+    DIRECT_DRIVE = 0;
+    PID = 1;
+    IDLE = 2;
+  }
 }

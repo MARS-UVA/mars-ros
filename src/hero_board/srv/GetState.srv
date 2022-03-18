@@ -1,5 +1,11 @@
+# (no request fields or constants)
 
 ---
-bool MANUAL=0
-bool AUTONOMY=1
+
+# response constants
+int8 DIRECT_DRIVE=0
+int8 AUTONOMY=1
+int8 IDLE=2
+
+# response fields
 bool state

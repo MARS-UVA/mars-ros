@@ -10,13 +10,13 @@ import struct
 
 
 NODE_NAME = "hero_send_recv"
-MANUAL_CONTROL_TOPIC = "/motor/output" # subscribing
+DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
 AUTO_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
 HERO_STATUS_TOPIC = "/motor/status" # publishing (data like motor currents and arm position read by the hero board)
 
 manual_sub = None
 auto_sub = None
-current_state = SetStateRequest.MANUAL
+current_state = SetStateRequest.IDLE
 
 serial_manager = None
 
@@ -41,23 +41,36 @@ def set_state_service(req):
 
     to_change = req.state
     if to_change == current_state:
-        return SetStateResponse("no change in state")
+        return SetStateResponse('no change in state')
 
-    if to_change == SetStateRequest.MANUAL:
-        rospy.loginfo('changing to manual control')
+    if to_change == SetStateRequest.DIRECT_DRIVE:
+        rospy.loginfo('changing to drive state DIRECT_DRIVE')
         if auto_sub:
             auto_sub.unregister()
             auto_sub = None
-        manual_sub = rospy.Subscriber(MANUAL_CONTROL_TOPIC, MotorVal, process_manual_motor_values)
+        manual_sub = rospy.Subscriber(DIRECT_DRIVE_CONTROL_TOPIC, MotorVal, process_manual_motor_values)
         return SetStateResponse('changing to manual control')
 
     elif to_change == SetStateRequest.AUTONOMY:
-        rospy.loginfo('changing to autonomy control')
+        rospy.loginfo('changing to drive state AUTONOMY')
         if manual_sub:
             manual_sub.unregister()
             manual_sub = None
         auto_sub = rospy.Subscriber(AUTO_CONTROL_TOPIC, MotorVal, process_auto_motor_values)
         return SetStateResponse('changing to autonomy control')
+    
+    elif to_change == SetStateRequest.IDLE:
+        rospy.loginfo('changing to drive state IDLE')
+        if auto_sub:
+            auto_sub.unregister()
+            auto_sub = None
+        if manual_sub:
+            manual_sub.unregister()
+            manual_sub = None
+        return SetStateResponse('changing to drive state IDLE')
+    
+    else:
+        rospy.logwarn('tried to change drive state to an unknown state')
 
     current_state = to_change
 
@@ -70,7 +83,8 @@ if __name__ == "__main__":
         s_s_serv = rospy.Service("/set_state", SetState, set_state_service)
         g_s_serv = rospy.Service("/get_state", GetState, get_state_service)
 
-        manual_sub = rospy.Subscriber(MANUAL_CONTROL_TOPIC, MotorVal, process_manual_motor_values, queue_size=1) # initialize the manual control subscriber because that's the state we start in
+        # TODO right now the system is frozen; the UI needs a way to switch state
+        # manual_sub = rospy.Subscriber(DIRECT_DRIVE_CONTROL_TOPIC, MotorVal, process_manual_motor_values, queue_size=1) # initialize the manual control subscriber because that's the state we start in
         
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages

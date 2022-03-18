@@ -1,5 +1,12 @@
-bool MANUAL=0
-bool AUTONOMY=1
+# request constants
+int8 DIRECT_DRIVE=0
+int8 AUTONOMY=1
+int8 IDLE=2
+
+# request fields
 bool state
+
 ---
+
+# response fields
 string controlResponse

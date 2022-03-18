@@ -66,11 +66,20 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             return Status::OK;
         }
 
-        auto stateStr = state.first == hero_board::GetStateResponse::MANUAL ? "manual" : "autonomy";
-        ROS_INFO("Switching from %s to %s", stateStr, "manual");
+        std::string stateStr;
+        if(state.first == hero_board::GetStateResponse::DIRECT_DRIVE) {
+            stateStr = "DIRECT_DRIVE";
+        } else if (state.first == hero_board::GetStateResponse::AUTONOMY) {
+            stateStr = "AUTONOMY";
+        } else if (state.first == hero_board::GetStateResponse::IDLE) {
+            stateStr = "IDLE";
+        } else {
+            stateStr = "UNKNOWN";
+        }
+        ROS_INFO("Switching state from %s to %s", stateStr.c_str(), "DIRECT_DRIVE");
 
-        if (!SwitchControl(hero_board::SetStateRequest::MANUAL)) {
-            ROS_ERROR("Failed to switch to manual control");
+        if (!SwitchControl(hero_board::SetStateRequest::DIRECT_DRIVE)) {
+            ROS_ERROR("Failed to switch to DIRECT_DRIVE control");
             return Status::OK; 
         }
 
@@ -104,10 +113,11 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             motor_pub.publish(msg);
         }
 
-        ROS_INFO("Client closes motor command stream, switching to previous control state %s", stateStr);
+        ROS_INFO("Client closes motor command stream, switching to previous control state %s", stateStr.c_str());
 
+        // Done receiving direct motor controls
         if (!SwitchControl(state.first)) {
-            ROS_ERROR("Failed to switch to %s", stateStr);
+            ROS_ERROR("Failed to switch back to previous state %s", stateStr.c_str());
             return Status::OK; 
         }
         return Status::OK;
