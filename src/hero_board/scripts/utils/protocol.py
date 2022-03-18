@@ -8,7 +8,9 @@ class Opcode(Enum):
     STOP = 0b00000000
     DIRECT_DRIVE = 0b01000000
     PID = 0b10000000
-    RESERVED = 0b11000000
+    FEEDBACK = 0b11000000
+
+opcode_options = [e.value for e in Opcode]
 
 
 def var_len_proto_send(opcode: Opcode, data: list) -> bytes:
@@ -23,13 +25,14 @@ def var_len_proto_send(opcode: Opcode, data: list) -> bytes:
 temp = bytearray()
 
 
-def var_len_proto_recv(data: bytes) -> typing.List[bytearray]:
+def var_len_proto_recv(data: bytes) -> typing.List[typing.Tuple[int, bytearray]]: # returns (Opcode, Data)
     global temp
     temp.extend(data)
     output = []
     while len(temp) > 2:  # read at least 3 bytes
         for i in range(len(temp) - 2):
-            if temp[i] == 0xFF and temp[i + 1] & 0b11000000 == 0b11000000:  # check the header
+            opcode_value = temp[i + 1] & 0b11000000
+            if temp[i] == 0xFF and opcode_value in opcode_options:  # check the header
                 count = temp[i + 1] & 0b111111
                 expected_len = 2 + count + 1  # 1 header + 1 count byte + ... + 1 checksum
                 # if temp's length is greater than the expected packet length
@@ -40,7 +43,7 @@ def var_len_proto_recv(data: bytes) -> typing.List[bytearray]:
                     del temp[:i + expected_len]
 
                     if sum(slc[:-1]) % 256 == slc[-1]:
-                        output.append(slc[2:-1])
+                        output.append( (Opcode(opcode_value), slc[2:-1]) )
                     break
                 else:
                     # not enough bytes

@@ -22,26 +22,37 @@ for i in range(50):
     assert var_len_proto_send(Opcode.DIRECT_DRIVE, data) == gen_var_send_test(Opcode.DIRECT_DRIVE, data)
 
 
-# ----- server test
-assert var_len_proto_recv(bytes([255, 195, 1, 2, 3, 200])) == [bytes([1, 2, 3])]
+# ---- server test
+assert var_len_proto_recv(bytes([255, 195, 1, 2, 3, 200])) == [(Opcode.FEEDBACK, bytes([1, 2, 3]))] # Opcode.FEEDBACK = 0b11000000 = 192
+assert var_len_proto_recv(bytes([255, 67, 1, 2, 3, 72])) == [(Opcode.DIRECT_DRIVE, bytes([1, 2, 3]))] # Opcode.DIRECT_DRIVE = 0b01000000 = 64
 for i in range(50):
     count = randint(1, 16)
     data = [randint(0, 255) for i in range(count)]
-    assert var_len_proto_recv(gen_var_send_test(Opcode.RESERVED, data)) == [bytes(data)]
+    assert var_len_proto_recv(gen_var_send_test(Opcode.FEEDBACK, data)) == [(Opcode.FEEDBACK, bytes(data))]
 
-# --- incomplete data test
+
+# ---- incomplete data test
 assert var_len_proto_recv(bytes([254])) == []
 assert var_len_proto_recv(bytes([])) == []
 assert var_len_proto_recv(bytes([255, 195, 1, 2, 3, 199])) == []  # checksum mismatch
 assert var_len_proto_recv(bytes([255, 195])) == []  # segmented data
-assert var_len_proto_recv(bytes([1, 2, 3, 200])) == [bytes([1, 2, 3])]
+assert var_len_proto_recv(bytes([1, 2, 3, 200])) == [(Opcode.FEEDBACK, bytes([1, 2, 3]))]
 assert var_len_proto_recv(bytes([255, 195, 2, 2, 3])) == []
-assert var_len_proto_recv(bytes([201])) == [bytes([2, 2, 3])]
+assert var_len_proto_recv(bytes([201])) == [(Opcode.FEEDBACK, bytes([2, 2, 3]))]
 assert var_len_proto_recv(bytes([255])) == []
 assert var_len_proto_recv(bytes([195])) == []
 assert var_len_proto_recv(bytes([2])) == []
 assert var_len_proto_recv(bytes([2, 3])) == []
-assert var_len_proto_recv(bytes([201])) == [bytes([2, 2, 3])]
+assert var_len_proto_recv(bytes([201])) == [(Opcode.FEEDBACK, bytes([2, 2, 3]))]
 assert var_len_proto_recv(bytes([255, 64, 1, 2, 3, 200])) == []  # count byte mismatch
 
-assert var_len_proto_recv(bytes([255, 195, 1, 2, 3, 200] * 2)) == [bytes([1, 2, 3])] * 2  # two packages all at once
+assert var_len_proto_recv(bytes([255, 195, 1, 2, 3, 200] * 2)) == [(Opcode.FEEDBACK, bytes([1, 2, 3]))] * 2  # two packages all at once
+
+
+# ---- back and forth test
+assert var_len_proto_recv(var_len_proto_send(Opcode.DIRECT_DRIVE, [1, 2, 3])) == [(Opcode.DIRECT_DRIVE, bytes([1, 2, 3]))]
+for i in range(50):
+    count = randint(1, 16)
+    data = [randint(0, 255) for i in range(count)]
+    assert var_len_proto_recv(var_len_proto_send(Opcode.DIRECT_DRIVE, data)) == [(Opcode.DIRECT_DRIVE, bytes(data))]
+

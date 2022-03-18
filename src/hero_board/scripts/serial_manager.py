@@ -3,6 +3,7 @@ import rospy
 import serial
 import time
 import traceback
+from utils.protocol import var_len_proto_send, Opcode
 
 """
 This class wraps around the normal serial interface that send_recv.py uses. It allows using either
@@ -24,7 +25,7 @@ class SerialManager:
                 # exit(-1)
                 # TODO would it make more sense to crash everything instead of switching to dummy mode?
                 print(e)
-                rospy.logfatal("Could not open serial connection /dev/ttyUSB0 in serial_manager.py. Maybe the file permissions aren't right? (see permission.sh). Switching to dummy output mode. ")
+                rospy.logfatal("Could not open serial connection /dev/ttyUSB0 in serial_manager.py. Maybe the file permissions aren't right? (try 'sudo chmod 666 /dev/ttyUSB0'). Switching to dummy output mode. ")
                 self.is_dummy = True
                 self.ser = None
         
@@ -40,11 +41,11 @@ class SerialManager:
             time.sleep(1)
             # emulate data received from the hero board. This data will get passed into var_len_proto_recv
             data = [0, 1, 2, 3, 4, 5, 6, 7] + [0]*8
-            length = 0b11000000 | len(data)
-            cs = (255 + sum(data) + length) % 256
-            ret = [255] + [length] + data + [cs]
-            # print("read dummy returning: ", ret)
-            return bytes(ret)
+            # length = 0b11000000 | len(data)
+            # cs = (255 + sum(data) + length) % 256
+            # ret = [255] + [length] + data + [cs]
+            # return bytes(ret)
+            return var_len_proto_send(Opcode.FEEDBACK, data)
         else:
             return self.ser.read(self.ser.inWaiting())
 

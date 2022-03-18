@@ -12,7 +12,7 @@ import struct
 NODE_NAME = "hero_send_recv"
 MANUAL_CONTROL_TOPIC = "/motor/output" # subscribing
 AUTO_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
-HERO_STATUS_TOPIC = "/motor/status" # publishing
+HERO_STATUS_TOPIC = "/motor/status" # publishing (data like motor currents and arm position read by the hero board)
 
 manual_sub = None
 auto_sub = None
@@ -84,9 +84,14 @@ if __name__ == "__main__":
             to_send_raw = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(to_send_raw)
             val = MotorVal()
-            for x in to_send:
-                val.motorval = x[:-8] # everything except last 8
-                val.angle, val.translation = struct.unpack("2f", x[-8:]) # last 8 (these values get reinterpreted as 2 floats)
+            for packet in to_send:
+                packet_opcode = packet[0]
+                packet_data = packet[1]
+                if packet_opcode != Opcode.FEEDBACK:
+                    rospy.logwarn("got data from hero with the wrong opcode, not publishing the packet")
+                    continue
+                val.motorval = packet_data[:-8] # everything except last 8
+                val.angle, val.translation = struct.unpack("2f", packet_data[-8:]) # last 8 (these values get reinterpreted as 2 floats)
                 pub.publish(val)
         
     except KeyboardInterrupt as k:
