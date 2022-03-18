@@ -4,14 +4,17 @@ package jetsonrpc;
 
 service JetsonRPC {
   rpc SendMotorCmd (stream MotorCmd) returns (Void);
-  rpc SendTwist (stream Twist) returns (Void);
   
   rpc StreamIMU (Rate) returns (stream IMUData);
   rpc StreamImage (Rate) returns (stream Image);
   rpc StreamMotorCurrent (Rate) returns (stream MotorCurrent);
   rpc StreamArmStatus (Rate) returns (stream ArmStatus);
+
+  rpc StreamAutonomyTwist (Void) returns (stream TwistMessage);
+
   rpc EmergencyStop (Void) returns (Void);
 }
+
 
 message Void {}
 
@@ -43,5 +46,17 @@ message Rate {
 }
 
 message Image {
-    bytes data = 1;
+  bytes data = 1;
+}
+
+message TwistMessage {
+  // Corresponds to the ROS geometry_msgs/Twist message, plus a timestamp. 
+  // See https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/Twist.html
+  float linX = 1;
+  float linY = 2;
+  float linZ = 3;
+  float angX = 4;
+  float angY = 5;
+  float angZ = 6;
+  int32 timeSinceStart = 7;
 }

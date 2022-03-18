@@ -113,6 +113,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return Status::OK;
     }
 
+    /*
     Status SendTwist(ServerContext* context, ServerReader<Twist>* reader, Void* _) override {
         Twist twist;
 
@@ -130,6 +131,11 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             pub.publish(msg);
         }
         ROS_INFO("Client closes twist stream");
+        return Status::OK;
+    }
+    */
+
+    Status StreamAutonomyTwist(ServerContext* context, const Void* _, ServerWriter<TwistMessage>* writer) override {
         return Status::OK;
     }
 
