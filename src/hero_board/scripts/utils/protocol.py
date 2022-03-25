@@ -7,7 +7,7 @@ from enum import Enum
 class Opcode(Enum):
     STOP = 0b00000000
     DIRECT_DRIVE = 0b01000000
-    PID = 0b10000000
+    AUTONOMY = 0b10000000
     FEEDBACK = 0b11000000
 
 opcode_options = [e.value for e in Opcode]

@@ -8,4 +8,4 @@ int8 AUTONOMY=1
 int8 IDLE=2
 
 # response fields
-bool state
+int8 state

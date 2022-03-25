@@ -32,59 +32,80 @@ using namespace std;
 
 ros::NodeHandlePtr nh;
 
-bool SwitchControl(bool state) {
-    hero_board::SetStateRequest req;
-    req.state = state;
-
-    hero_board::SetStateResponse res;
-    bool status = ros::service::call("/set_state", req, res);
-    ROS_INFO("%s", res.controlResponse.c_str());
-    return status;
-}
-
-pair<bool, bool> GetControlState() {
-    hero_board::GetStateRequest req;
-    hero_board::GetStateResponse res;
-
-    bool status = ros::service::call("/get_state", req, res);
-    return {res.state, status};
-}
-
 template <typename ROSMsgPtr>
 void update_ptr(ROSMsgPtr* ptr, ROSMsgPtr newPtr) {
     *ptr = newPtr;
 }
 
+bool SwitchControlState(DriveStateEnum grpcEnum) {
+    // must convert between enum used in gRPC and enum used in ROS services
+    hero_board::SetStateRequest req;
+    std::string stateString;
+    if(grpcEnum == DriveStateEnum::DIRECT_DRIVE) {
+        req.state = hero_board::SetStateRequest::DIRECT_DRIVE;
+        stateString = "DIRECT_DRIVE";
+    } else if(grpcEnum == DriveStateEnum::AUTONOMY) {
+        req.state = hero_board::SetStateRequest::AUTONOMY;
+        stateString = "AUTONOMY";
+    } else { // includes DriveStateEnum::IDLE
+        req.state = hero_board::SetStateRequest::IDLE;
+        stateString = "IDLE";
+    }
+
+    ROS_INFO("Setting state to %s", stateString.c_str());
+    hero_board::SetStateResponse res;
+    bool success = ros::service::call("/set_state", req, res);
+    // ROS_INFO("%s", res.controlResponse.c_str());
+    return success;
+}
+
+pair<DriveStateEnum, bool> GetControlState() {
+    hero_board::GetStateRequest req;
+    hero_board::GetStateResponse res;
+
+    bool success = ros::service::call("/get_state", req, res);
+    if(!success) {
+        ROS_ERROR("GetControlState failed to get control state!");
+        return {DriveStateEnum::IDLE, success};
+    }
+
+    if(res.state == hero_board::GetStateResponse::DIRECT_DRIVE) {
+        return {DriveStateEnum::DIRECT_DRIVE, success};
+    } else if(res.state == hero_board::GetStateResponse::AUTONOMY) {
+        return {DriveStateEnum::AUTONOMY, success};
+    } else { // includes hero_board::GetStateResponse::IDLE
+        return {DriveStateEnum::IDLE, success};
+    }
+}
+
+
 class JetsonServiceImpl final : public JetsonRPC::Service {
-    /**
-     * publish motor commands send from the client, disable autonomy
-     */
+
+     // publish motor commands send from the client (disabled autonomy)
     Status SendMotorCmd(ServerContext* context, ServerReader<MotorCmd>* reader, Void* _) override {
-        auto state = GetControlState();
-        if (!state.second) {
-            ROS_ERROR("Failed to get control state");
-            return Status::OK;
+        auto stateAndSuccess = GetControlState();
+        DriveStateEnum state = stateAndSuccess.first;
+        bool success = stateAndSuccess.second;
+        if (!success) {
+            ROS_ERROR("SendMotorCMD failed to get initial drive state");
+            return Status::CANCELLED;
         }
+        if(state != DriveStateEnum::DIRECT_DRIVE) { 
+            // The state needs to be DIRECT_DRIVE (because the hero node needs to be subscribed to the right topics)
+            ROS_ERROR("SendMotorCMD not in drive state DIRECT_DRIVE! Switch to this state before using this function. Returning. ");
+            return Status::CANCELLED;
 
-        std::string stateStr;
-        if(state.first == hero_board::GetStateResponse::DIRECT_DRIVE) {
-            stateStr = "DIRECT_DRIVE";
-        } else if (state.first == hero_board::GetStateResponse::AUTONOMY) {
-            stateStr = "AUTONOMY";
-        } else if (state.first == hero_board::GetStateResponse::IDLE) {
-            stateStr = "IDLE";
-        } else {
-            stateStr = "UNKNOWN";
+            // We could make the switch here, but for now let's make the client switch
+            // ROS_INFO("SendMotorCMD switching from old state to DIRECT_DRIVE...");
+            // if (!SwitchControlState(DriveStateEnum::DIRECT_DRIVE)) {
+            //     ROS_ERROR("Failed to switch to DIRECT_DRIVE control");
+            //     return Status::CANCELLED; 
+            // }
         }
-        ROS_INFO("Switching state from %s to %s", stateStr.c_str(), "DIRECT_DRIVE");
-
-        if (!SwitchControl(hero_board::SetStateRequest::DIRECT_DRIVE)) {
-            ROS_ERROR("Failed to switch to DIRECT_DRIVE control");
-            return Status::OK; 
-        }
+       
 
         MotorCmd cmd;
-        hero_board::MotorVal msg; // definitions see hero-serial/Program.cs
+        hero_board::MotorVal msg; // definitions see hero-serial/Program.cs (?)
         // publisher is only initialized once
         static auto motor_pub = nh->advertise<hero_board::MotorVal>("/motor/output", 1);
 
@@ -109,18 +130,20 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
                 cout << (int)msg.motorval[i] << " ";
             }
             cout << endl;
-            // publish message
+
             motor_pub.publish(msg);
         }
-
-        ROS_INFO("Client closes motor command stream, switching to previous control state %s", stateStr.c_str());
-
         // Done receiving direct motor controls
-        if (!SwitchControl(state.first)) {
-            ROS_ERROR("Failed to switch back to previous state %s", stateStr.c_str());
-            return Status::OK; 
-        }
         return Status::OK;
+
+        // If we want to switch back to the drive state before SendMotorCmd was called:
+        // ROS_INFO("SendMotorCMD switching from DIRECT_DRIVE back to old state...");
+        // if (!SwitchControlState(oldState)) {
+        //     ROS_ERROR("SendMotorCMD failed to switch back to previous state!");
+        //     return Status::CANCELLED; 
+        // } else {
+        //     return Status::OK;
+        // }
     }
 
     Status SendTwist(ServerContext* context, ServerReader<Twist>* reader, Void* _) override {
@@ -143,6 +166,15 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return Status::OK;
     }
 
+    Status ChangeDriveState(ServerContext* context, const DriveState* _state, Void* _) override {
+        if(!SwitchControlState(_state->dse())) {
+            ROS_ERROR("ChangeDriveState failed!");
+            return Status::CANCELLED;
+        } else {
+            return Status::OK;
+        }
+    }
+
     Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_values(0, ros_msg_ptr->angular_velocity.x);
@@ -156,6 +188,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return StreamToClient<IMUData, sensor_msgs::Imu, sensor_msgs::ImuConstPtr, decltype(process)>(
             context, _rate, writer, process, "/camera/imu", "Client closes IMU stream"
         );
+        return Status::OK;
     }
 
     Status StreamImage(ServerContext* context, const Rate* _rate, ServerWriter<Image>* writer) override { 
@@ -244,7 +277,7 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "image_listener");
+    ros::init(argc, argv, "grpc-server");
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
     RunServer();

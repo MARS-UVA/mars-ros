@@ -4,7 +4,7 @@ int8 AUTONOMY=1
 int8 IDLE=2
 
 # request fields
-bool state
+int8 state
 
 ---
 
