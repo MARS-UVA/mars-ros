@@ -121,9 +121,9 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             raw >>= 6;
             msg.motorval[4] = (raw & 0b111111) << 2;
             raw >>= 6;
-            msg.motorval[3] = msg.motorval[2] = (raw & 0b111111) << 2;
+            msg.motorval[3] = msg.motorval[1] = (raw & 0b111111) << 2;
             raw >>= 6;
-            msg.motorval[1] = msg.motorval[0] = raw << 2;
+            msg.motorval[2] = msg.motorval[0] = raw << 2;
 
             cout << "Client send motor command (decoded): ";
             for (int i = 0; i < 8; i++) {

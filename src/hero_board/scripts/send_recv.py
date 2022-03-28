@@ -65,9 +65,11 @@ def set_state_service(req):
     elif to_change == SetStateRequest.IDLE:
         rospy.loginfo('changing to drive state IDLE')
         if auto_sub:
+            # TODO send a neutral motor message? other places too
             auto_sub.unregister()
             auto_sub = None
         if manual_sub:
+            # TODO send a neutral motor message?
             manual_sub.unregister()
             manual_sub = None
         return SetStateResponse('changing to drive state IDLE')

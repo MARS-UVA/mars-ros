@@ -1,9 +1,10 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="autonomy" default="false" />
-    <arg name="hero" default="false" />
     <arg name="cameras" default="false" />
+    <arg name="rpc" default="true" />
+    <arg name="hero" default="false" />
+    <arg name="autonomy" default="false" />
 
     <group if="$(eval cameras)">
         <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
@@ -15,7 +16,9 @@
     </group>
     
     <!-- rpc server -->
-    <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
+    <group if="$(eval rpc)">
+        <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
+    </group>
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
