@@ -20,6 +20,7 @@ class SerialManager:
         if not self.is_dummy:
             try:
                 self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=None)
+                # self.ser = serial.Serial('/dev/pts/3', 115200, timeout=None) # Debugging option - virtual serial device: https://stackoverflow.com/questions/52187/virtual-serial-port-for-linux
             except OSError as e: # OSError includes FileNotFoundError
                 traceback.print_exc()
                 # exit(-1)
@@ -47,7 +48,11 @@ class SerialManager:
             # return bytes(ret)
             return var_len_proto_send(Opcode.FEEDBACK, data)
         else:
-            return self.ser.read(self.ser.inWaiting())
+            waiting = self.ser.inWaiting()
+            while waiting == 0:
+                time.sleep(0.01)
+                waiting = self.ser.inWaiting()
+            return self.ser.read(waiting)
 
     def close(self):
         if self.is_dummy:

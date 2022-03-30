@@ -233,6 +233,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             ros::spinOnce();  // note: spinOnce is called within the same thread
                               // so reading ros_msg_ptr does not require a lock
                               // it updates the ros_msg_ptr in the local scope if there are new messages
+            rate.sleep();
             if (ros_msg_ptr == NULL)
                 continue;
             
@@ -241,7 +242,6 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
                 break;
 
             ros_msg_ptr = NULL;
-            rate.sleep();
         }
         ROS_INFO("%s", message);
         return Status::OK;
