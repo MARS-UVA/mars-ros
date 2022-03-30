@@ -21,6 +21,9 @@ current_state = SetStateRequest.IDLE
 serial_manager = None
 
 
+def stop_motors_non_emergency():
+    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
+
 def process_manual_motor_values(motor_vals):
     m_val = motor_vals.motorval
     rospy.loginfo("writing direct_drive motor value: %s", list(m_val))
@@ -59,19 +62,19 @@ def set_state_service(req):
         if manual_sub:
             manual_sub.unregister()
             manual_sub = None
+        stop_motors_non_emergency()
         auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, MotorVal, process_autonomy_motor_values)
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
         rospy.loginfo('changing to drive state IDLE')
         if auto_sub:
-            # TODO send a neutral motor message? other places too
             auto_sub.unregister()
             auto_sub = None
         if manual_sub:
-            # TODO send a neutral motor message?
             manual_sub.unregister()
             manual_sub = None
+        stop_motors_non_emergency()
         return SetStateResponse('changing to drive state IDLE')
     
     else:
