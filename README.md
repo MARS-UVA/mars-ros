@@ -28,7 +28,8 @@ roslaunch navigation malvi_config.launch
 To clone this repository, you need to add the `--recursive` flag
 
 ```bash
-git clone --recursive https://github.com/hanzh713/mars-ros
+git clone --recursive https://github.com/MARS-UVA/mars-ros.git
+OLD: git clone --recursive https://github.com/hanzh713/mars-ros
 ```
 
 If you forgot the `--recursive` flag, you need to run submodule init manually after cloning
