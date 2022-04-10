@@ -9,7 +9,8 @@
 
 #include <cv_bridge/cv_bridge.h>
 
-#include <hero_board/MotorVal.h>
+#include <hero_board/HeroFeedback.h>
+#include <hero_board/MotorCommand.h>
 #include <hero_board/SetState.h>
 #include <hero_board/SetStateResponse.h>
 #include <hero_board/GetState.h>
@@ -82,8 +83,8 @@ pair<DriveStateEnum, bool> GetControlState() {
 class JetsonServiceImpl final : public JetsonRPC::Service {
 
      // publish motor commands send from the client (disabled autonomy)
-    Status SendMotorCmd(ServerContext* context, ServerReader<MotorCmd>* reader, Void* _) override {
-        auto stateAndSuccess = GetControlState();
+    Status SendDDCommand(ServerContext* context, ServerReader<DDCommand>* reader, Void* _) override {
+        pair<DriveStateEnum, bool> stateAndSuccess = GetControlState();
         DriveStateEnum state = stateAndSuccess.first;
         bool success = stateAndSuccess.second;
         if (!success) {
@@ -104,34 +105,34 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         }
        
 
-        MotorCmd cmd;
-        hero_board::MotorVal msg; // definitions see hero-serial/Program.cs (?)
+        DDCommand rpc_cmd;
+        hero_board::MotorCommand hero_cmd; // definitions see hero-serial/Program.cs (?)
         // publisher is only initialized once
-        static auto motor_pub = nh->advertise<hero_board::MotorVal>("/motor/output", 1);
+        static auto motor_pub = nh->advertise<hero_board::MotorCommand>("/motor/output", 1);
 
-        msg.motorval.resize(8);
-        while (reader->Read(&cmd)) {
-            // decode motor values
-            uint32_t raw = cmd.values();
-            msg.motorval[7] = (raw & 0b11) * 100;  // 0, 100, or 200
+        hero_cmd.values.resize(8);
+        while (reader->Read(&rpc_cmd)) {
+            uint32_t raw = rpc_cmd.values();
+
+            hero_cmd.values[7] = (raw & 0b11) * 100;  // 0, 100, or 200
             raw >>= 2;
-            msg.motorval[6] = (raw & 0b111111) << 2;
+            hero_cmd.values[6] = (raw & 0b111111) << 2;
             raw >>= 6;
-            msg.motorval[5] = (raw & 0b111111) << 2;
+            hero_cmd.values[5] = (raw & 0b111111) << 2;
             raw >>= 6;
-            msg.motorval[4] = (raw & 0b111111) << 2;
+            hero_cmd.values[4] = (raw & 0b111111) << 2;
             raw >>= 6;
-            msg.motorval[3] = msg.motorval[1] = (raw & 0b111111) << 2;
+            hero_cmd.values[3] = hero_cmd.values[1] = (raw & 0b111111) << 2;
             raw >>= 6;
-            msg.motorval[2] = msg.motorval[0] = raw << 2;
+            hero_cmd.values[2] = hero_cmd.values[0] = raw << 2;
 
             cout << "Client send motor command (decoded): ";
             for (int i = 0; i < 8; i++) {
-                cout << (int)msg.motorval[i] << " ";
+                cout << (int)hero_cmd.values[i] << " ";
             }
             cout << endl;
 
-            motor_pub.publish(msg);
+            motor_pub.publish(hero_cmd);
         }
         // Done receiving direct motor controls
         return Status::OK;
@@ -146,6 +147,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         // }
     }
 
+    /*
     Status SendTwist(ServerContext* context, ServerReader<Twist>* reader, Void* _) override {
         Twist twist;
 
@@ -165,6 +167,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         ROS_INFO("Client closes twist stream");
         return Status::OK;
     }
+    */
 
     Status ChangeDriveState(ServerContext* context, const DriveState* _state, Void* _) override {
         if(!SwitchControlState(_state->dse())) {
@@ -176,6 +179,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
     }
 
     Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
+        /*
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_values(0, ros_msg_ptr->angular_velocity.x);
             rpc_val.set_values(1, ros_msg_ptr->angular_velocity.y);
@@ -188,6 +192,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return StreamToClient<IMUData, sensor_msgs::Imu, sensor_msgs::ImuConstPtr, decltype(process)>(
             context, _rate, writer, process, "/camera/imu", "Client closes IMU stream"
         );
+        */
         return Status::OK;
     }
 
@@ -200,6 +205,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         );
     }
 
+    /*
     Status StreamMotorCurrent(ServerContext* context, const Rate* _rate, ServerWriter<MotorCurrent>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             // reinterpret 8 motor current bytes as uint64
@@ -209,7 +215,6 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             context, _rate, writer, process, "/motor/status", "Client closes motor current stream"
         );
     }
-
     Status StreamArmStatus(ServerContext* context, const Rate* _rate, ServerWriter<ArmStatus>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_angle(ros_msg_ptr->angle);
@@ -219,11 +224,28 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             context, _rate, writer, process, "/motor/status", "Client closes angle stream"
         );
     }
+    */
+    Status StreamHeroFeedback(ServerContext* context, const Rate* _rate, ServerWriter<HeroFeedback>* writer) override {
+        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
+            // reinterpret 8 motor current bytes as uint64
+            // rpc_val.set_values(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->motorval.data()));
+
+            rpc_val.set_currents(ros_msg_ptr->currents.data(), 8);
+            // rpc_val.set_currents(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->currents.data()));
+            rpc_val.set_bucketladderangle(ros_msg_ptr->bucketLadderAngle);
+            rpc_val.set_depositbinraised(ros_msg_ptr->depositBinRaised);
+            rpc_val.set_depositbinlowered(ros_msg_ptr->depositBinLowered);
+            
+        };
+        return StreamToClient<HeroFeedback, hero_board::HeroFeedback, hero_board::HeroFeedbackConstPtr, decltype(process)>(
+            context, _rate, writer, process, "/motor/feedback", "Client closes hero feedback stream"
+        );
+    }
     
     // a template function for streaming data from jetson (server) to laptop (client)
     template <typename RPCMsg, typename ROSMsg, typename ROSMsgPtr, typename Process, int queue_size = 1>
     Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, 
-    Process process, const char* topic, const char* message) {
+    Process process, const char* topic, const char* shutdown_message) {
         RPCMsg rpc_val;
 
         ROSMsgPtr ros_msg_ptr;
@@ -243,13 +265,14 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
 
             ros_msg_ptr = NULL;
         }
-        ROS_INFO("%s", message);
+        ROS_INFO("%s", shutdown_message);
         return Status::OK;
     }
    private:
 };
 
 void RunServer() {
+    ROS_INFO("grpc-server starting\n");
     std::string server_address("0.0.0.0:50051");
     JetsonServiceImpl service;
 
@@ -265,7 +288,8 @@ void RunServer() {
     builder.RegisterService(&service);
     // Finally assemble the server.
     std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "Server listening on " << server_address << std::endl;
+    // std::cout << "Server listening on " << server_address << std::endl;
+    ROS_INFO("Server listening on %s\n", server_address.c_str());
 
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.

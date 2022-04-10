@@ -5,45 +5,37 @@ package jetsonrpc;
 // Message type documentation here: https://developers.google.com/protocol-buffers/docs/proto3
 
 service JetsonRPC {
-  rpc SendMotorCmd (stream MotorCmd) returns (Void);
-  rpc SendTwist (stream Twist) returns (Void);
+  rpc SendDDCommand (stream DDCommand) returns (Void);
 
   rpc ChangeDriveState (DriveState) returns (Void);
   rpc EmergencyStop (Void) returns (Void);
 
   rpc StreamIMU (Rate) returns (stream IMUData);
   rpc StreamImage (Rate) returns (stream Image);
-  rpc StreamMotorCurrent (Rate) returns (stream MotorCurrent);
-  rpc StreamArmStatus (Rate) returns (stream ArmStatus);
+  rpc StreamHeroFeedback (Rate) returns (stream HeroFeedback);
 }
 
 message Void {}
 
-message MotorCmd {
+message DDCommand {
   // 8 motor commands packed
   fixed32 values = 1;
 }
 
-message Twist {
-  repeated float values = 1;
-}
-
-message MotorCurrent {
-  // 8 bytes packed in values
-  fixed64 values = 1;
-}
-
-message ArmStatus {
-  float angle = 1;
-  float translation = 2;
-}
-
-message IMUData {
-  repeated float values = 1;
+message HeroFeedback {
+  bytes currents = 1; // this is a Python bytes object (an array of bytes) where each byte 
+                      // corresponds to one motor current
+  float bucketLadderAngle = 2;
+  bool depositBinRaised = 3;
+  bool depositBinLowered = 4;
 }
 
 message Rate {
-  int32 rate = 1;
+  uint32 rate = 1;
+}
+
+message IMUData {
+  
 }
 
 message Image {

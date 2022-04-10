@@ -41,7 +41,8 @@ class SerialManager:
         if self.is_dummy:
             time.sleep(1)
             # emulate data received from the hero board. This data will get passed into var_len_proto_recv
-            data = [0, 1, 2, 3, 4, 5, 6, 7] + [0]*8
+            # data = [0, 1, 2, 3, 4, 5, 6, 7] + [0]*8
+            data = [0, 1, 2, 3, 4, 5, 6, 7]
             # length = 0b11000000 | len(data)
             # cs = (255 + sum(data) + length) % 256
             # ret = [255] + [length] + data + [cs]
