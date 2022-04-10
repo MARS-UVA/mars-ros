@@ -2,7 +2,7 @@
 import rospy
 from serial_manager import SerialManager
 import traceback
-from hero_board.msg import MotorVal
+from hero_board.msg import HeroFeedback, MotorCommand
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 import time
@@ -31,15 +31,16 @@ serial_manager = None
 def stop_motors_non_emergency():
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
 
-def process_manual_motor_values(motor_vals):
-    m_val = motor_vals.motorval
-    rospy.loginfo("writing direct_drive motor value: %s", list(m_val))
-    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, m_val))
+# Both of these subscriber functions take a MotorCommand ROS msg as a parameter, not anything related to RPC
+def process_manual_motor_values(command): 
+    vals = command.values
+    rospy.loginfo("writing direct_drive motor value: %s", list(vals))
+    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
-def process_autonomy_motor_values(motor_vals):
-    m_val = motor_vals.motorval
-    rospy.loginfo('writing autonomy motor value: %s', list(m_val))
-    serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, m_val))
+def process_autonomy_motor_values(command):
+    vals = command.values
+    rospy.loginfo('writing autonomy motor value: %s', list(vals))
+    serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
 
 
 def get_state_service(req):
@@ -61,7 +62,7 @@ def set_state_service(req):
         if auto_sub:
             auto_sub.unregister()
             auto_sub = None
-        manual_sub = rospy.Subscriber(DIRECT_DRIVE_CONTROL_TOPIC, MotorVal, process_manual_motor_values)
+        manual_sub = rospy.Subscriber(DIRECT_DRIVE_CONTROL_TOPIC, MotorCommand, process_manual_motor_values)
         return SetStateResponse('changing to manual control')
 
     elif to_change == SetStateRequest.AUTONOMY:
@@ -70,7 +71,7 @@ def set_state_service(req):
             manual_sub.unregister()
             manual_sub = None
         stop_motors_non_emergency()
-        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, MotorVal, process_autonomy_motor_values)
+        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, MotorCommand, process_autonomy_motor_values)
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages
         rospy.loginfo("starting hero status publisher")
-        pub = rospy.Publisher(HERO_FEEDBACK_TOPIC, MotorVal, queue_size=5)
+        pub = rospy.Publisher(HERO_FEEDBACK_TOPIC, HeroFeedback, queue_size=5)
         while not rospy.is_shutdown():
             # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
             if pub.get_num_connections() == 0: # don't publish if there are no subscribers
@@ -107,7 +108,7 @@ if __name__ == "__main__":
                 continue
             to_send_raw = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(to_send_raw)
-            val = MotorVal()
+            val = HeroFeedback()
             for packet in to_send:
                 packet_opcode = packet[0]
                 packet_data = packet[1]
@@ -117,6 +118,7 @@ if __name__ == "__main__":
                 if len(packet_data) != EXPECTED_PACKET_LENGTH:
                     rospy.logwarn("got packet from hero with an unexpected length, not publishing this packet (got {}, expected {})".format(len(packet_data), EXPECTED_PACKET_LENGTH))
                     continue
+
                 # print("  sending packet data=" + str(packet_data))
                 val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
                 # val.bucketLadderAngle = struct.unpack("%df"%NUM_FLOATS, packet_data[NUM_MOTOR_CURRENTS:(NUM_FLOATS*4)]) # (each float is 4 bytes and there is X of them)
