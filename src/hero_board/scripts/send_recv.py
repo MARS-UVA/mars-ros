@@ -12,7 +12,14 @@ import struct
 NODE_NAME = "hero_send_recv"
 DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
 AUTONOMY_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
-HERO_STATUS_TOPIC = "/motor/status" # publishing (data like motor currents and arm position read by the hero board)
+HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
+
+NUM_MOTOR_CURRENTS = 8 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
+# NUM_FLOATS = 1 # currently, 1 angle for bucket ladder angle
+# NUM_BOOLS = 2 # currently, 2 bools total for bucket pressing upper and lower limit switch
+NUM_FLOATS = 0
+NUM_BOOLS = 0
+EXPECTED_PACKET_LENGTH = NUM_MOTOR_CURRENTS + 4*NUM_FLOATS + NUM_BOOLS # currents and bools are 1 byte each, floats are 4 bytes each
 
 manual_sub = None
 auto_sub = None
@@ -92,7 +99,7 @@ if __name__ == "__main__":
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages
         rospy.loginfo("starting hero status publisher")
-        pub = rospy.Publisher(HERO_STATUS_TOPIC, MotorVal, queue_size=5)
+        pub = rospy.Publisher(HERO_FEEDBACK_TOPIC, MotorVal, queue_size=5)
         while not rospy.is_shutdown():
             # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
             if pub.get_num_connections() == 0: # don't publish if there are no subscribers
@@ -105,10 +112,19 @@ if __name__ == "__main__":
                 packet_opcode = packet[0]
                 packet_data = packet[1]
                 if packet_opcode != Opcode.FEEDBACK:
-                    rospy.logwarn("got data from hero with the wrong opcode, not publishing the packet")
+                    rospy.logwarn("got packet from hero with the wrong opcode, not publishing this packet")
                     continue
-                val.motorval = packet_data[:-8] # everything except last 8
-                val.angle, val.translation = struct.unpack("2f", packet_data[-8:]) # last 8 (these values get reinterpreted as 2 floats)
+                if len(packet_data) != EXPECTED_PACKET_LENGTH:
+                    rospy.logwarn("got packet from hero with an unexpected length, not publishing this packet (got {}, expected {})".format(len(packet_data), EXPECTED_PACKET_LENGTH))
+                    continue
+                # print("  sending packet data=" + str(packet_data))
+                val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
+                # val.bucketLadderAngle = struct.unpack("%df"%NUM_FLOATS, packet_data[NUM_MOTOR_CURRENTS:(NUM_FLOATS*4)]) # (each float is 4 bytes and there is X of them)
+                # val.depositBinRaised = (packet_data[-2] == 1) # second to last value
+                # val.depositBinLowered = (packet_data[-1] == 1) # last value
+                val.bucketLadderAngle = 45.0 
+                val.depositBinRaised = False
+                val.depositBinLowered = True
                 pub.publish(val)
         
     except KeyboardInterrupt as k:
