@@ -205,34 +205,15 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         );
     }
 
-    /*
-    Status StreamMotorCurrent(ServerContext* context, const Rate* _rate, ServerWriter<MotorCurrent>* writer) override {
-        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
-            // reinterpret 8 motor current bytes as uint64
-            rpc_val.set_values(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->motorval.data()));
-        };
-        return StreamToClient<MotorCurrent, hero_board::MotorVal, hero_board::MotorValConstPtr, decltype(process)>(
-            context, _rate, writer, process, "/motor/status", "Client closes motor current stream"
-        );
-    }
-    Status StreamArmStatus(ServerContext* context, const Rate* _rate, ServerWriter<ArmStatus>* writer) override {
-        auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
-            rpc_val.set_angle(ros_msg_ptr->angle);
-            rpc_val.set_translation(ros_msg_ptr->translation);
-        };
-        return StreamToClient<ArmStatus, hero_board::MotorVal, hero_board::MotorValConstPtr, decltype(process)>(
-            context, _rate, writer, process, "/motor/status", "Client closes angle stream"
-        );
-    }
-    */
     Status StreamHeroFeedback(ServerContext* context, const Rate* _rate, ServerWriter<HeroFeedback>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             // reinterpret 8 motor current bytes as uint64
             // rpc_val.set_values(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->motorval.data()));
 
-            rpc_val.set_currents(ros_msg_ptr->currents.data(), 8);
+            rpc_val.set_currents(ros_msg_ptr->currents.data(), 11);
             // rpc_val.set_currents(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->currents.data()));
-            rpc_val.set_bucketladderangle(ros_msg_ptr->bucketLadderAngle);
+            rpc_val.set_bucketladderanglel(ros_msg_ptr->bucketLadderAngleL);
+            rpc_val.set_bucketladderangler(ros_msg_ptr->bucketLadderAngleR);
             rpc_val.set_depositbinraised(ros_msg_ptr->depositBinRaised);
             rpc_val.set_depositbinlowered(ros_msg_ptr->depositBinLowered);
             

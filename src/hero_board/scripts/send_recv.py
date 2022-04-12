@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import rospy
-from serial_manager import SerialManager
+import struct
+import time
 import traceback
 from hero_board.msg import HeroFeedback, MotorCommand
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
+from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
-import time
-import struct
 
 
 NODE_NAME = "hero_send_recv"
@@ -14,12 +14,10 @@ DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
 AUTONOMY_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 
-NUM_MOTOR_CURRENTS = 8 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
-# NUM_FLOATS = 1 # currently, 1 angle for bucket ladder angle
-# NUM_BOOLS = 2 # currently, 2 bools total for bucket pressing upper and lower limit switch
-NUM_FLOATS = 0
-NUM_BOOLS = 0
-EXPECTED_PACKET_LENGTH = NUM_MOTOR_CURRENTS + 4*NUM_FLOATS + NUM_BOOLS # currents and bools are 1 byte each, floats are 4 bytes each
+NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
+NUM_FLOATS = 2 # 2 angles for bucket ladder angle, one from each actuator
+NUM_BOOLS = 2 # 2 bools total for bucket pressing upper and lower limit switch
+EXPECTED_PACKET_LENGTH = 1*NUM_MOTOR_CURRENTS + 4*NUM_FLOATS + 1*NUM_BOOLS # currents and bools are 1 byte each, floats are 4 bytes each
 
 manual_sub = None
 auto_sub = None
@@ -39,7 +37,7 @@ def process_manual_motor_values(command):
 
 def process_autonomy_motor_values(command):
     vals = command.values
-    rospy.loginfo('writing autonomy motor value: %s', list(vals))
+    rospy.loginfo("writing autonomy motor value: %s", list(vals))
     serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
 
 
@@ -116,17 +114,15 @@ if __name__ == "__main__":
                     rospy.logwarn("got packet from hero with the wrong opcode, not publishing this packet")
                     continue
                 if len(packet_data) != EXPECTED_PACKET_LENGTH:
-                    rospy.logwarn("got packet from hero with an unexpected length, not publishing this packet (got {}, expected {})".format(len(packet_data), EXPECTED_PACKET_LENGTH))
+                    rospy.logwarn("got packet from hero with an unexpected length, not publishing this packet (got length {}, expected {})".format(len(packet_data), EXPECTED_PACKET_LENGTH))
                     continue
 
-                # print("  sending packet data=" + str(packet_data))
                 val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
-                # val.bucketLadderAngle = struct.unpack("%df"%NUM_FLOATS, packet_data[NUM_MOTOR_CURRENTS:(NUM_FLOATS*4)]) # (each float is 4 bytes and there is X of them)
-                # val.depositBinRaised = (packet_data[-2] == 1) # second to last value
-                # val.depositBinLowered = (packet_data[-1] == 1) # last value
-                val.bucketLadderAngle = 45.0 
-                val.depositBinRaised = False
-                val.depositBinLowered = True
+                floats_combined = struct.unpack("%df"%NUM_FLOATS, packet_data[NUM_MOTOR_CURRENTS:(NUM_MOTOR_CURRENTS + NUM_FLOATS*4)]) # (each float is 4 bytes and there is X of them)
+                val.bucketLadderAngleL = floats_combined[0]
+                val.bucketLadderAngleR = floats_combined[1]
+                val.depositBinRaised = (packet_data[-2] == 1) # second to last value
+                val.depositBinLowered = (packet_data[-1] == 1) # last value
                 pub.publish(val)
         
     except KeyboardInterrupt as k:

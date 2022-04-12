@@ -41,8 +41,9 @@ class SerialManager:
         if self.is_dummy:
             time.sleep(1)
             # emulate data received from the hero board. This data will get passed into var_len_proto_recv
-            # data = [0, 1, 2, 3, 4, 5, 6, 7] + [0]*8
-            data = [0, 1, 2, 3, 4, 5, 6, 7]
+            data = list(range(11)) + [0]*4*2 + [0, 1] # Lengths and count should correspond with the constants at the top of send_recv.py
+
+            # For manually replicating the protocol encoding: 
             # length = 0b11000000 | len(data)
             # cs = (255 + sum(data) + length) % 256
             # ret = [255] + [length] + data + [cs]
