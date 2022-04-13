@@ -121,8 +121,8 @@ if __name__ == "__main__":
                 floats_combined = struct.unpack("%df"%NUM_FLOATS, packet_data[NUM_MOTOR_CURRENTS:(NUM_MOTOR_CURRENTS + NUM_FLOATS*4)]) # (each float is 4 bytes and there is X of them)
                 val.bucketLadderAngleL = floats_combined[0]
                 val.bucketLadderAngleR = floats_combined[1]
-                val.depositBinRaised = (packet_data[-2] == 1) # second to last value
-                val.depositBinLowered = (packet_data[-1] == 1) # last value
+                val.depositBinRaised = (packet_data[-2] != 0) # second to last value
+                val.depositBinLowered = (packet_data[-1] != 0) # last value TODO verify the order of these floats and bools
                 pub.publish(val)
         
     except KeyboardInterrupt as k:
