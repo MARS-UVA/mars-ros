@@ -67,8 +67,8 @@
 
         <arg name="align_depth"           value="true"/>
         <arg name="filters"               value="pointcloud"/>
-        <arg name="depth_fps"             value="20" />
-        <arg name="color_fps"             value="20" />
+        <arg name="depth_fps"             value="6" />
+        <arg name="color_fps"             value="6" />
         <arg name="enable_infra1"         value="false" />
         <arg name="enable_infra2"         value="false" />
       </include>
