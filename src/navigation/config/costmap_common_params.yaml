@@ -12,6 +12,8 @@ point_cloud_sensor: {
   sensor_frame: d435_depth_optical_frame, 
   data_type: PointCloud2, 
   topic: /d435/depth/color/points, 
+  # data_type: Image, 
+  # topic: /d435/depth/image_rect_raw, 
   marking: true, 
   clearing: true
 }
