@@ -3,6 +3,7 @@ import rospy
 import serial
 import time
 import traceback
+import numpy as np
 from utils.protocol import var_len_proto_send, Opcode
 
 """
@@ -29,7 +30,7 @@ class SerialManager:
                 rospy.logfatal("Could not open serial connection /dev/ttyUSB0 in serial_manager.py. Maybe the file permissions aren't right? (try 'sudo chmod 666 /dev/ttyUSB0'). Switching to dummy output mode. ")
                 self.is_dummy = True
                 self.ser = None
-        
+
     def write(self, data):
         if self.is_dummy:
             # rospy.loginfo("[DUMMY] serial_manager writing data: {}".format(data))
@@ -41,7 +42,8 @@ class SerialManager:
         if self.is_dummy:
             time.sleep(1)
             # emulate data received from the hero board. This data will get passed into var_len_proto_recv
-            data = list(range(11)) + [0]*4*2 + [0, 1] # Lengths and count should correspond with the constants at the top of send_recv.py
+            data = list(np.array([1.1*i for i in range(11)], np.float32).tobytes()) + [0]*4*2 + [0, 1] # Lengths and count should correspond with the constants at the top of send_recv.py
+            # data = list(range(11)) + [0]*4*2 + [0, 1] # Lengths and count should correspond with the constants at the top of send_recv.py
 
             # For manually replicating the protocol encoding: 
             # length = 0b11000000 | len(data)
