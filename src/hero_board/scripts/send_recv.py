@@ -122,8 +122,8 @@ if __name__ == "__main__":
                 val.currents = [max(0, min(255, int(c))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
                                                                                                 # float to int and make sure it fits in one byte by clamping to range [0, 255]
                 # val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
-                val.bucketLadderAngleL = floats_combined[0]
-                val.bucketLadderAngleR = floats_combined[1]
+                val.bucketLadderAngleL = floats_combined[NUM_MOTOR_CURRENTS + 0]
+                val.bucketLadderAngleR = floats_combined[NUM_MOTOR_CURRENTS + 1]
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                 val.depositBinLowered = (packet_data[-1] != 0) # last value
                 pub.publish(val)

@@ -110,7 +110,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         // publisher is only initialized once
         static auto motor_pub = nh->advertise<hero_board::MotorCommand>("/motor/output", 1);
 
-        hero_cmd.values.resize(8);
+        hero_cmd.values.resize(9);
         while (reader->Read(&rpc_cmd)) {
             uint32_t raw = rpc_cmd.values();
 
@@ -125,6 +125,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             hero_cmd.values[3] = hero_cmd.values[1] = (raw & 0b111111) << 2;
             raw >>= 6;
             hero_cmd.values[2] = hero_cmd.values[0] = raw << 2;
+            hero_cmd.values[8] = 100;
 
             cout << "Client send motor command (decoded): ";
             for (int i = 0; i < 8; i++) {
