@@ -18,8 +18,7 @@ service JetsonRPC {
 message Void {}
 
 message DDCommand {
-  // 8 motor commands packed
-  fixed32 values = 1;
+  bytes values = 1;
 }
 
 message HeroFeedback {

@@ -96,39 +96,28 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             ROS_ERROR("SendMotorCMD not in drive state DIRECT_DRIVE! Switch to this state before using this function. Returning. ");
             return Status::CANCELLED;
 
-            // We could make the switch here, but for now let's make the client switch
+            // We could make the state switch here, but for now let's require the client to make the switch
             // ROS_INFO("SendMotorCMD switching from old state to DIRECT_DRIVE...");
             // if (!SwitchControlState(DriveStateEnum::DIRECT_DRIVE)) {
             //     ROS_ERROR("Failed to switch to DIRECT_DRIVE control");
             //     return Status::CANCELLED; 
             // }
         }
-       
 
         DDCommand rpc_cmd;
-        hero_board::MotorCommand hero_cmd; // definitions see hero-serial/Program.cs (?)
+        hero_board::MotorCommand hero_cmd;
         // publisher is only initialized once
         static auto motor_pub = nh->advertise<hero_board::MotorCommand>("/motor/output", 1);
 
         hero_cmd.values.resize(9);
         while (reader->Read(&rpc_cmd)) {
-            uint32_t raw = rpc_cmd.values();
-
-            hero_cmd.values[7] = (raw & 0b11) * 100;  // 0, 100, or 200
-            raw >>= 2;
-            hero_cmd.values[6] = (raw & 0b111111) << 2;
-            raw >>= 6;
-            hero_cmd.values[5] = (raw & 0b111111) << 2;
-            raw >>= 6;
-            hero_cmd.values[4] = (raw & 0b111111) << 2;
-            raw >>= 6;
-            hero_cmd.values[3] = hero_cmd.values[1] = (raw & 0b111111) << 2;
-            raw >>= 6;
-            hero_cmd.values[2] = hero_cmd.values[0] = raw << 2;
-            hero_cmd.values[8] = 100;
+            char* raw = (char*)rpc_cmd.values().c_str();
+            for(int i=0; i<9; i++) {
+                hero_cmd.values[i] = raw[i];
+            }
 
             cout << "Client send motor command (decoded): ";
-            for (int i = 0; i < 8; i++) {
+            for (int i=0; i<9; i++) {
                 cout << (int)hero_cmd.values[i] << " ";
             }
             cout << endl;
