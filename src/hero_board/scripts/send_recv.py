@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
                 # TODO verify the order of the floats and bools
                 floats_combined = struct.unpack("%df"%(NUM_MOTOR_CURRENTS+NUM_ANGLES), packet_data[0:(NUM_MOTOR_CURRENTS*4 + NUM_ANGLES*4)]) # each float is 4 bytes
-                val.currents = [max(0, min(255, int(c))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
+                val.currents = [max(0, min(255, int(c*50.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
                                                                                                 # float to int and make sure it fits in one byte by clamping to range [0, 255]
                 # val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
                 val.bucketLadderAngleL = floats_combined[NUM_MOTOR_CURRENTS + 0]
