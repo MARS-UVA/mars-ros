@@ -1,10 +1,32 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="cameras" default="false" />
+    <arg name="hero" default="true" />
+    <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
-    <arg name="hero" default="false" />
+    <arg name="cameras" default="false" />
     <arg name="autonomy" default="false" />
+
+
+    <!-- hero communication node -->
+    <group if="$(eval hero)">
+        <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
+        <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
+        <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
+    </group>
+
+    <!-- actions -->
+    <group if="$(eval actions)">
+        <node name="actions" pkg="actions" type="actions_main.py" output="screen" />
+    </group>
+    
+    <!-- rpc server -->
+    <group if="$(eval rpc)">
+        <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
+    </group>
+
+    <!-- static transforms -->
+    <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node>
 
     <group if="$(eval cameras)">
         <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
@@ -14,21 +36,6 @@
 
         <include file="$(find navigation)/launch/cameras.launch"></include>
     </group>
-    
-    <!-- rpc server -->
-    <group if="$(eval rpc)">
-        <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
-    </group>
-
-    <!-- hero communication node -->
-    <group if="$(eval hero)">
-        <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
-        <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
-        <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
-    </group>
-
-    <!-- static transforms -->
-    <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node>
 
     <group if="$(eval autonomy)">
         <!-- depth to point cloud -->

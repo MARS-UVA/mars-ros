@@ -6,8 +6,8 @@ package jetsonrpc;
 
 service JetsonRPC {
   rpc SendDDCommand (stream DDCommand) returns (Void);
-
   rpc ChangeDriveState (DriveState) returns (Void);
+  rpc StartAction (ActionDescription) returns (Void);
   rpc EmergencyStop (Void) returns (Void);
 
   rpc StreamIMU (Rate) returns (stream IMUData);
@@ -49,4 +49,8 @@ enum DriveStateEnum {
 }
 message DriveState {
   DriveStateEnum dse = 1;
+}
+
+message ActionDescription {
+  string text = 1;
 }

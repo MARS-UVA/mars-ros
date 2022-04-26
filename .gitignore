@@ -11,3 +11,5 @@ compile_commands.json
 *.bag
 install
 .mypy_cache
+*.py[cod]
+__pycache__

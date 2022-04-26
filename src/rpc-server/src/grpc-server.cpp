@@ -16,6 +16,9 @@
 #include <hero_board/GetState.h>
 #include <hero_board/GetStateResponse.h>
 
+#include <actions/StartAction.h>
+#include <actions/StartActionResponse.h>
+
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
@@ -211,6 +214,21 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return StreamToClient<HeroFeedback, hero_board::HeroFeedback, hero_board::HeroFeedbackConstPtr, decltype(process)>(
             context, _rate, writer, process, "/motor/feedback", "Client closes hero feedback stream"
         );
+    }
+
+    Status StartAction(ServerContext* context, const ActionDescription* _action_description, Void* _) override {
+        // ROS_INFO("StartAction");
+        actions::StartActionRequest req;
+        req.action_description_json = _action_description->text();
+
+        actions::StartActionResponse res;
+        bool success = ros::service::call("/start_action", req, res);
+        
+        if(success) {
+            return Status::OK;
+        } else {
+            return Status::CANCELLED;
+        }
     }
     
     // a template function for streaming data from jetson (server) to laptop (client)
