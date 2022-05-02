@@ -26,6 +26,10 @@ current_state = SetStateRequest.IDLE
 serial_manager = None
 
 
+def convert_ladder_pot_to_angle(pot):
+    # TODO use geometry to calculate the real angle (assuming potentiometer is linear?)
+    return pot
+
 def stop_motors_non_emergency():
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
 
@@ -122,8 +126,8 @@ if __name__ == "__main__":
                 val.currents = [max(0, min(255, int(c*50.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
                                                                                                 # float to int and make sure it fits in one byte by clamping to range [0, 255]
                 # val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
-                val.bucketLadderAngleL = floats_combined[NUM_MOTOR_CURRENTS + 0]
-                val.bucketLadderAngleR = floats_combined[NUM_MOTOR_CURRENTS + 1]
+                val.bucketLadderAngleL = convert_ladder_pot_to_angle(floats_combined[NUM_MOTOR_CURRENTS + 0])
+                val.bucketLadderAngleR = convert_ladder_pot_to_angle(floats_combined[NUM_MOTOR_CURRENTS + 1])
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                 val.depositBinLowered = (packet_data[-1] != 0) # last value
                 pub.publish(val)

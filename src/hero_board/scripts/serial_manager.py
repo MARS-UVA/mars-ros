@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from datetime import datetime
+import math
 import rospy
 import serial
 import time
@@ -41,9 +43,14 @@ class SerialManager:
     def read_in_waiting(self):
         if self.is_dummy:
             time.sleep(1)
-            # emulate data received from the hero board. This data will get passed into var_len_proto_recv
-            data = list(np.array([1.1*i for i in range(11)], np.float32).tobytes()) + [0]*4*2 + [0, 1] # Lengths and count should correspond with the constants at the top of send_recv.py
-            # data = list(range(11)) + [0]*4*2 + [0, 1] # Lengths and count should correspond with the constants at the top of send_recv.py
+            # Emulate data received from the hero board. This data will get passed into var_len_proto_recv
+            # Lengths and count should correspond with the constants at the top of send_recv.py
+            t = datetime.now().microsecond
+            a1 = (math.sin(t//1500) + 1) * 45
+            a2 = a1 + 1
+            limit = 1 if (t % 8) > 4 else 0
+            data = list(np.array([1.1*i for i in range(11)] + [a1, a2], np.float32).tobytes()) + [limit, limit]
+            # data = list(np.array([1.1*i for i in range(11)], np.float32).tobytes()) + [0]*4*2 + [0, 1] # (just constant feedback)
 
             # For manually replicating the protocol encoding: 
             # length = 0b11000000 | len(data)
