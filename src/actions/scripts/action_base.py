@@ -14,7 +14,7 @@ class ActionBase:
         self.feedback_data = None
         self.sub = rospy.Subscriber("/motor/feedback", HeroFeedback, self.callback)
 
-        # TODO for now, all the actions publish motor commmands as direct drive commands, mainly 
+        # For now, all the actions publish motor commmands as direct drive commands, mainly 
         # because the hero board isn't set up for autonomy messages (messages that rely on feedback)
         self.pub = rospy.Publisher("/motor/cmd_vel", MotorCommand, queue_size=0) 
 
@@ -39,6 +39,10 @@ class ActionBase:
         # Publishes motor commands corresponding to the current robot's reported state
         raise NotImplementedError()
 
+    def cleanup(self):
+        msg = [100]*9
+        self.pub.publish(MotorCommand(msg))
+
     def start(self):
         # print("action_base start()")
         if self.get_state().state != GetStateResponse.AUTONOMY:
@@ -52,6 +56,8 @@ class ActionBase:
         while self.is_running():
             # print("action looping...")
             self.execute()
+
+        self.cleanup()
 
         self.sub.unregister()
         rospy.loginfo("Action finished executing")
