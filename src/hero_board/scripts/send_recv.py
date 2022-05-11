@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import rospy
 import struct
 import time
@@ -26,9 +27,25 @@ current_state = SetStateRequest.IDLE
 serial_manager = None
 
 
+def map(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
 def convert_ladder_pot_to_angle(pot):
-    # TODO use geometry to calculate the real angle (assuming potentiometer is linear?)
-    return pot
+    # print("converting pot= {0:.4f}".format(pot))
+    """
+    Approximate potentiometer readings: top=0.362, bottom=0.160
+    Bottom: 16 in
+    Bottom to top of actuator: 14.5
+        added length when short: 1
+        added length when long: 10
+
+    Ladder: 31
+    """
+    # For the angle between the ladder and the actuator:
+    approx_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5
+    angle_rad = math.acos(approx_length/31.0)
+    angle_deg = angle_rad * (180.0/3.14)
+    return angle_deg
 
 def stop_motors_non_emergency():
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
@@ -41,8 +58,9 @@ def process_manual_motor_values(command):
 
 def process_autonomy_motor_values(command):
     vals = command.values
-    rospy.loginfo("writing autonomy motor value: %s", list(vals))
-    serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
+    rospy.loginfo("writing 'autonomy' motor value: %s", list(vals))
+    # serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
+    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 
 def get_state_service(req):

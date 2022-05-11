@@ -23,7 +23,9 @@ class SerialManager:
         if not self.is_dummy:
             try:
                 self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=None)
-                # self.ser = serial.Serial('/dev/pts/3', 115200, timeout=None) # Debugging option - virtual serial device: https://stackoverflow.com/questions/52187/virtual-serial-port-for-linux
+
+                # Debugging option - virtual serial device: https://stackoverflow.com/questions/52187/virtual-serial-port-for-linux
+                # self.ser = serial.Serial('/dev/pts/3', 115200, timeout=None)
             except OSError as e: # OSError includes FileNotFoundError
                 traceback.print_exc()
                 # exit(-1)
@@ -45,12 +47,12 @@ class SerialManager:
             time.sleep(1)
             # Emulate data received from the hero board. This data will get passed into var_len_proto_recv
             # Lengths and count should correspond with the constants at the top of send_recv.py
-            t = datetime.now().microsecond
-            a1 = (math.sin(t//1500) + 1) * 45
-            a2 = a1 + 1
-            limit = 1 if (t % 8) > 4 else 0
-            data = list(np.array([1.1*i for i in range(11)] + [a1, a2], np.float32).tobytes()) + [limit, limit]
-            # data = list(np.array([1.1*i for i in range(11)], np.float32).tobytes()) + [0]*4*2 + [0, 1] # (just constant feedback)
+            now = datetime.now()
+            a1 = (math.sin(now.microsecond//1500) + 1) * 0.08 + 0.16
+            a2 = a1 + 0.05
+            limit1 = 1 if (now.second % 6) >= 3 else 0
+            limit2 = 1 - limit1
+            data = list(np.array([1.1*i for i in range(11)] + [a1, a2], np.float32).tobytes()) + [limit1, limit2]
 
             # For manually replicating the protocol encoding: 
             # length = 0b11000000 | len(data)
