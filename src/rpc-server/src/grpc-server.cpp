@@ -3,11 +3,10 @@
 #include <queue>
 #include <string>
 #include <thread>
+// #include <cv_bridge/cv_bridge.h>
 
 #include <grpcpp/grpcpp.h>
 #include "jetsonrpc.grpc.pb.h"
-
-#include <cv_bridge/cv_bridge.h>
 
 #include <hero_board/HeroFeedback.h>
 #include <hero_board/MotorCommand.h>
@@ -19,7 +18,7 @@
 #include <actions/StartAction.h>
 #include <actions/StartActionResponse.h>
 
-#include <image_transport/image_transport.h>
+// #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
 #include <sensor_msgs/Imu.h>
@@ -171,8 +170,8 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         }
     }
 
+    /*
     Status StreamIMU(ServerContext* context, const Rate* _rate, ServerWriter<IMUData>* writer) override {
-        /*
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_values(0, ros_msg_ptr->angular_velocity.x);
             rpc_val.set_values(1, ros_msg_ptr->angular_velocity.y);
@@ -185,10 +184,11 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
         return StreamToClient<IMUData, sensor_msgs::Imu, sensor_msgs::ImuConstPtr, decltype(process)>(
             context, _rate, writer, process, "/camera/imu", "Client closes IMU stream"
         );
-        */
         return Status::OK;
     }
+    */
 
+    /*
     Status StreamImage(ServerContext* context, const Rate* _rate, ServerWriter<Image>* writer) override { 
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
             rpc_val.set_data({reinterpret_cast<const char*>(ros_msg_ptr->data.data()), ros_msg_ptr->data.size()});
@@ -197,6 +197,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             context, _rate, writer, process, "/camera/color/image_raw/compressed", "Client closes image stream"
         );
     }
+    */
 
     Status StreamHeroFeedback(ServerContext* context, const Rate* _rate, ServerWriter<HeroFeedback>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
@@ -239,7 +240,9 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
 
         ROSMsgPtr ros_msg_ptr;
         auto sub = nh->subscribe<ROSMsg>(topic, queue_size, boost::bind(&update_ptr<ROSMsgPtr>, &ros_msg_ptr, _1));
-        ros::Rate rate(_rate->rate());
+        float hz = 1000.0 / _rate->rate(); // convert period in ms to hz
+        ros::Rate rate(hz);
+
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
                               // so reading ros_msg_ptr does not require a lock
@@ -261,7 +264,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
 };
 
 void RunServer() {
-    ROS_INFO("grpc-server starting\n");
+    ROS_INFO("grpc-server starting");
     std::string server_address("0.0.0.0:50051");
     JetsonServiceImpl service;
 
@@ -278,7 +281,7 @@ void RunServer() {
     // Finally assemble the server.
     std::unique_ptr<Server> server(builder.BuildAndStart());
     // std::cout << "Server listening on " << server_address << std::endl;
-    ROS_INFO("Server listening on %s\n", server_address.c_str());
+    ROS_INFO("Server listening on %s", server_address.c_str());
 
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.

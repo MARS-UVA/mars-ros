@@ -10,8 +10,8 @@ service JetsonRPC {
   rpc StartAction (ActionDescription) returns (Void);
   rpc EmergencyStop (Void) returns (Void);
 
-  rpc StreamIMU (Rate) returns (stream IMUData);
-  rpc StreamImage (Rate) returns (stream Image);
+  // rpc StreamIMU (Rate) returns (stream IMUData);
+  // rpc StreamImage (Rate) returns (stream Image);
   rpc StreamHeroFeedback (Rate) returns (stream HeroFeedback);
 }
 
@@ -31,16 +31,14 @@ message HeroFeedback {
 }
 
 message Rate {
-  uint32 rate = 1;
+  uint32 rate = 1; // update period in ms
 }
 
-message IMUData {
-  
-}
+// message IMUData {}
 
-message Image {
-  bytes data = 1;
-}
+// message Image {
+//   bytes data = 1;
+// }
 
 enum DriveStateEnum {
   DIRECT_DRIVE = 0;
