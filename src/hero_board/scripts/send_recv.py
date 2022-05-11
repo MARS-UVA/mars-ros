@@ -26,25 +26,38 @@ current_state = SetStateRequest.IDLE
 
 serial_manager = None
 
+prev_converted_angle_L = None
+prev_converted_angle_R = None
 
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 def convert_ladder_pot_to_angle(pot):
+    global prev_converted_angle
     # print("converting pot= {0:.4f}".format(pot))
     """
     Approximate potentiometer readings: top=0.362, bottom=0.160
-    Bottom: 16 in
+    Bottom length (along frame): 16 in
     Bottom to top of actuator: 14.5
         added length when short: 1
         added length when long: 10
 
-    Ladder: 31
+    Bucket ladder length: 31
     """
     # For the angle between the ladder and the actuator:
-    approx_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5
-    angle_rad = math.acos(approx_length/31.0)
-    angle_deg = angle_rad * (180.0/3.14)
+    act_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5 # side c
+    a = 30
+    b = 16
+    angle_deg = prev_converted_angle
+    try:
+        cosc = (pow(a, 2) + pow(b, 2) - pow(act_length, 2)) / (2*a*b)
+        angle_rad = math.acos(cosc)
+        angle_deg = angle_rad * (180.0/3.14)
+    except ValueError:
+        rospy.logwarn("Failed converting angle with actuator reading=%f, returning previous value" % pot)
+
+    print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, angle_deg))
+    prev_converted_angle = angle_deg
     return angle_deg
 
 def stop_motors_non_emergency():
