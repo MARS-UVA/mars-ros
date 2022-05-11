@@ -32,6 +32,7 @@ prev_converted_angle_R = None
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
+#converts one potentiometer value to an angle. Can be used for either side of the bucket ladder, but assumes they have the same geometry
 def convert_ladder_pot_to_angle(pot):
     global prev_converted_angle
     # print("converting pot= {0:.4f}".format(pot))
@@ -44,7 +45,7 @@ def convert_ladder_pot_to_angle(pot):
 
     Bucket ladder length: 31
     """
-    # For the angle between the ladder and the actuator:
+    # To find the angle between the ladder and the actuator, use law of cosines:
     act_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5 # side c
     a = 30
     b = 16
@@ -56,9 +57,12 @@ def convert_ladder_pot_to_angle(pot):
     except ValueError:
         rospy.logwarn("Failed converting angle with actuator reading=%f, returning previous value" % pot)
 
-    print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, angle_deg))
-    prev_converted_angle = angle_deg
-    return angle_deg
+    #angle_deg is now either the last converted angle (if there was a math error) or the new angle just calculated
+    #next, return and save a weighted average of the previous angle and the new angle. more weight is put on previous calculations
+    weighted_avg = 0.75 * prev_converted_angle + 0.25 * angle_deg
+    print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, weighted_avg))
+    prev_converted_angle = weighted_avg #the weighted average is saved
+    return weighted_avg
 
 def stop_motors_non_emergency():
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
