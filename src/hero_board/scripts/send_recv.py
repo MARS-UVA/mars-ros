@@ -46,8 +46,8 @@ def convert_ladder_pot_to_angle(old_average, pot):
     """
     # To find the angle between the ladder and the actuator, use law of cosines:
     act_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5 # side c
-    a = 32
-    b = 16
+    a = 31
+    b = 17
     angle_deg = old_average
     try:
         cosc = (pow(a, 2) + pow(b, 2) - pow(act_length, 2)) / (2*a*b)
@@ -59,8 +59,8 @@ def convert_ladder_pot_to_angle(old_average, pot):
     # angle_deg is now either the old average angle (if there was a math error) or the new angle just calculated
     # next, return and save a weighted average of the previous angle and the new angle. more weight is put on previous calculations
 
-    new_average = 0.75 * old_average + 0.25 * angle_deg
-    print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, new_average))
+    new_average = 0.95 * old_average + 0.05 * angle_deg
+    # print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, new_average))
     return new_average
 
 def stop_motors_non_emergency():
