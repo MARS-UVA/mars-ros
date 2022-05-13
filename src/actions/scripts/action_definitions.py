@@ -109,13 +109,13 @@ class ActionLowerLadder(ActionBase):
 class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
-        self.initial_time = time.time() #gets the time when the action was started
-        #the dig action description has three fields: name, update_delay, and duration
+        self.initial_time = int(time.time()) #gets the time when the action was started
+        #the dig action description has fields: name, update_delay, duration, speed
 
     def execute(self):
         rospy.loginfo("action dig executing...")
-        # msg = [100]*7 + [100] + [100] #set these values based on which index of msg corresponds to the bucket ladder chain
-        msg = [100]*9 # TODO
+        msg = [100]*9
+        msg[6] = 100 - self.description["speed"]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
 
