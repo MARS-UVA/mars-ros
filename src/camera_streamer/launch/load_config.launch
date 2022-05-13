@@ -1,0 +1,3 @@
+<launch>
+    <node name="dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load /webcam1/image_raw/theora $(find camera_streamer)/config/webcam1_theora.yaml" />
+</launch>

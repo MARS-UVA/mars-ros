@@ -1,0 +1,23 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      keyframe_frequency: 64
+      name: Default
+      optimize_for: 1
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      quality: 31
+      state: true
+      target_bitrate: 800000
+      type: ''
+    state: []
+  keyframe_frequency: 64
+  optimize_for: 1
+  quality: 31
+  target_bitrate: 800000
+state: []

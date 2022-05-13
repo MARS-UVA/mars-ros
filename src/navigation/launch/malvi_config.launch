@@ -4,7 +4,8 @@
     <arg name="hero" default="true" />
     <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
-    <arg name="cameras" default="false" />
+    <arg name="feedback_cameras" default="false" />
+    <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
 
 
@@ -17,18 +18,77 @@
 
     <!-- actions -->
     <group if="$(eval actions)">
-        <node name="actions" pkg="actions" type="actions_main.py" output="screen" />
+        <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
     </group>
-    
+
     <!-- rpc server -->
     <group if="$(eval rpc)">
         <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
     </group>
 
+    <group if="$(eval feedback_cameras)">
+        <include file="$(find video_stream_opencv)/launch/camera.launch" >
+            <!-- node name and ros graph name -->
+            <arg name="camera_name" value="webcam0" />
+            <!-- means video device 0, /dev/video0 -->
+            <arg name="video_stream_provider" value="/dev/video0" />
+            <!-- <arg name="video_stream_provider" value="/home/ethan/Downloads/video.mp4" /> -->
+
+            <!-- set camera fps to (if the device allows) -->
+            <arg name="set_camera_fps" value="5"/>
+            <!-- set buffer queue size of frame capturing to -->
+            <arg name="buffer_queue_size" value="1" />
+            <!-- throttling the querying of frames to -->
+            <arg name="fps" value="5" />
+            <!-- setting frame_id -->
+            <arg name="frame_id" value="webcam0" />
+            <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
+            "file:///$(find your_camera_package)/config/your_camera.yaml" -->
+            <!-- <arg name="camera_info_url" value="" /> -->
+            <!-- flip the image horizontally (mirror it) -->
+            <arg name="flip_horizontal" value="false" />
+            <!-- flip the image vertically -->
+            <arg name="flip_vertical" value="false" />
+            <!-- visualize on an image_view window the stream generated -->
+            <arg name="visualize" value="false" />
+        </include>
+
+        <include file="$(find video_stream_opencv)/launch/camera.launch" >
+            <arg name="camera_name" value="webcam1" />
+            <arg name="video_stream_provider" value="/dev/video1" />
+            <arg name="set_camera_fps" value="5"/>
+            <arg name="buffer_queue_size" value="1" />
+            <arg name="fps" value="5" />
+            <arg name="frame_id" value="webcam1" />
+            <arg name="flip_horizontal" value="false" />
+            <arg name="flip_vertical" value="false" />
+            <arg name="visualize" value="false" />
+        </include>
+
+        <!-- <include file="$(find video_stream_opencv)/launch/camera.launch" >
+            <arg name="camera_name" value="webcam2" />
+            <arg name="video_stream_provider" value="/dev/video2" />
+            <arg name="set_camera_fps" value="5"/>
+            <arg name="buffer_queue_size" value="1" />
+            <arg name="fps" value="5" />
+            <arg name="frame_id" value="webcam2" />
+            <arg name="flip_horizontal" value="false" />
+            <arg name="flip_vertical" value="false" />
+            <arg name="visualize" value="false" />
+        </include> -->
+
+
+        <!-- <node name="image_transport" pkg="image_transport" type="republish" output="screen" 
+            args="raw in:=/webcam/image_raw theora out:=transport/webcam_compressed" /> -->
+
+        <!-- <include file="$(find camera_streamer)/launch/load_config.launch" /> -->
+
+    </group>
+
     <!-- static transforms -->
     <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node>
 
-    <group if="$(eval cameras)">
+    <group if="$(eval autonomy_cameras)">
         <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
         <!-- use a bash script to delay t265 launch -->
         <!-- <node pkg="navigation" name="t265_script" type="t265_camera.sh" output="screen"></node> -->
@@ -54,6 +114,5 @@
             <!-- <param name="odom_param" value="param_value" /> -->
         <!-- </node> -->
 
-        <!-- This is where  -->
     </group>
 </launch>
