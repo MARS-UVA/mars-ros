@@ -26,15 +26,14 @@ current_state = SetStateRequest.IDLE
 
 serial_manager = None
 
-prev_converted_angle_L = None
-prev_converted_angle_R = None
+averaged_converted_angle_L = 45.0 # By setting these intial values to a constant, the readings will start off inaccurate
+averaged_converted_angle_R = 45.0
 
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 #converts one potentiometer value to an angle. Can be used for either side of the bucket ladder, but assumes they have the same geometry
-def convert_ladder_pot_to_angle(pot):
-    global prev_converted_angle
+def convert_ladder_pot_to_angle(old_average, pot):
     # print("converting pot= {0:.4f}".format(pot))
     """
     Approximate potentiometer readings: top=0.362, bottom=0.160
@@ -43,26 +42,26 @@ def convert_ladder_pot_to_angle(pot):
         added length when short: 1
         added length when long: 10
 
-    Bucket ladder length: 31
+    Bucket ladder length: 31?
     """
     # To find the angle between the ladder and the actuator, use law of cosines:
     act_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5 # side c
-    a = 30
+    a = 32
     b = 16
-    angle_deg = prev_converted_angle
+    angle_deg = old_average
     try:
         cosc = (pow(a, 2) + pow(b, 2) - pow(act_length, 2)) / (2*a*b)
         angle_rad = math.acos(cosc)
         angle_deg = angle_rad * (180.0/3.14)
     except ValueError:
-        rospy.logwarn("Failed converting angle with actuator reading=%f, returning previous value" % pot)
+        rospy.logwarn("Failed converting angle with actuator reading=%f, skipping this reading" % pot)
 
-    #angle_deg is now either the last converted angle (if there was a math error) or the new angle just calculated
-    #next, return and save a weighted average of the previous angle and the new angle. more weight is put on previous calculations
-    weighted_avg = 0.75 * prev_converted_angle + 0.25 * angle_deg
-    print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, weighted_avg))
-    prev_converted_angle = weighted_avg #the weighted average is saved
-    return weighted_avg
+    # angle_deg is now either the old average angle (if there was a math error) or the new angle just calculated
+    # next, return and save a weighted average of the previous angle and the new angle. more weight is put on previous calculations
+
+    new_average = 0.75 * old_average + 0.25 * angle_deg
+    print("act_length={:.3f}, pot={:.3f}, angle_deg={:.3f}".format(act_length, pot, new_average))
+    return new_average
 
 def stop_motors_non_emergency():
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
@@ -158,13 +157,15 @@ if __name__ == "__main__":
 
                 # TODO verify the order of the floats and bools
                 floats_combined = struct.unpack("%df"%(NUM_MOTOR_CURRENTS+NUM_ANGLES), packet_data[0:(NUM_MOTOR_CURRENTS*4 + NUM_ANGLES*4)]) # each float is 4 bytes
-                val.currents = [max(0, min(255, int(c*50.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
+                val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
                                                                                                 # float to int and make sure it fits in one byte by clamping to range [0, 255]
-                # val.currents = packet_data[0:NUM_MOTOR_CURRENTS] # first X bytes
-                val.bucketLadderAngleL = convert_ladder_pot_to_angle(floats_combined[NUM_MOTOR_CURRENTS + 0])
-                val.bucketLadderAngleR = convert_ladder_pot_to_angle(floats_combined[NUM_MOTOR_CURRENTS + 1])
+                averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
+                averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
+                val.bucketLadderAngleL = averaged_converted_angle_L
+                val.bucketLadderAngleR = averaged_converted_angle_R
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                 val.depositBinLowered = (packet_data[-1] != 0) # last value
+
                 pub.publish(val)
         
     except KeyboardInterrupt as k:
