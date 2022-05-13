@@ -10,14 +10,15 @@
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
-        <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
-        <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" />
+        <!-- This bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
+        <!-- Now, the setup.sh script performs the chmod -->
+        <!-- <node name="hero_permission" pkg="hero_board" type="permission.sh" output="screen" /> -->
         <node name="hero_comm" pkg="hero_board" type="send_recv.py" output="screen" />
     </group>
 
     <!-- actions -->
     <group if="$(eval actions)">
-        <node name="actions" pkg="actions" type="actions_main.py" output="screen" />
+        <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
     </group>
     
     <!-- rpc server -->
@@ -26,7 +27,7 @@
     </group>
 
     <!-- static transforms -->
-    <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node>
+    <!-- <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node> -->
 
     <group if="$(eval cameras)">
         <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
@@ -54,6 +55,5 @@
             <!-- <param name="odom_param" value="param_value" /> -->
         <!-- </node> -->
 
-        <!-- This is where  -->
     </group>
 </launch>
