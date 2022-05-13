@@ -33,6 +33,8 @@ def start_action_callback(req):
         start_action_in_background(action_definitions.ActionRaiseLadder(data))
     elif name == "lower_ladder":
         start_action_in_background(action_definitions.ActionLowerLadder(data))
+    elif name == "dig":
+        start_action_in_background(action_definitions.ActionDig(data))
     else:
         rospy.logwarn("Received action name that was not recognized! name=%s" % name)
 
