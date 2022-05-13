@@ -95,8 +95,8 @@ class ActionDig(ActionBase):
 
     def execute(self):
         rospy.loginfo("action dig executing...")
-         msg = [100]*7 + [100] + [100] #set these values based on which index of msg corresponds to the bucket ladder chain
-       # msg = [100]*9 # TODO
+        # msg = [100]*7 + [100] + [100] #set these values based on which index of msg corresponds to the bucket ladder chain
+        msg = [100]*9 # TODO
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
 
