@@ -94,17 +94,32 @@ class ActionLowerLadder(ActionBase):
     def is_completed(self):
         return self.left_lowered and self.right_lowered
 
-
+# msg format:
+'''
+0: raise/lower ladder
+1:
+2:
+3:
+4:
+5:
+6:
+7: raise/lower collection bin
+8:
+'''
 class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
+        self.initial_time = time.time() #gets the time when the action was started
+        #the dig action description has three fields: name, update_delay, and duration
 
     def execute(self):
         rospy.loginfo("action dig executing...")
-        # msg = [100]*7 + [100 - self.description["speed"]] + [100]
+        # msg = [100]*7 + [100] + [100] #set these values based on which index of msg corresponds to the bucket ladder chain
         msg = [100]*9 # TODO
         self.pub.publish(MotorCommand(msg))
-        time.sleep(self.description["update_delay"])
+        time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
 
     def is_completed(self):
-        return True
+        #the way we check that the action is completed is if we've been digging for the specified duration
+        current_time = time.time()
+        return current_time - self.initial_time >= self.description["duration"]
