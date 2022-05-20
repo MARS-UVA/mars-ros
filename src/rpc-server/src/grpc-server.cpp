@@ -231,7 +231,15 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             return Status::CANCELLED;
         }
     }
-    
+
+    Status EmergencyStop(ServerContext* context, const Void* _param, Void* _) override {
+        SwitchControlState(DriveStateEnum::IDLE); // TODO make this use the hero board's non-recoverable STOP opcode
+        system("shutdown -P now");
+
+        return Status::OK; // this shouldn't be reached!
+    }
+
+
     // a template function for streaming data from jetson (server) to laptop (client)
     template <typename RPCMsg, typename ROSMsg, typename ROSMsgPtr, typename Process, int queue_size = 1>
     Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, 
