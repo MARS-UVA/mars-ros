@@ -4,7 +4,7 @@
     <arg name="hero" default="true" />
     <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
-    <arg name="feedback_cameras" default="true" />
+    <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
 

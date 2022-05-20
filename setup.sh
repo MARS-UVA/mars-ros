@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo "Enter this device's IP address (laptop): (without http:// or port)"
-echo "    (if running this in a VM, enter the guest computer's IP)"
-echo "    (find IP using 'hostname -I')"
+echo "Enter this device's IP address (Jetson): (without http:// or port)"
+echo "    (if running the rpc server in a VM, enter the guest OS's IP)"
+echo "    (find IP using in Linux 'hostname -I')"
 read IP
 
 source /opt/ros/melodic/setup.bash

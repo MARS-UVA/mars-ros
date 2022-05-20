@@ -279,7 +279,7 @@ void RunServer() {
     ServerBuilder builder;
 
     // no compression by default
-    // builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
+    builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
 
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
