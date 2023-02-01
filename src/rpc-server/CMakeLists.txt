@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge 
   image_transport
   hero_board
+  actions
 )
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
