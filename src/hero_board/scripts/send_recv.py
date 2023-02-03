@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import math
+import os
 import rospy
 import struct
 import time
 import traceback
 from hero_board.msg import HeroFeedback, MotorCommand
-from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
+from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse, \
+    EmergencyStop
 from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 
@@ -124,6 +126,12 @@ def set_state_service(req):
     else:
         rospy.logwarn('tried to change drive state to an unknown state')
 
+def emergency_stop_service(request):
+    if request.stop_signal == 1:
+        # switch control state to idle
+        set_state_service(SetStateRequest(state = SetStateRequest.IDLE))
+        # shutdown jetson
+        # os.system("shutdown -P now") # commented out for now
 
 if __name__ == "__main__":
     try:
@@ -132,6 +140,7 @@ if __name__ == "__main__":
 
         s_s_serv = rospy.Service("/set_state", SetState, set_state_service)
         g_s_serv = rospy.Service("/get_state", GetState, get_state_service)
+        e_stop_service = rospy.ServiceException('/emergency_stop', EmergencyStop, emergency_stop_service)
 
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages
@@ -156,9 +165,11 @@ if __name__ == "__main__":
                     continue
 
                 # TODO verify the order of the floats and bools
+                #tuple of floats
                 floats_combined = struct.unpack("%df"%(NUM_MOTOR_CURRENTS+NUM_ANGLES), packet_data[0:(NUM_MOTOR_CURRENTS*4 + NUM_ANGLES*4)]) # each float is 4 bytes
                 val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
                                                                                                 # float to int and make sure it fits in one byte by clamping to range [0, 255]
+        
                 averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
                 averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
                 val.bucketLadderAngleL = averaged_converted_angle_L
@@ -166,6 +177,10 @@ if __name__ == "__main__":
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                 val.depositBinLowered = (packet_data[-1] != 0) # last value
 
+                rospy.loginfo("currents sent from send_recv:")
+                rospy.loginfo(val.currents)
+                rospy.loginfo(type(val.currents[0]))
+                
                 pub.publish(val)
         
     except KeyboardInterrupt as k:

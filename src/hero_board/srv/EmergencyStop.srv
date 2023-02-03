@@ -1,0 +1,7 @@
+# request constants
+int8 EMERGENCY_STOP_SIGNAL=1
+
+# request fields
+int8 stop_signal
+
+---
