@@ -60,6 +60,7 @@ add_service_files(
   FILES
   SetState.srv
   GetState.srv
+  EmergencyStop.srv
 )
 
 ## Generate actions in the 'action' folder

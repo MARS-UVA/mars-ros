@@ -5,3 +5,6 @@ int8 EMERGENCY_STOP_SIGNAL=1
 int8 stop_signal
 
 ---
+
+# response fields
+string controlResponse
