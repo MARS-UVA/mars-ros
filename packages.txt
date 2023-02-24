@@ -6,5 +6,8 @@ navigation
 apriltag_ros
 image_common
 image_proc
+video_stream_opencv
 cv_camera
 ddynamic_reconfigure
+librealsense2
+realsense2_camera

@@ -5,7 +5,7 @@ echo "    (if running the rpc server in a VM, enter the guest OS's IP)"
 echo "    (find IP using in Linux 'hostname -I')"
 read IP
 
-source /opt/ros/melodic/setup.bash
+source /opt/ros/noetic/setup.bash
 
 if [ -f "devel/setup.bash" ]; then
     # echo "Sourcing devel/setup.bash"
