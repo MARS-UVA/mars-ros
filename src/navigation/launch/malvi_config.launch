@@ -53,7 +53,7 @@
             <arg name="visualize" value="false" />
         </include>
 
-        <include file="$(find video_stream_opencv)/launch/camera.launch" >
+        <!-- <include file="$(find video_stream_opencv)/launch/camera.launch" >
             <arg name="camera_name" value="webcam1" />
             <arg name="video_stream_provider" value="/dev/video1" />
             <arg name="set_camera_fps" value="5"/>
@@ -63,14 +63,14 @@
             <arg name="flip_horizontal" value="false" />
             <arg name="flip_vertical" value="false" />
             <arg name="visualize" value="false" />
-        </include>
+        </include> -->
 
         <!-- This doesn't seem to be needed because the theora topic comes up automatically -->
         <!-- <node name="image_transport" pkg="image_transport" type="republish" output="screen" 
             args="raw in:=/webcam0/image_raw theora out:=/transport/webcam0_theora" /> -->
 
         <!-- Sets the initial camera parameters to the ones in the config file -->
-        <include file="$(find camera_streamer)/launch/load_config.launch" />
+        <include file="$(find navigation)/launch/cameras/webcam_load_config.launch" />
 
     </group>
 
