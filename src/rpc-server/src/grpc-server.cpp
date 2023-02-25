@@ -3,7 +3,7 @@
 #include <queue>
 #include <string>
 #include <thread>
-// #include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <grpcpp/grpcpp.h>
 #include "jetsonrpc.grpc.pb.h"
@@ -18,7 +18,7 @@
 #include <actions/StartAction.h>
 #include <actions/StartActionResponse.h>
 
-// #include <image_transport/image_transport.h>
+#include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
 #include <sensor_msgs/Imu.h>
@@ -188,16 +188,48 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
     }
     */
 
-    /*
     Status StreamImage(ServerContext* context, const Rate* _rate, ServerWriter<Image>* writer) override { 
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
+            // Compression: https://stackoverflow.com/questions/33535151/compress-mat-into-jpeg-and-save-the-result-into-memory
+            // Mat to bytes: https://answers.opencv.org/question/4761/mat-to-byte-array/
+            //     https://answers.opencv.org/question/33596/convert-mat-to-byte-in-c/
+
+            // const char* data = {reinterpret_cast<const char*>(ros_msg_ptr->data.data()), ros_msg_ptr->data.size()};
             rpc_val.set_data({reinterpret_cast<const char*>(ros_msg_ptr->data.data()), ros_msg_ptr->data.size()});
         };
         return StreamToClient<Image, sensor_msgs::CompressedImage, sensor_msgs::CompressedImageConstPtr, decltype(process)>(
             context, _rate, writer, process, "/camera/color/image_raw/compressed", "Client closes image stream"
         );
+
+        /*
+        auto imageCallback = [writer](const sensor_msgs::ImageConstPtr& msg) {
+            try {
+                cv::Mat img = cv_bridge::toCvShare(msg, "bgr8")->image;
+
+                cv::Mat img_resized;
+                cv::resize(img, img_resized, cv::Size(150, 150));
+
+                cv::Mat img_compressed = img_resized;
+
+                // Image rpc_val;
+
+                // typedef char byte;
+                // int size = img_compressed.total() * img_compressed.elemSize();
+                // byte* bytes = new byte[size];  // you will have to delete[] that later
+                // std::memcpy(bytes, img_compressed.data, size * sizeof(byte));
+                // rpc_val.set_data(bytes);
+
+                // writer->Write(rpc_val);
+            } catch (cv_bridge::Exception& e) {
+                ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
+            }
+        };
+        image_transport::ImageTransport it(*nh);
+        image_transport::TransportHints hints;
+        image_transport::Subscriber sub = it.subscribe("camera/image", 1, imageCallback, hints);
+        return Status::OK;
+        */
     }
-    */
 
     Status StreamHeroFeedback(ServerContext* context, const Rate* _rate, ServerWriter<HeroFeedback>* writer) override {
         auto process = [](const auto& ros_msg_ptr, auto& rpc_val) {
@@ -242,15 +274,14 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
 
     // a template function for streaming data from jetson (server) to laptop (client)
     template <typename RPCMsg, typename ROSMsg, typename ROSMsgPtr, typename Process, int queue_size = 1>
-    Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, 
-    Process process, const char* topic, const char* shutdown_message) {
+    Status StreamToClient(ServerContext* context, const Rate* _rate, ServerWriter<RPCMsg>* writer, Process process, const char* topic, const char* shutdown_message) {
         RPCMsg rpc_val;
-
         ROSMsgPtr ros_msg_ptr;
-        auto sub = nh->subscribe<ROSMsg>(topic, queue_size, boost::bind(&update_ptr<ROSMsgPtr>, &ros_msg_ptr, _1));
+
+        nh->subscribe<ROSMsg>(topic, queue_size, boost::bind(&update_ptr<ROSMsgPtr>, &ros_msg_ptr, _1));
+
         float hz = 1000.0 / _rate->rate(); // convert period in ms to hz
         ros::Rate rate(hz);
-
         while (true) {
             ros::spinOnce();  // note: spinOnce is called within the same thread
                               // so reading ros_msg_ptr does not require a lock
@@ -279,7 +310,7 @@ void RunServer() {
     ServerBuilder builder;
 
     // no compression by default
-    builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
+    // builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
 
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
