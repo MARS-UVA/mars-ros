@@ -1,0 +1,50 @@
+<launch>
+    <include file="$(find video_stream_opencv)/launch/camera.launch" >
+        <!-- node name and ros graph name -->
+        <arg name="camera_name" value="webcam0" />
+        <!-- means video device 0, /dev/video0 -->
+        <arg name="video_stream_provider" value="/dev/video0" />
+        <!-- <arg name="video_stream_provider" value="/home/ethan/Downloads/video.mp4" /> -->
+
+        <!-- set camera fps to (if the device allows) -->
+        <arg name="set_camera_fps" value="5"/>
+        <!-- set buffer queue size of frame capturing to -->
+        <arg name="buffer_queue_size" value="1" />
+        <!-- throttling the querying of frames to -->
+        <arg name="fps" value="5" />
+        <!-- setting frame_id -->
+        <arg name="frame_id" value="webcam0" />
+        <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
+        "file:///$(find your_camera_package)/config/your_camera.yaml" -->
+        <arg name="camera_info_url" value="file:///$(find navigation)/config/cameras/webcam0_calibration.yaml" />
+        <!-- flip the image horizontally (mirror it) -->
+        <arg name="flip_horizontal" value="false" />
+        <!-- flip the image vertically -->
+        <arg name="flip_vertical" value="false" />
+        <!-- visualize on an image_view window the stream generated -->
+        <arg name="visualize" value="false" />
+    </include>
+
+    <!-- <include file="$(find video_stream_opencv)/launch/camera.launch" >
+        <arg name="camera_name" value="webcam1" />
+        <arg name="video_stream_provider" value="/dev/video1" />
+        <arg name="set_camera_fps" value="5"/>
+        <arg name="buffer_queue_size" value="1" />
+        <arg name="fps" value="5" />
+        <arg name="frame_id" value="webcam1" />
+        <arg name="flip_horizontal" value="false" />
+        <arg name="flip_vertical" value="false" />
+        <arg name="visualize" value="false" />
+    </include> -->
+
+    <!-- This doesn't seem to be needed because the theora topic comes up automatically -->
+    <!-- <node name="image_transport" pkg="image_transport" type="republish" output="screen" 
+        args="raw in:=/webcam0/image_raw theora out:=/transport/webcam0_theora" /> -->
+
+    <!-- Sets the initial camera image compression parameters to the ones in the config file -->
+    <include file="$(find navigation)/launch/cameras/webcams_load_config.launch" />
+
+    <!-- Uses the camera calibration file data to align/straighten/etc the raw webcam image -->
+    <node name="proc" ns="webcam0" pkg="image_proc" type="image_proc" output="screen" />
+
+</launch>

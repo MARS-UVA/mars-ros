@@ -6,6 +6,7 @@ navigation
 apriltag_ros
 image_common
 image_proc
+image_transport_plugins
 video_stream_opencv
 cv_camera
 ddynamic_reconfigure
