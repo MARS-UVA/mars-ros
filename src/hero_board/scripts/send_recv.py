@@ -8,11 +8,12 @@ from hero_board.msg import HeroFeedback, MotorCommand
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
 from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
+from geometry_msgs.msg import Twist
 
 
 NODE_NAME = "hero_send_recv"
 DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
-AUTONOMY_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
+AUTONOMY_CONTROL_TOPIC = "/cmd_vel" # subscribing
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 
 NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
@@ -68,15 +69,21 @@ def stop_motors_non_emergency():
 
 # Both of these subscriber functions take a MotorCommand ROS msg as a parameter, not anything related to RPC
 def process_manual_motor_values(command): 
+    # command type is hero_board::MotorCommand
     vals = command.values
     rospy.loginfo("writing direct_drive motor value: %s", list(vals))
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 def process_autonomy_motor_values(command):
-    vals = command.values
-    rospy.loginfo("writing 'autonomy' motor value: %s", list(vals))
+    # command type is geometry_msgs/Twist
+    # see https://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html
+
+    linear = command.linear
+    angular = command.angular
+    # TODO calculate motor values for left+right side motors based on linear+angular velocity
+    
+    rospy.loginfo("writing 'autonomy' motor value: \nlinear=%s\nangular=%s\n", linear, angular)
     # serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
-    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 
 def get_state_service(req):
@@ -107,7 +114,7 @@ def set_state_service(req):
             manual_sub.unregister()
             manual_sub = None
         stop_motors_non_emergency()
-        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, MotorCommand, process_autonomy_motor_values)
+        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
@@ -132,6 +139,12 @@ if __name__ == "__main__":
 
         s_s_serv = rospy.Service("/set_state", SetState, set_state_service)
         g_s_serv = rospy.Service("/get_state", GetState, get_state_service)
+
+        # Temporary code to start the robot in autonomy mode:
+        rospy.loginfo('changing to drive state AUTONOMY')
+        current_state = SetStateRequest.AUTONOMY
+        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
+
 
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages
