@@ -1,9 +1,14 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
+<<<<<<< HEAD
     <!-- NODES -->
     <arg name="hero" default="false" />
     <arg name="actions" default="true" />
+=======
+    <arg name="hero" default="true" />
+    <arg name="actions" default="false" />
+>>>>>>> code stub for incoming kinematic calculation
     <arg name="rpc" default="false" />
     <arg name="realsense_cameras" default="false" /> 
     <arg name="apriltags" default="true" />
