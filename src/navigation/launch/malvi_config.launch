@@ -8,7 +8,15 @@
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
     <arg name="webcam_enabled" default="true" />
+    <arg name="rosbridge" default="true" />
 
+
+    <!-- rosbridge -->
+    <group if="$(eval rosbridge)">
+        <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" >
+            <arg name="port" value="9090" />
+        </include>
+    </group>
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -29,7 +37,7 @@
 
     <!-- testing webcam -->
     <group if="$(eval webcam_enabled)">
-        <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+        <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" >
             <param name="video_device" value="/dev/video0" />
             <param name="image_width" value="640" />
             <param name="image_height" value="480" />
