@@ -1,9 +1,9 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="hero" default="false" /> <!-- I changed this to false -->
+    <arg name="hero" default="true" />
     <arg name="actions" default="true" />
-    <arg name="rpc" default="true" />
+    <arg name="rpc" default="false" />
     <arg name="feedback_cameras" default="false" /> 
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
