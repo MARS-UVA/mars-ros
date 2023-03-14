@@ -13,7 +13,7 @@ from geometry_msgs.msg import Twist
 
 NODE_NAME = "hero_send_recv"
 DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
-AUTONOMY_CONTROL_TOPIC = "/cmd_vel" # subscribing
+AUTONOMY_CONTROL_TOPIC = "cmd_vel" # subscribing
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 
 NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
@@ -74,16 +74,33 @@ def process_manual_motor_values(command):
     rospy.loginfo("writing direct_drive motor value: %s", list(vals))
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
+def rad_per_sec_to_motor_power(a):
+    return a * 0.008
+
 def process_autonomy_motor_values(command):
     # command type is geometry_msgs/Twist
     # see https://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html
 
-    linear = command.linear
-    angular = command.angular
-    # TODO calculate motor values for left+right side motors based on linear+angular velocity
-    
-    rospy.loginfo("writing 'autonomy' motor value: \nlinear=%s\nangular=%s\n", linear, angular)
-    # serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
+    linear = command.linear.x
+    angular = command.angular.z
+    b = 0.457 #width of vehicle base
+    r = 0.127 #radius of wheels
+
+    angular_left = (linear - angular * b / 2.0) / r
+    angular_right = (linear + angular * b / 2.0) / r
+
+    angular_left_scaled = 100 + int(rad_per_sec_to_motor_power(angular_left * 100))
+    angular_right_scaled = 100 + int(rad_per_sec_to_motor_power(angular_right * 100))
+
+    vals = [100]*9
+    vals[0] = angular_left_scaled
+    vals[1] = angular_left_scaled
+    vals[2] = angular_right_scaled
+    vals[3] = angular_right_scaled
+
+    rospy.loginfo("writing 'autonomy' motor value: l=%s, a=%s, vals=%s", linear, angular, vals)
+    # rospy.loginfo("writing 'autonomy': %s", vals)
+    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 
 def get_state_service(req):
@@ -114,7 +131,9 @@ def set_state_service(req):
             manual_sub.unregister()
             manual_sub = None
         stop_motors_non_emergency()
+        print("subbing...")
         auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
+        print("done")
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
@@ -141,9 +160,9 @@ if __name__ == "__main__":
         g_s_serv = rospy.Service("/get_state", GetState, get_state_service)
 
         # Temporary code to start the robot in autonomy mode:
-        rospy.loginfo('changing to drive state AUTONOMY')
-        current_state = SetStateRequest.AUTONOMY
-        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
+        # rospy.loginfo('changing to drive state AUTONOMY')
+        # current_state = SetStateRequest.AUTONOMY
+        # auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
 
 
         # no need to used a thread here. As per testing, main thread works fine
