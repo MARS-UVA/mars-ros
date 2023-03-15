@@ -71,11 +71,18 @@ def stop_motors_non_emergency():
 def process_manual_motor_values(command): 
     # command type is hero_board::MotorCommand
     vals = command.values
-    rospy.loginfo("writing direct_drive motor value: %s", list(vals))
+    rospy.loginfo("writing 'direct_drive' values: %s", list(vals))
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 def rad_per_sec_to_motor_power(a):
-    return a * 0.008
+    # The following equations account for a 100:1 gear ratio between the motors and the wheels
+    # and were made using the rubber wheels on the old robot
+
+    # This will have to be adjusted based on ground material, wheel size, robot dimensions, power source, etc. 
+
+    # return 63.386 * (a / 6.28) + 10.161 # best fitting experimental equation (counting wheel revolutions per time), but has non-zero intercept which doesn't make sense
+    # return 72.818 * (a / 6.28) # best fitting experimental equation with forced zero intercept
+    return 90 * (a / 6.28) # adjusted equation based on actually driving the robot around
 
 def process_autonomy_motor_values(command):
     # command type is geometry_msgs/Twist
@@ -89,17 +96,18 @@ def process_autonomy_motor_values(command):
     angular_left = (linear - angular * b / 2.0) / r
     angular_right = (linear + angular * b / 2.0) / r
 
-    angular_left_scaled = 100 + int(rad_per_sec_to_motor_power(angular_left * 100))
-    angular_right_scaled = 100 + int(rad_per_sec_to_motor_power(angular_right * 100))
+    angular_left_scaled = 100 + int(rad_per_sec_to_motor_power(angular_left)) # add 100 because neutral motor value is 100 and not 0
+    angular_right_scaled = 100 + int(rad_per_sec_to_motor_power(angular_right))
 
     vals = [100]*9
     vals[0] = angular_left_scaled
-    vals[1] = angular_left_scaled
-    vals[2] = angular_right_scaled
+    vals[1] = angular_right_scaled
+    vals[2] = angular_left_scaled
     vals[3] = angular_right_scaled
 
-    rospy.loginfo("writing 'autonomy' motor value: l=%s, a=%s, vals=%s", linear, angular, vals)
-    # rospy.loginfo("writing 'autonomy': %s", vals)
+    # rospy.loginfo("writing 'autonomy' motor value: linear=%s, angular=%s, angular_left=%s, angular_left_scaled=%s, vals=%s", \
+        # linear, angular, angular_left, angular_left_scaled, vals)
+    rospy.loginfo("writing 'autonomy' values: %s", vals)
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 
@@ -131,9 +139,7 @@ def set_state_service(req):
             manual_sub.unregister()
             manual_sub = None
         stop_motors_non_emergency()
-        print("subbing...")
         auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
-        print("done")
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
@@ -163,7 +169,6 @@ if __name__ == "__main__":
         # rospy.loginfo('changing to drive state AUTONOMY')
         # current_state = SetStateRequest.AUTONOMY
         # auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
-
 
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages
