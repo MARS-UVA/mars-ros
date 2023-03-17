@@ -8,11 +8,12 @@ from hero_board.msg import HeroFeedback, MotorCommand
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
 from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
+from geometry_msgs.msg import Twist
 
 
 NODE_NAME = "hero_send_recv"
 DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
-AUTONOMY_CONTROL_TOPIC = "/motor/cmd_vel" # subscribing
+AUTONOMY_CONTROL_TOPIC = "cmd_vel" # subscribing
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 
 NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
@@ -68,14 +69,45 @@ def stop_motors_non_emergency():
 
 # Both of these subscriber functions take a MotorCommand ROS msg as a parameter, not anything related to RPC
 def process_manual_motor_values(command): 
+    # command type is hero_board::MotorCommand
     vals = command.values
-    rospy.loginfo("writing direct_drive motor value: %s", list(vals))
+    rospy.loginfo("writing 'direct_drive' values: %s", list(vals))
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
+def rad_per_sec_to_motor_power(a):
+    # The following equations account for a 100:1 gear ratio between the motors and the wheels
+    # and were made using the rubber wheels on the old robot
+
+    # This will have to be adjusted based on ground material, wheel size, robot dimensions, power source, etc. 
+
+    # return 63.386 * (a / 6.28) + 10.161 # best fitting experimental equation (counting wheel revolutions per time), but has non-zero intercept which doesn't make sense
+    # return 72.818 * (a / 6.28) # best fitting experimental equation with forced zero intercept
+    return 90 * (a / 6.28) # adjusted equation based on actually driving the robot around
+
 def process_autonomy_motor_values(command):
-    vals = command.values
-    rospy.loginfo("writing 'autonomy' motor value: %s", list(vals))
-    # serial_manager.write(var_len_proto_send(Opcode.AUTONOMY, vals))
+    # command type is geometry_msgs/Twist
+    # see https://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html
+
+    linear = command.linear.x
+    angular = command.angular.z
+    b = 0.457 #width of vehicle base
+    r = 0.127 #radius of wheels
+
+    angular_left = (linear - angular * b / 2.0) / r
+    angular_right = (linear + angular * b / 2.0) / r
+
+    angular_left_scaled = 100 + int(rad_per_sec_to_motor_power(angular_left)) # add 100 because neutral motor value is 100 and not 0
+    angular_right_scaled = 100 + int(rad_per_sec_to_motor_power(angular_right))
+
+    vals = [100]*9
+    vals[0] = angular_left_scaled
+    vals[1] = angular_right_scaled
+    vals[2] = angular_left_scaled
+    vals[3] = angular_right_scaled
+
+    # rospy.loginfo("writing 'autonomy' motor value: linear=%s, angular=%s, angular_left=%s, angular_left_scaled=%s, vals=%s", \
+        # linear, angular, angular_left, angular_left_scaled, vals)
+    rospy.loginfo("writing 'autonomy' values: %s", vals)
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
 
@@ -107,7 +139,7 @@ def set_state_service(req):
             manual_sub.unregister()
             manual_sub = None
         stop_motors_non_emergency()
-        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, MotorCommand, process_autonomy_motor_values)
+        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
@@ -132,6 +164,11 @@ if __name__ == "__main__":
 
         s_s_serv = rospy.Service("/set_state", SetState, set_state_service)
         g_s_serv = rospy.Service("/get_state", GetState, get_state_service)
+
+        # Temporary code to start the robot in autonomy mode:
+        # rospy.loginfo('changing to drive state AUTONOMY')
+        # current_state = SetStateRequest.AUTONOMY
+        # auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
 
         # no need to used a thread here. As per testing, main thread works fine
         # ros publisher queue can be used to limit the number of messages

@@ -1,9 +1,9 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="hero" default="false" />
+    <arg name="hero" default="true" />
     <arg name="actions" default="false" />
-    <arg name="rpc" default="false" />
+    <arg name="rpc" default="true" />
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
@@ -71,9 +71,6 @@
 
         <!-- Sets the initial camera parameters to the ones in the config file -->
         <include file="$(find camera_streamer)/launch/load_config.launch" />
-        
-
-
     </group>
 
     <!-- static transforms -->
@@ -105,7 +102,7 @@
         <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen"> -->
             <!-- <param name="odom_param" value="param_value" /> -->
         <!-- </node> -->
-        <node name="odom_node" pkg="navigation" type="localization"/>
+        <node pkg="navigation" type="localization" name="odom_node" output="screen"/>
     </group>
 
 </launch>
