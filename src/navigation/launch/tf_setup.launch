@@ -1,0 +1,31 @@
+<!--
+  Modified from https://github.com/IntelRealSense/realsense-ros/blob/development/realsense2_camera/launch/rs_d400_and_t265.launch
+  Or ~/mars-ros/src/realsense-ros/realsense2_camera/launch/rs_d400_and_t265.launch
+
+  Details about parameters at https://github.com/IntelRealSense/realsense-ros/tree/ros1-legacy#launch-parameters
+ -->
+
+<launch>
+    <arg name="camera1"                   default="t265"/>
+    <arg name="camera2"                   default="d435"/>
+    <arg name="tf_prefix_camera1"         default="$(arg camera1)"/>
+    <arg name="tf_prefix_camera2"         default="$(arg camera2)"/>
+    <arg name="webcam_link"               default="webcam0"/>
+    <arg name="base_link"                 default="move_base"/>
+
+
+    <!-- Camera mount from https://dev.intelrealsense.com/docs/2d-occupancy-map#section-mechanical-mounting-for-t265-d435 -->
+    <!-- Transform values from https://github.com/IntelRealSense/realsense-ros/blob/occupancy-mapping/realsense2_camera/urdf/mount_t265_d435.urdf.xacro -->
+    <!-- static_transform_publisher x y z yaw pitch roll frame_id child_frame_id period_in_ms   -->
+
+    <!-- this relates the bottom realsense camera (tracking camera) to the top one (depth camera) -->
+    <node pkg="tf" type="static_transform_publisher" name="t265_to_d400" args="0.009 0.021 0.027 0.000 -0.018 0.005 /$(arg tf_prefix_camera1)_link /$(arg tf_prefix_camera2)_link 100"/>
+    
+    <!-- Transform of realsense camera to parent (point on base of robot)-->
+    <node pkg="tf" type="static_transform_publisher" name="realsense_to_base" args="0.011 -0.065 0.397 0.000 0.000 0.000 /$(arg base_link) /$(arg tf_prefix_camera1)_link 100"/>
+
+    <!-- Transform of webcam to parent (point on base of robot)-->
+    <node pkg="tf" type="static_transform_publisher" name="webcam_to_base" args="0.029 -0.252 0.441 0.000 0.000 3.141 /$(arg base_link) /$(arg webcam_link) 100"/>
+
+
+  </launch>

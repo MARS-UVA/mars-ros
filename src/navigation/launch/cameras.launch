@@ -77,7 +77,7 @@
     <!-- Camera mount from https://dev.intelrealsense.com/docs/2d-occupancy-map#section-mechanical-mounting-for-t265-d435 -->
     <!-- Transform values from https://github.com/IntelRealSense/realsense-ros/blob/occupancy-mapping/realsense2_camera/urdf/mount_t265_d435.urdf.xacro -->
     <!-- static_transform_publisher x y z yaw pitch roll frame_id child_frame_id period_in_ms   -->
-    <node pkg="tf" type="static_transform_publisher" name="t265_to_d400" args="0.009 0.021 0.027 0.000 -0.018 0.005 /$(arg tf_prefix_camera1)_link /$(arg tf_prefix_camera2)_link 100"/>
+    <!-- <node pkg="tf" type="static_transform_publisher" name="t265_to_d400" args="0.009 0.021 0.027 0.000 -0.018 0.005 /$(arg tf_prefix_camera1)_link /$(arg tf_prefix_camera2)_link 100"/> -->
     <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_t265" args="0 0 0 0 0 0 /map /t265_odom_frame 100"/> -->
 
   </launch>

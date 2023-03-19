@@ -1,12 +1,13 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="hero" default="true" />
+    <arg name="hero" default="false" />
     <arg name="actions" default="false" />
-    <arg name="rpc" default="true" />
+    <arg name="rpc" default="false" />
     <arg name="feedback_cameras" default="false" />
-    <arg name="autonomy_cameras" default="false" />
+    <arg name="autonomy_cameras" default="true" />
     <arg name="autonomy" default="false" />
+    <arg name="autonomy2" default="true" />
 
 
     <!-- hero communication node -->
@@ -105,4 +106,12 @@
         <node pkg="navigation" type="localization" name="odom_node" output="screen"/>
     </group>
 
+<<<<<<< HEAD
+=======
+    <group if="$(eval autonomy2)">
+        <!-- move base -->
+        <include file="$(find navigation)/launch/move_base.launch"></include>
+
+    </group>
+>>>>>>> first set up of tf transforms.
 </launch>

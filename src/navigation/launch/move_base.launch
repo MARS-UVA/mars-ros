@@ -1,6 +1,6 @@
 <launch>
     <!-- Run the map server -->
-    <include file="$(find navigation)/launch/camera.launch" />
+    <!-- <include file="$(find navigation)/launch/camera.launch" /> -->
     <!-- <node name="map_server" pkg="map_server" type="map_server" args="$(find my_map_package)/my_map.pgm my_map_resolution"/> -->
 
     <!--- Run AMCL -->
