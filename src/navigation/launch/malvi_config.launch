@@ -106,12 +106,9 @@
         <node pkg="navigation" type="localization" name="odom_node" output="screen"/>
     </group>
 
-<<<<<<< HEAD
-=======
     <group if="$(eval autonomy2)">
         <!-- move base -->
         <include file="$(find navigation)/launch/move_base.launch"></include>
 
     </group>
->>>>>>> first set up of tf transforms.
 </launch>
