@@ -16,7 +16,7 @@ DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
 AUTONOMY_CONTROL_TOPIC = "cmd_vel" # subscribing
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 
-NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
+NUM_MOTOR_CURRENTS = 12 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
 NUM_ANGLES = 2 # 2 angles for bucket ladder angle, one from each actuator
 NUM_BOOLS = 2 # 2 bools total for bucket pressing upper and lower limit switch
 EXPECTED_PACKET_LENGTH = 4*NUM_MOTOR_CURRENTS + 4*NUM_ANGLES + 1*NUM_BOOLS # currents and angles are 4 bytes each, bools are 1 byte each
@@ -65,7 +65,7 @@ def convert_ladder_pot_to_angle(old_average, pot):
     return new_average
 
 def stop_motors_non_emergency():
-    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
+    serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value -- but why are there only 8 of these, not 9?
 
 # Both of these subscriber functions take a MotorCommand ROS msg as a parameter, not anything related to RPC
 def process_manual_motor_values(command): 

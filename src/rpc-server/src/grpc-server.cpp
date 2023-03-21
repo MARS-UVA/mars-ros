@@ -204,7 +204,7 @@ class JetsonServiceImpl final : public JetsonRPC::Service {
             // reinterpret 8 motor current bytes as uint64
             // rpc_val.set_values(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->motorval.data()));
 
-            rpc_val.set_currents(ros_msg_ptr->currents.data(), 11);
+            rpc_val.set_currents(ros_msg_ptr->currents.data(), 12);
             // rpc_val.set_currents(*reinterpret_cast<const uint64_t*>(ros_msg_ptr->currents.data()));
             rpc_val.set_bucketladderanglel(ros_msg_ptr->bucketLadderAngleL);
             rpc_val.set_bucketladderangler(ros_msg_ptr->bucketLadderAngleR);
