@@ -4,11 +4,12 @@
     <arg name="hero" default="false" />
     <arg name="actions" default="false" />
     <arg name="rpc" default="false" />
-    <arg name="feedback_cameras" default="true" />
-    <arg name="autonomy_cameras" default="true" />
+    <arg name="feedback_cameras" default="false" />
+    <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
-    <arg name="autonomy2" default="true" />
 
+
+    <include file="$(find navigation)/launch/tf_setup.launch"></include>
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -81,20 +82,19 @@
         <!-- <include file="$(find navigation)/launch/t265_camera.launch"></include> -->
 
         <include file="$(find navigation)/launch/cameras.launch"></include>
-        <include file="$(find processing)/launch/pointcloud.launch" ></include>
-        <include file="$(find navigation)/launch/tf_setup.launch"></include>
+        <!-- <include file="$(find processing)/launch/pointcloud.launch" ></include> -->
     </group>
 
     <group if="$(eval autonomy)">
         <!-- depth to point cloud -->
-        <include file="$(find processing)/launch/pointcloud.launch">
+        <!-- <include file="$(find processing)/launch/pointcloud.launch">
             <arg name="rgb_pc" value="false" />
-        </include>
+        </include> -->
 
         <!-- apriltag detection -->
         <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
             <arg name="camera_name" value="/d435/color" />
-            <arg name="camera_frame" value="d435_link" />
+            <!-- <arg name="camera_frame" value="d435_link" /> -->
             <arg name="image_topic" value="image_raw" />
         </include>
 
@@ -102,12 +102,6 @@
             <!-- <param name="odom_param" value="param_value" /> -->
         <!-- </node> -->
         <node pkg="navigation" type="localization" name="odom_node" output="screen"/>
-    </group>
-
-    <group if="$(eval autonomy2)">
-        <!-- move base -->
-        <include file="$(find navigation)/launch/move_base.launch"></include>
-
     </group>
 
 </launch>

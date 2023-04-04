@@ -23,7 +23,7 @@
     <arg name="depth_width"               default="848"/> <!-- was 640 -->
     <arg name="depth_height"              default="480"/>
     <arg name="clip_distance"             default="-1"/>
-    <arg name="topic_odom_in"             default="odom_in"/> <!-- TODO -->
+    <arg name="topic_odom_in"             default="odom_in"/> <!-- TODO - do we have this? -->
     <arg name="calib_odom_file"           default=""/>
 
     <arg name="enable_sync"               default="true" />
@@ -47,6 +47,8 @@
         <arg name="enable_pose"           value="true"/> <!-- TODO determine which of these are needed -->
         <arg name="enable_gyro"           value="true"/>
         <arg name="enable_accel"          value="true"/>
+        <!-- <arg name="base_frame_id"         value="testbase" /> -->
+        <!-- <arg name="odom_frame_id"         value="testodom" /> -->
       </include>
     </group>
 
