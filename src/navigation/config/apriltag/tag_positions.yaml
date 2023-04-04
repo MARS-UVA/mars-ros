@@ -1,0 +1,12 @@
+# TODO
+# Units are meters and radians
+# ALL POSITION VALUES MUST HAVE DECIMAL POINTS, IE 42.0 NOT JUST 42
+
+tag_positions:
+  standalone_tags:
+    [
+      {id: 0, xpos: 0.1, ypos: 0.0, zpos: 1.0, yaw: 1.571},
+    ]
+  tag_bundles:
+    [
+    ]
