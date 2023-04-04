@@ -1,11 +1,14 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="hero" default="true" />
+    <arg name="hero" default="false" />
     <arg name="actions" default="false" />
+    <arg name="rpc" default="false" />
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
-    <arg name="autonomy" default="false" />
+    <arg name="autonomy" default="true" />
+    <arg name="webcam_enabled" default="true" />
+    <arg name="naive_autonomy" default="true" />
 
 
     <!-- hero communication node -->
@@ -21,6 +24,7 @@
     </group>
 
     <group if="$(eval feedback_cameras)">
+        <!-- To calibrate: rosrun camera_calibration cameracalibrator.py - -pattern=chessboard - -size=6x8 - -square=0.024 image:=/webcam0/image_raw -->
         <include file="$(find video_stream_opencv)/launch/camera.launch" >
             <!-- node name and ros graph name -->
             <arg name="camera_name" value="webcam0" />
@@ -38,7 +42,7 @@
             <arg name="frame_id" value="webcam0" />
             <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
             "file:///$(find your_camera_package)/config/your_camera.yaml" -->
-            <!-- <arg name="camera_info_url" value="" /> -->
+            <arg name="camera_info_url" value="file:///$(find navigation)/config/cameras/depstech_webcam_calibration.yaml" />
             <!-- flip the image horizontally (mirror it) -->
             <arg name="flip_horizontal" value="false" />
             <!-- flip the image vertically -->
@@ -47,7 +51,7 @@
             <arg name="visualize" value="false" />
         </include>
 
-        <include file="$(find video_stream_opencv)/launch/camera.launch" >
+        <!-- <include file="$(find video_stream_opencv)/launch/camera.launch" >
             <arg name="camera_name" value="webcam1" />
             <arg name="video_stream_provider" value="/dev/video1" />
             <arg name="set_camera_fps" value="5"/>
@@ -57,46 +61,75 @@
             <arg name="flip_horizontal" value="false" />
             <arg name="flip_vertical" value="false" />
             <arg name="visualize" value="false" />
-        </include>
+        </include> -->
 
         <!-- This doesn't seem to be needed because the theora topic comes up automatically -->
         <!-- <node name="image_transport" pkg="image_transport" type="republish" output="screen" 
             args="raw in:=/webcam0/image_raw theora out:=/transport/webcam0_theora" /> -->
 
         <!-- Sets the initial camera parameters to the ones in the config file -->
-        <include file="$(find camera_streamer)/launch/load_config.launch" />
+        <!-- <include file="$(find camera_streamer)/launch/load_config.launch" /> -->
     </group>
 
-    <!-- static transforms -->
-    <!-- <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node> -->
-
     <group if="$(eval autonomy_cameras)">
-        <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
-        <!-- use a bash script to delay t265 launch -->
-        <!-- <node pkg="navigation" name="t265_script" type="t265_camera.sh" output="screen"></node> -->
-        <!-- <include file="$(find navigation)/launch/t265_camera.launch"></include> -->
-
         <include file="$(find navigation)/launch/cameras.launch"></include>
-        <include file="$(find processing)/launch/pointcloud.launch" ></include>
+    </group>
+
+    <!-- testing webcam -->
+    <group if="$(eval webcam_enabled)">
+        <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" >
+            <param name="video_device" value="/dev/video0" />
+            <param name="image_width" value="640" />
+            <param name="image_height" value="480" />
+            <param name="pixel_format" value="mjpeg" />
+            <param name="color_format" value="yuv422p" />
+            <param name="camera_frame_id" value="usb_cam" />
+            <param name="io_method" value="mmap"/>
+            <param name="camera_info_url" value="file:///$(find navigation)/config/cameras/xps_webcam_calibration.yaml" />
+        </node>
     </group>
 
     <group if="$(eval autonomy)">
-        <!-- depth to point cloud -->
-        <include file="$(find processing)/launch/pointcloud.launch">
-            <arg name="rgb_pc" value="false" />
-        </include>
 
         <!-- apriltag detection -->
-        <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
-            <arg name="camera_name" value="/d435/color" />
-            <arg name="camera_frame" value="d435_link" />
-            <arg name="image_topic" value="image_raw" />
-        </include>
+        <arg name="apriltag_camera_name" default="/usb_cam" />
+        <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
+        <arg name="apriltag_queue_size" default="1" />
+        <!-- apriltag_ros continuous detection node -->
+        <!-- <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen" launch-prefix="$(arg launch_prefix)"> -->
+        <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen">
 
-        <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen"> -->
-            <!-- <param name="odom_param" value="param_value" /> -->
-        <!-- </node> -->
-        <node pkg="navigation" type="localization" name="odom_node" output="screen"/>
+            <!-- Remap topics from those used in code to those on the ROS network -->
+            <remap from="image_rect" to="$(arg apriltag_camera_name)/$(arg apriltag_image_topic)" />
+            <remap from="camera_info" to="$(arg apriltag_camera_name)/camera_info" />
+
+            <param name="publish_tag_detections_image" type="bool" value="true" /> <!-- default: false --> <!-- TODO disable this once the system works to save processing -->
+            <param name="queue_size" type="int" value="$(arg apriltag_queue_size)" />
+
+            <!-- load parameters (incl. tag family, tags, etc.) -->
+            <rosparam command="load" file="$(find navigation)/config/apriltag/settings.yaml"/>
+            <rosparam command="load" file="$(find navigation)/config/apriltag/tags.yaml"/>
+        </node>
+        
+        <!-- odometry based on apriltag -->
+        <rosparam file="$(find navigation)/config/apriltag/tag_positions.yaml" command="load" />
+        <node pkg="navigation" type="environment_visualizer" name="environment_visualizer" output="screen" />
+        <!-- <node pkg="navigation" type="apriltag_odom" name="localization_node" output="screen" /> -->
+
+        <!-- fake odometry and tf based on /cmd_vel alone -->
+        <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen">
+            <param name="odom_param" value="param_value" />
+        </node> -->
+
+        <!-- <include file="$(find navigation)/launch/slam.launch"></include> -->
+    </group>
+
+    <group if="$(eval naive_autonomy)">
+        <node pkg="navigation" type="naive-nav.py" name="naive_navigator"/>
+        <!-- the following two static transforms come from https://github.com/mit212/me212lab3/blob/master/catkin_ws/src/me212bot/launch/frames.launch -->
+        <!-- these are placeholder values -->
+        <node pkg="tf2_ros" name="apriltag_to_map" type="static_transform_publisher" args="0 0 0.44 0.5 0.5 0.5 0.5 /tag_1 /map" />
+        <node pkg="tf2_ros" name="camera_to_base" type="static_transform_publisher" args="-0.24 0 0.35 -0.5 0.5 -0.5 0.5 /robot_base /usb_cam" /> 
     </group>
 
 </launch>

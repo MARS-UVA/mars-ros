@@ -1,0 +1,14 @@
+# Parameters described here https://wiki.ros.org/apriltag_ros#apriltag_ros-1
+#                   and here https://wiki.ros.org/apriltag_ros/Tutorials/Detection%20in%20a%20video%20stream#config.2Fsettings.yaml
+
+tag_family:        'tag36h11'
+tag_border:        1 
+tag_threads:       2 
+tag_decimate:      1.0 
+tag_blur:          0.0 
+tag_refine_edges:  1 
+tag_refine_decode: 0 
+tag_refine_pose:   0 
+tag_debug:         0 
+publish_tf:        true
+remove_duplicates: true
