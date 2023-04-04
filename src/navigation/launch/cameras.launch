@@ -71,6 +71,7 @@
         <arg name="color_fps"             value="6" />
         <arg name="enable_infra1"         value="false" />
         <arg name="enable_infra2"         value="false" />
+        <arg name="pointcloud_texture_stream" value="RS2_STREAM_ANY"/>
       </include>
     </group>
 
@@ -80,4 +81,5 @@
     <node pkg="tf" type="static_transform_publisher" name="t265_to_d400" args="0.009 0.021 0.027 0.000 -0.018 0.005 /$(arg tf_prefix_camera1)_link /$(arg tf_prefix_camera2)_link 100"/>
     <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_t265" args="0 0 0 0 0 0 /map /t265_odom_frame 100"/> -->
 
+    <!-- roslaunch realsense2_camera rs_camera.launch filters:=pointcloud pointcloud_texture_stream:=RS2_STREAM_ANY -->
   </launch>
