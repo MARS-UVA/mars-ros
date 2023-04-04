@@ -1,3 +1,10 @@
+/*
+This node subscribes to /cmd_vel and effectively integrates those velocity commands to calculate a position value based off all past velocity commands. 
+The result of this is the theoretical position of the robot, but due to drift/slip/errors/etc this will definitely be inaccurate. The position estimate
+from this node is sent to the robot_localization node that combines it with other sources of position data to hopefully calculate a position estimate
+that is more accurate than the individual sources alone. 
+*/
+
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -6,7 +13,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "odometry_publisher");
+  ros::init(argc, argv, "fake_odom_node");
 
   ros::NodeHandle n;
   ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
