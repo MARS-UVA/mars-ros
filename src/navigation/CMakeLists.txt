@@ -136,9 +136,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(static_tf "src/static_tf.cpp")
+add_executable(apriltag_odom "src/apriltag_odom.cpp")
 add_executable(fake_odom "src/fake_odom.cpp")
-add_executable(localization "src/localization.cpp")
+add_executable(environment_visualizer "src/environment_visualizer.cpp")
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,9 +151,9 @@ add_executable(localization "src/localization.cpp")
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(static_tf ${catkin_LIBRARIES})
+target_link_libraries(apriltag_odom ${catkin_LIBRARIES})
 target_link_libraries(fake_odom ${catkin_LIBRARIES})
-target_link_libraries(localization ${catkin_LIBRARIES})
+target_link_libraries(environment_visualizer ${catkin_LIBRARIES})
 
 #############
 ## Install ##

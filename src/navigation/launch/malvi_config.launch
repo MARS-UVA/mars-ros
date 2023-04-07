@@ -4,9 +4,9 @@
     <arg name="hero" default="false" />
     <arg name="actions" default="false" />
     <arg name="rpc" default="false" />
-    <arg name="feedback_cameras" default="false" />
+    <arg name="feedback_cameras" default="true" />
     <arg name="autonomy_cameras" default="false" />
-    <arg name="autonomy" default="false" />
+    <arg name="autonomy" default="true" />
 
 
     <!-- hero communication node -->
@@ -74,47 +74,46 @@
         <!-- <include file="$(find camera_streamer)/launch/load_config.launch" /> -->
     </group>
 
-    <!-- static transforms -->
-    <!-- <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node> -->
-
     <group if="$(eval autonomy_cameras)">
-        <!-- <include file="$(find navigation)/launch/d435_camera.launch"></include> -->
-        <!-- use a bash script to delay t265 launch -->
-        <!-- <node pkg="navigation" name="t265_script" type="t265_camera.sh" output="screen"></node> -->
-        <!-- <include file="$(find navigation)/launch/t265_camera.launch"></include> -->
-
         <include file="$(find navigation)/launch/cameras.launch"></include>
-        <!-- <include file="$(find processing)/launch/pointcloud.launch" ></include> -->
-    </group>
 
-    <group if="$(eval autonomy)">
         <!-- depth to point cloud -->
         <!-- <include file="$(find processing)/launch/pointcloud.launch">
             <arg name="rgb_pc" value="false" />
         </include> -->
+    </group>
+
+    <group if="$(eval autonomy)">
 
         <!-- apriltag detection -->
-        <arg name="camera_name" default="/webcam0" />
-        <arg name="image_topic" default="image_raw" /> <!-- TODO use recitified image -->
-        <arg name="queue_size" default="1" />
+        <arg name="apriltag_camera_name" default="/webcam0" />
+        <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
+        <arg name="apriltag_queue_size" default="1" />
         <!-- apriltag_ros continuous detection node -->
-        <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen" launch-prefix="$(arg launch_prefix)">
-            <!-- Remap topics from those used in code to those on the ROS network -->
-            <remap from="image_rect" to="$(arg camera_name)/$(arg image_topic)" />
-            <remap from="camera_info" to="$(arg camera_name)/camera_info" />
+        <!-- <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen" launch-prefix="$(arg launch_prefix)"> -->
+        <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen">
 
-            <param name="publish_tag_detections_image" type="bool" value="true" /><!-- default: false --> <!-- TODO disable this once system works to save processing -->
-            <param name="queue_size" type="int" value="$(arg queue_size)" />
+            <!-- Remap topics from those used in code to those on the ROS network -->
+            <remap from="image_rect" to="$(arg apriltag_camera_name)/$(arg apriltag_image_topic)" />
+            <remap from="camera_info" to="$(arg apriltag_camera_name)/camera_info" />
+
+            <param name="publish_tag_detections_image" type="bool" value="true" /> <!-- default: false --> <!-- TODO disable this once the system works to save processing -->
+            <param name="queue_size" type="int" value="$(arg apriltag_queue_size)" />
 
             <!-- load parameters (incl. tag family, tags, etc.) -->
             <rosparam command="load" file="$(find navigation)/config/apriltag/settings.yaml"/>
             <rosparam command="load" file="$(find navigation)/config/apriltag/tags.yaml"/>
         </node>
+        
+        <!-- odometry based on apriltag -->
+        <rosparam file="$(find navigation)/config/apriltag/tag_positions.yaml" command="load" />
+        <node pkg="navigation" type="environment_visualizer" name="environment_visualizer" output="screen" />
+        <!-- <node pkg="navigation" type="apriltag_odom" name="localization_node" output="screen" /> -->
 
-        <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen"> -->
-            <!-- <param name="odom_param" value="param_value" /> -->
-        <!-- </node> -->
-        <!-- <node pkg="navigation" type="localization" name="odom_node" output="screen"/> -->
+        <!-- fake odometry and tf based on /cmd_vel alone -->
+        <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen">
+            <param name="odom_param" value="param_value" />
+        </node> -->
 
         <!-- <include file="$(find navigation)/launch/slam.launch"></include> -->
         
