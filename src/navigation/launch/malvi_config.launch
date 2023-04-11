@@ -4,10 +4,12 @@
     <arg name="hero" default="false" />
     <arg name="actions" default="false" />
     <arg name="rpc" default="false" />
-    <arg name="feedback_cameras" default="true" />
+    <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="true" />
 
+
+    <include file="$(find navigation)/launch/tf_setup.launch"></include>
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -77,7 +79,7 @@
     <group if="$(eval autonomy_cameras)">
         <include file="$(find navigation)/launch/cameras.launch"></include>
 
-        <!-- depth to point cloud -->
+        <!-- depth to point cloud: should never be necessary -->
         <!-- <include file="$(find processing)/launch/pointcloud.launch">
             <arg name="rgb_pc" value="false" />
         </include> -->
