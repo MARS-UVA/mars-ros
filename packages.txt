@@ -11,3 +11,4 @@ cv_camera
 ddynamic_reconfigure
 librealsense2
 realsense2_camera
+rtabmap_ros
