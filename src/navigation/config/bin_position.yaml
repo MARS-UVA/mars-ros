@@ -1,0 +1,7 @@
+# TODO
+# Units are meters and radians
+# ALL POSITION VALUES MUST HAVE DECIMAL POINTS, IE 42.0 NOT JUST 42
+bin_position:
+  xpos: 0.5
+  ypos: 0.6
+  zpos: 2.3
