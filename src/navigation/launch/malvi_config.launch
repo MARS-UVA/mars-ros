@@ -4,9 +4,10 @@
     <arg name="hero" default="false" />
     <arg name="actions" default="false" />
     <arg name="rpc" default="false" />
-    <arg name="feedback_cameras" default="true" />
+    <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="true" />
+    <arg name="webcam_enabled" default="true" />
 
 
     <!-- hero communication node -->
@@ -76,17 +77,25 @@
 
     <group if="$(eval autonomy_cameras)">
         <include file="$(find navigation)/launch/cameras.launch"></include>
+    </group>
 
-        <!-- depth to point cloud -->
-        <!-- <include file="$(find processing)/launch/pointcloud.launch">
-            <arg name="rgb_pc" value="false" />
-        </include> -->
+    <!-- testing webcam -->
+    <group if="$(eval webcam_enabled)">
+        <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" >
+            <param name="video_device" value="/dev/video0" />
+            <param name="image_width" value="640" />
+            <param name="image_height" value="480" />
+            <param name="pixel_format" value="mjpeg" />
+            <param name="color_format" value="yuv422p" />
+            <param name="camera_frame_id" value="usb_cam" />
+            <param name="io_method" value="mmap"/>
+        </node>
     </group>
 
     <group if="$(eval autonomy)">
 
         <!-- apriltag detection -->
-        <arg name="apriltag_camera_name" default="/webcam0" />
+        <arg name="apriltag_camera_name" default="/usb_cam" />
         <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
         <arg name="apriltag_queue_size" default="1" />
         <!-- apriltag_ros continuous detection node -->
