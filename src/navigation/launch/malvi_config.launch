@@ -125,7 +125,5 @@
         </node> -->
 
         <!-- <include file="$(find navigation)/launch/slam.launch"></include> -->
-        
     </group>
-
 </launch>
