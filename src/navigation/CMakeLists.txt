@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   nav_msgs
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -136,7 +137,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(apriltag_odom "src/apriltag_odom.cpp")
+## add_executable(apriltag_odom "src/apriltag_odom.cpp") ## TODO - what was this for??
 add_executable(fake_odom "src/fake_odom.cpp")
 add_executable(environment_visualizer "src/environment_visualizer.cpp")
 
@@ -151,7 +152,7 @@ add_executable(environment_visualizer "src/environment_visualizer.cpp")
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(apriltag_odom ${catkin_LIBRARIES})
+## target_link_libraries(apriltag_odom ${catkin_LIBRARIES})
 target_link_libraries(fake_odom ${catkin_LIBRARIES})
 target_link_libraries(environment_visualizer ${catkin_LIBRARIES})
 
@@ -164,10 +165,10 @@ target_link_libraries(environment_visualizer ${catkin_LIBRARIES})
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(PROGRAMS
+   scripts/naive-nav
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
