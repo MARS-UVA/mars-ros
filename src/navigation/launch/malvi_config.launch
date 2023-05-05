@@ -132,8 +132,9 @@
     <group if="$(eval naive_autonomy)">
         <node pkg="navigation" type="naive-nav.py" name="naive_navigator"/>
         <!-- the following two static transforms come from https://github.com/mit212/me212lab3/blob/master/catkin_ws/src/me212bot/launch/frames.launch -->
-        <node pkg="tf2_ros" name="apriltag_to_map" type="static_transform_publisher" args="0 0 0.44 0.5 0.5 0.5 0.5 map tag_1" />
-        <node pkg="tf2_ros" name="camera_to_base" type="static_transform_publisher" args="-0.24 0 0.35 -0.5 0.5 -0.5 0.5 robot_base usb_cam" /> 
+        <!-- these are placeholder values -->
+        <node pkg="tf2_ros" name="apriltag_to_map" type="static_transform_publisher" args="0 0 0.44 0.5 0.5 0.5 0.5 /tag_1 /map" />
+        <node pkg="tf2_ros" name="camera_to_base" type="static_transform_publisher" args="-0.24 0 0.35 -0.5 0.5 -0.5 0.5 /robot_base /usb_cam" /> 
     </group>
 
 </launch>
