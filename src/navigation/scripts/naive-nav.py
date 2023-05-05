@@ -6,13 +6,12 @@ import rospy
 import tf
 import numpy as np
 import threading
-import serial
 import tf.transformations as tfm
 from geometry_msgs.msg import Point, Pose, PoseStamped
+from std_msgs.msg import String
 
-from hero_board.msg import MotorCommand # to be used later
+from hero_board.msg import MotorCommand
 from apriltag_ros.msg import AprilTagDetectionArray
-# from helper import transformPose, pubFrame, cross2d, lookupTransform, pose2poselist, invPoselist, diffrad
 
 nTfRetry = 1
 retryTime = 0.05
@@ -23,11 +22,9 @@ br = tf.TransformBroadcaster()
     
 def main():
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
-    
     rospy.sleep(1)
     
-    #TO DO: CHANGE THIS FOR TASK 3. 
-    constant_vel = True # for now, do nothing, just subscribe to the tag detections
+    constant_vel = False # start in the navigation loop
     if constant_vel:
         thread = threading.Thread(target = constant_vel_loop)
     else:
@@ -36,7 +33,7 @@ def main():
     
     rospy.spin()
 
-## sending constant velocity (Need to modify for Task 1)
+## does nothing
 def constant_vel_loop():
     # Create a publisher using the syntax described in the handout
     ## velcmd_pub = ??
@@ -48,10 +45,12 @@ def constant_vel_loop():
         ## wcv.desiredWV_L = ??
         
         ## velcmd_pub.publish(??) 
+        ## for our robot, I will publish MotorCommand messages
+        ## for use in a simulation, I will publish Twist messages (at least, I think so -- would need to look into what turtlebot sim needs)
         
         rate.sleep() 
 
-## apriltag msg handling function (Need to modify for Task 2)
+## apriltag msg handling function
 def apriltag_callback(data):
     # use apriltag pose detection to find where is the robot
     for detection in data.detections:
@@ -79,13 +78,15 @@ def apriltag_callback(data):
             poselist_base_map = transformPose(poselist_base_tag, '/robot_base', '/map') #(3) on the lab handout
             pubFrame(br, pose = poselist_base_map, frame_id = '/robot_base', parent_frame_id = '/map')
 
-## navigation control loop (No need to modify)
+## navigation control loop
 def navi_loop():
-    velcmd_pub = rospy.Publisher("/apriltag_motor_cmds", MotorCommand, queue_size = 1)
-    target_pose2d = [0.25, 0, np.pi]
-    rate = rospy.Rate(100) # 100hz
+    # velcmd_pub = rospy.Publisher("/apriltag_motor_cmds", MotorCommand, queue_size = 1)
+    debug_publisher = rospy.Publisher("/debug_messages", String, queue_size=1)
+    target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
+    rate = rospy.Rate(10) # 100hz
     
-    wcv = MotorCommand()
+    # wcv = MotorCommand()
+    debug_msg = String()
     
     arrived = False
     arrived_position = False
@@ -96,9 +97,11 @@ def navi_loop():
         
         if robot_pose3d is None:
             print('1. Tag not in view, Stop')
-            wcv.desiredWV_R = 0  # right, left
-            wcv.desiredWV_L = 0
-            velcmd_pub.publish(wcv)  
+            debug_msg.data = "1. Tag not in view, Stop"
+            debug_publisher.publish(debug_msg)
+            # wcv.desiredWV_R = 0  # right, left
+            # wcv.desiredWV_L = 0
+            # velcmd_pub.publish(wcv)  
             rate.sleep()
             continue
         
@@ -126,35 +129,47 @@ def navi_loop():
         
         if arrived or (np.linalg.norm( pos_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
             print('Case 2.1  Stop')
-            wcv.desiredWV_R = 0  
-            wcv.desiredWV_L = 0
+            debug_msg.data = "Case 2.1  Stop"
+            debug_publisher.publish(debug_msg)
+            # wcv.desiredWV_R = 0  
+            # wcv.desiredWV_L = 0
             arrived = True
         elif np.linalg.norm( pos_delta ) < 0.08:
             arrived_position = True
             if diffrad(robot_yaw, target_pose2d[2]) > 0:
-                print('Case 2.2.1  Turn right slowly')     
-                wcv.desiredWV_R = -0.05 
-                wcv.desiredWV_L = 0.05
+                print('Case 2.2.1  Turn right slowly')   
+                debug_msg.data = "Case 2.2.1  Turn right slowly"
+                debug_publisher.publish(debug_msg) 
+                # wcv.desiredWV_R = -0.05 
+                # wcv.desiredWV_L = 0.05
             else:
-                print('Case 2.2.2  Turn left slowly')
-                wcv.desiredWV_R = 0.05  
-                wcv.desiredWV_L = -0.05
+                print('Case 2.1  Stop')
+                debug_msg.data = "Case 2.1  Stop"
+                debug_publisher.publish(debug_msg)
+                # wcv.desiredWV_R = 0.05  
+                # wcv.desiredWV_L = -0.05
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
             print('Case 2.3  Straight forward')
-            wcv.desiredWV_R = 0.1
-            wcv.desiredWV_L = 0.1
+            debug_msg.data = "Case 2.3  Straight forward"
+            debug_publisher.publish(debug_msg)
+            # wcv.desiredWV_R = 0.1
+            # wcv.desiredWV_L = 0.1
         else:
             if heading_err_cross < 0:
                 print('Case 2.4.1  Turn right')
-                wcv.desiredWV_R = -0.1
-                wcv.desiredWV_L = 0.1
+                debug_msg.data = "Case 2.4.1  Turn right"
+                debug_publisher.publish(debug_msg)
+                # wcv.desiredWV_R = -0.1
+                # wcv.desiredWV_L = 0.1
             else:
                 print('Case 2.4.2  Turn left')
-                wcv.desiredWV_R = 0.1
-                wcv.desiredWV_L = -0.1
+                debug_msg.data = "Case 2.4.2  Turn left"
+                debug_publisher.publish(debug_msg)
+                # wcv.desiredWV_R = 0.1
+                # wcv.desiredWV_L = -0.1
                 
-        velcmd_pub.publish(wcv)  
+        # velcmd_pub.publish(wcv)  
         
         rate.sleep()
 
