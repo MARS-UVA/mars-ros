@@ -4,6 +4,7 @@
 
 import rospy
 import tf2_ros
+import tf2_geometry_msgs # so that geometry_msgs are automatically converted to tf2_geometry_msgs
 import numpy as np
 import threading
 # import tf.transformations as tfm
@@ -88,11 +89,14 @@ def apriltag_callback(data):
             #HINT3: The syntax for invPoselist should look like:
             ## invPoselist(poselist)
 
-            poselist_tag_base = transformPose(poselist_tag_cam, '/tag_1', '/robot_base') #(1) on the lab handout
+            # transform the tag -> camera tf into a tag -> base tf
+            poselist_tag_base = transformPose(poselist_tag_cam, 'usb_cam', 'robot_base') #(1) on the lab handout
+            # calculate base -> tag
             poselist_base_tag = invPoselist(poselist_tag_base)  #(2) on the lab handout
-            poselist_base_map = transformPose(poselist_base_tag, '/robot_base', '/map') #(3) on the lab handout
-            pubFrame(br, pose = poselist_base_map, frame_id = '/robot_base', parent_frame_id = '/map')
-            # pubFrame(pose = poselist_tag_cam, frame_id = '/robot_base', parent_frame_id = '/map')
+            # transform base -> tag into base -> map
+            poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map') #(3) on the lab handout
+            # publich base -> map
+            pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
 
 ## navigation control loop
 def navi_loop():
@@ -239,9 +243,10 @@ def lookupTransform(lr, sourceFrame, targetFrame):
             rospy.sleep(retryTime)
     return None
 
-def transformPose(pose, sourceFrame, targetFrame):
-    _pose = PoseStamped()
-    _pose.header.frame_id = sourceFrame
+# https://answers.ros.org/question/323075/transform-the-coordinate-frame-of-a-pose-from-one-fixed-frame-to-another/ 
+def transformPose(pose, fromFrame, toFrame):
+    _pose = tf2_geometry_msgs.PoseStamped()
+    _pose.header.frame_id = fromFrame
     if len(pose) == 6:
         pose.append(0)
         pose[3:7] = tf_conversions.transformations.quaternion_from_euler(pose[3], pose[4], pose[5]).tolist()
@@ -256,9 +261,9 @@ def transformPose(pose, sourceFrame, targetFrame):
     
     for i in range(nTfRetry):
         try:
-            t = rospy.Time(0)
+            t = rospy.Time.now()
             _pose.header.stamp = t
-            _pose_target = lr.transformPose(targetFrame, _pose)
+            _pose_target = tfBuffer.transform(_pose, toFrame, rospy.Duration(1))
             p = _pose_target.pose.position
             o = _pose_target.pose.orientation
             return [p.x, p.y, p.z, o.x, o.y, o.z, o.w]
