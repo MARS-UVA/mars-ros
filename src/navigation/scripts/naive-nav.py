@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # This code heavily inspired by Lab 3 (AprilTag Navigation)
 # in Peter Yu's Sept 2016 Intro to Robotics Lab at MIT
+# https://people.csail.mit.edu/peterkty/teaching/Lab3Handout_Fall_2016.pdf 
 
 import rospy
 import tf2_ros
 import tf2_geometry_msgs # so that geometry_msgs are automatically converted to tf2_geometry_msgs
 import numpy as np
 import threading
-# import tf.transformations as tfm
 import tf_conversions
-from geometry_msgs.msg import Point, Pose, PoseStamped, TransformStamped
-import geometry_msgs.msg
+from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
 
 from hero_board.msg import MotorCommand
@@ -30,91 +29,56 @@ def main():
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
     rospy.sleep(1)
     
-    constant_vel = True # start in the constant loop for now # TODO change back to False
+    constant_vel = False
     if constant_vel:
         thread = threading.Thread(target = constant_vel_loop)
     else:
-        thread = threading.Thread(target = navi_loop)
+        thread = threading.Thread(target = nav_loop)
     thread.start()
     
     rospy.spin()
 
 ## does nothing
 def constant_vel_loop():
-    # Create a publisher using the syntax described in the handout
-    ## velcmd_pub = ??
+    # Create a publisher here
     rate = rospy.Rate(100) # 100hz
     
     while not rospy.is_shutdown() :
-        ## wcv = ??
-        ## wcv.desiredWV_R = ??
-        ## wcv.desiredWV_L = ??
-        
-        ## velcmd_pub.publish(??) 
-        ## for our robot, I will publish MotorCommand messages
-        ## for use in a simulation, I will publish Twist messages (at least, I think so -- would need to look into what turtlebot sim needs)
+        # for our robot, I will publish MotorCommand messages
+        # for use in a simulation, I will publish Twist messages (at least, I think so -- would need to look into what turtlebot sim needs)
         
         rate.sleep() 
 
 ## apriltag msg handling function
 def apriltag_callback(data):
-    """
-    if len(data.detections) > 0:
-        debug_msg.data = str(type(data.detections[0].id))
-    else:
-        debug_msg.data = "No tags seen"
-    """
-    # debug_msg.data = "IN APRILTAG CALLBACK"
-    # debug_publisher.publish(debug_msg)
-    # use apriltag pose detection to find where is the robot
+    # use apriltag pose detection to find where the robot is
     for detection in data.detections:
-        if 1 in detection.id:   # our apriltag ID rn is 1
-            debug_msg.data = str(type(detection.pose.pose.pose))
-            debug_publisher.publish(debug_msg)
-            # poselist_tag_cam = pose2poselist(detection.pose) #This is the pose you're transforming
+        if 1 in detection.id:   # our apriltag ID is 1
             poselist_tag_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
-            ## Relevant frames that are already defined:
-            ## camera, map, robot_base, apriltag
-
-            ## Relevant functions that are defined in a different ros package:
-            ## transformPose(), invPoseList()
-
-            ## Relevant variables already defined:
-            ## lr
-            #TO DO: Convert the poselist_tag_cam into the pose that we want. 
-
-            #HINT: The first argument for transformPose is lr which is already defined in the beginning of this code.
-            #HINT2: The syntax for transformPose should look like:
-            ## transformPose(lr, poselist_someframe_otherframe, 'otherframe', 'newframe')\
-            #HINT3: The syntax for invPoselist should look like:
-            ## invPoselist(poselist)
 
             # transform the tag -> camera tf into a tag -> base tf
-            poselist_tag_base = transformPose(poselist_tag_cam, 'usb_cam', 'robot_base') #(1) on the lab handout
+            poselist_tag_base = transformPose(poselist_tag_cam, 'usb_cam', 'robot_base')
             # calculate base -> tag
-            poselist_base_tag = invPoselist(poselist_tag_base)  #(2) on the lab handout
+            poselist_base_tag = invPoselist(poselist_tag_base)
             # transform base -> tag into base -> map
-            poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map') #(3) on the lab handout
-            # publich base -> map
+            poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map')
+            # publish base -> map
             pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
 
 ## navigation control loop
-def navi_loop():
-    # velcmd_pub = rospy.Publisher("/apriltag_motor_cmds", MotorCommand, queue_size = 1)
+def nav_loop():
+    # create a publisher here to send motor commands
     target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
     rate = rospy.Rate(10) # 100hz
-    
-    # wcv = MotorCommand()
     
     arrived = False
     arrived_position = False
     
     while not rospy.is_shutdown() :
-        # 1. get robot pose
-        robot_pose3d = lookupTransform(lr, '/map', '/robot_base')
+        # get robot pose
+        robot_pose3d = lookupTransform('map', 'robot_base')
         
         if robot_pose3d is None:
-            print('1. Tag not in view, Stop')
             debug_msg.data = "1. Tag not in view, Stop"
             debug_publisher.publish(debug_msg)
             # wcv.desiredWV_R = 0  # right, left
@@ -146,48 +110,42 @@ def navi_loop():
         # print 'heading_err_cross', heading_err_cross
         
         if arrived or (np.linalg.norm( pos_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
-            print('Case 2.1  Stop')
             debug_msg.data = "Case 2.1  Stop"
             debug_publisher.publish(debug_msg)
             # wcv.desiredWV_R = 0  
             # wcv.desiredWV_L = 0
-            arrived = True
+            # arrived = True # for now, comment this out, because i want to keep doing stuff even if we get to the target once
         elif np.linalg.norm( pos_delta ) < 0.08:
             arrived_position = True
-            if diffrad(robot_yaw, target_pose2d[2]) > 0:
-                print('Case 2.2.1  Turn right slowly')   
+            if diffrad(robot_yaw, target_pose2d[2]) > 0:  
                 debug_msg.data = "Case 2.2.1  Turn right slowly"
                 debug_publisher.publish(debug_msg) 
                 # wcv.desiredWV_R = -0.05 
                 # wcv.desiredWV_L = 0.05
             else:
-                print('Case 2.1  Stop')
                 debug_msg.data = "Case 2.1  Stop"
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = 0.05  
                 # wcv.desiredWV_L = -0.05
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
-            print('Case 2.3  Straight forward')
             debug_msg.data = "Case 2.3  Straight forward"
             debug_publisher.publish(debug_msg)
             # wcv.desiredWV_R = 0.1
             # wcv.desiredWV_L = 0.1
         else:
             if heading_err_cross < 0:
-                print('Case 2.4.1  Turn right')
                 debug_msg.data = "Case 2.4.1  Turn right"
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = -0.1
                 # wcv.desiredWV_L = 0.1
             else:
-                print('Case 2.4.2  Turn left')
                 debug_msg.data = "Case 2.4.2  Turn left"
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = 0.1
                 # wcv.desiredWV_L = -0.1
                 
-        # velcmd_pub.publish(wcv)  
+        # publish motor commands here 
         
         rate.sleep()
 
@@ -227,20 +185,18 @@ def pubFrame(pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1
         t.transform.rotation.w = ori[3]
 
         br.sendTransform(t)
-        # br.sendTransform(pos, ori, rospy.Time.now(), frame_id, parent_frame_id)
         rospy.sleep(0.01)
 
-def lookupTransform(lr, sourceFrame, targetFrame):
+# http://wiki.ros.org/tf2/Tutorials/tf2%20and%20time%20%28Python%29
+def lookupTransform(sourceFrame, targetFrame):
     for i in range(nTfRetry):
         try:
-            t = rospy.Time(0)
-            (trans,rot) = lr.lookupTransform(sourceFrame, targetFrame, t)
-            if lr.getLatestCommonTime(sourceFrame, targetFrame) < (rospy.Time.now() - rospy.Duration(1)):
-                return None
-            return list(trans) + list(rot)
-        except:
-            print('[lookupTransform] failed to transform targetFrame %s sourceFrame %s, retry %d' % (targetFrame, sourceFrame, i))
+            trans = tfBuffer.lookup_transform(sourceFrame, targetFrame, rospy.Time())
+            transform_list = [trans.transform.translation.x, trans.transform.translation.y, trans.transform.translation.z, trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w]
+            return transform_list
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.sleep(retryTime)
+            continue
     return None
 
 # https://answers.ros.org/question/323075/transform-the-coordinate-frame-of-a-pose-from-one-fixed-frame-to-another/ 
