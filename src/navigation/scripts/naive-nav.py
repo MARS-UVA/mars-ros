@@ -3,11 +3,13 @@
 # in Peter Yu's Sept 2016 Intro to Robotics Lab at MIT
 
 import rospy
-import tf
+import tf2_ros
 import numpy as np
 import threading
-import tf.transformations as tfm
-from geometry_msgs.msg import Point, Pose, PoseStamped
+# import tf.transformations as tfm
+import tf_conversions
+from geometry_msgs.msg import Point, Pose, PoseStamped, TransformStamped
+import geometry_msgs.msg
 from std_msgs.msg import String
 
 from hero_board.msg import MotorCommand
@@ -17,14 +19,17 @@ nTfRetry = 1
 retryTime = 0.05
 
 rospy.init_node('naive_navigator', anonymous=True)
-lr = tf.TransformListener()
-br = tf.TransformBroadcaster()
+tfBuffer = tf2_ros.Buffer()
+lr = tf2_ros.TransformListener(tfBuffer)
+br = tf2_ros.TransformBroadcaster()
+debug_publisher = rospy.Publisher("/debug_messages", String, queue_size=1)
+debug_msg = String()
     
 def main():
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
     rospy.sleep(1)
     
-    constant_vel = False # start in the navigation loop
+    constant_vel = True # start in the constant loop for now # TODO change back to False
     if constant_vel:
         thread = threading.Thread(target = constant_vel_loop)
     else:
@@ -52,11 +57,21 @@ def constant_vel_loop():
 
 ## apriltag msg handling function
 def apriltag_callback(data):
+    """
+    if len(data.detections) > 0:
+        debug_msg.data = str(type(data.detections[0].id))
+    else:
+        debug_msg.data = "No tags seen"
+    """
+    # debug_msg.data = "IN APRILTAG CALLBACK"
+    # debug_publisher.publish(debug_msg)
     # use apriltag pose detection to find where is the robot
     for detection in data.detections:
-        if detection.id == 1:   # TODO: change the number to equal the id on the april tag you're using
+        if 1 in detection.id:   # our apriltag ID rn is 1
+            debug_msg.data = str(type(detection.pose.pose.pose))
+            debug_publisher.publish(debug_msg)
             # poselist_tag_cam = pose2poselist(detection.pose) #This is the pose you're transforming
-            poselist_tag_cam = [detection.pose.position.x, detection.pose.position.y, detection.pose.position.z, detection.pose.orientation.x, detection.pose.orientation.y, detection.pose.orientation.z, detection.pose.orientation.w]
+            poselist_tag_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
             ## Relevant frames that are already defined:
             ## camera, map, robot_base, apriltag
 
@@ -73,20 +88,19 @@ def apriltag_callback(data):
             #HINT3: The syntax for invPoselist should look like:
             ## invPoselist(poselist)
 
-            poselist_tag_base = transformPose(lr, poselist_tag_cam, '/tag_1', '/robot_base') #(1) on the lab handout
+            poselist_tag_base = transformPose(poselist_tag_cam, '/tag_1', '/robot_base') #(1) on the lab handout
             poselist_base_tag = invPoselist(poselist_tag_base)  #(2) on the lab handout
             poselist_base_map = transformPose(poselist_base_tag, '/robot_base', '/map') #(3) on the lab handout
             pubFrame(br, pose = poselist_base_map, frame_id = '/robot_base', parent_frame_id = '/map')
+            # pubFrame(pose = poselist_tag_cam, frame_id = '/robot_base', parent_frame_id = '/map')
 
 ## navigation control loop
 def navi_loop():
     # velcmd_pub = rospy.Publisher("/apriltag_motor_cmds", MotorCommand, queue_size = 1)
-    debug_publisher = rospy.Publisher("/debug_messages", String, queue_size=1)
     target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
     rate = rospy.Rate(10) # 100hz
     
     # wcv = MotorCommand()
-    debug_msg = String()
     
     arrived = False
     arrived_position = False
@@ -108,7 +122,7 @@ def navi_loop():
         robot_position2d  = robot_pose3d[0:2]
         target_position2d = target_pose2d[0:2]
         
-        robot_yaw    = tfm.euler_from_quaternion(robot_pose3d[3:7]) [2]
+        robot_yaw    = tf_conversions.transformations.euler_from_quaternion(robot_pose3d[3:7]) [2]
         robot_pose2d = robot_position2d + [robot_yaw]
         
         # 2. navigation policy
@@ -184,11 +198,11 @@ def diffrad(a,b):
         diff -= 2*np.pi
     return diff
 
-def pubFrame(br, pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1):
+def pubFrame(pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1):
     if len(pose) == 7:
         ori = tuple(pose[3:7])
     elif len(pose) == 6:
-        ori = tfm.quaternion_from_euler(*pose[3:6])
+        ori = tf_conversions.transformations.quaternion_from_euler(*pose[3:6])
     else:
         print('Bad length of pose')
         return None
@@ -196,7 +210,20 @@ def pubFrame(br, pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', np
     pos = tuple(pose[0:3])
     
     for j in range(npub):
-        br.sendTransform(pos, ori, rospy.Time.now(), frame_id, parent_frame_id)
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = parent_frame_id
+        t.child_frame_id = frame_id
+        t.transform.translation.x = pose[0]
+        t.transform.translation.y = pose[1]
+        t.transform.translation.z = pose[2]
+        t.transform.rotation.x = ori[0]
+        t.transform.rotation.y = ori[1]
+        t.transform.rotation.z = ori[2]
+        t.transform.rotation.w = ori[3]
+
+        br.sendTransform(t)
+        # br.sendTransform(pos, ori, rospy.Time.now(), frame_id, parent_frame_id)
         rospy.sleep(0.01)
 
 def lookupTransform(lr, sourceFrame, targetFrame):
@@ -212,12 +239,12 @@ def lookupTransform(lr, sourceFrame, targetFrame):
             rospy.sleep(retryTime)
     return None
 
-def transformPose(lr, pose, sourceFrame, targetFrame):
+def transformPose(pose, sourceFrame, targetFrame):
     _pose = PoseStamped()
     _pose.header.frame_id = sourceFrame
     if len(pose) == 6:
         pose.append(0)
-        pose[3:7] = tfm.quaternion_from_euler(pose[3], pose[4], pose[5]).tolist()
+        pose[3:7] = tf_conversions.transformations.quaternion_from_euler(pose[3], pose[4], pose[5]).tolist()
     
     _pose.pose.position.x = pose[0]
     _pose.pose.position.y = pose[1]
@@ -245,7 +272,7 @@ def invPoselist(poselist):
     return xyzquat_from_matrix(np.linalg.inv(matrix_from_xyzquat(poselist)))
 
 def xyzquat_from_matrix(matrix):
-    return tfm.translation_from_matrix(matrix).tolist() + tfm.quaternion_from_matrix(matrix).tolist()
+    return tf_conversions.transformations.translation_from_matrix(matrix).tolist() + tf_conversions.transformations.quaternion_from_matrix(matrix).tolist()
 
 def matrix_from_xyzquat(arg1, arg2=None):
     return matrix_from_xyzquat_np_array(arg1, arg2).tolist()
@@ -258,8 +285,8 @@ def matrix_from_xyzquat_np_array(arg1, arg2=None):
         translate = arg1[0:3]
         quaternion = arg1[3:7]
 
-    return np.dot(tfm.compose_matrix(translate=translate) ,
-                   tfm.quaternion_matrix(quaternion))
+    return np.dot(tf_conversions.transformations.compose_matrix(translate=translate) ,
+                   tf_conversions.transformations.quaternion_matrix(quaternion))
 
 if __name__=='__main__':
     main()

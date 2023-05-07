@@ -1,9 +1,9 @@
 digraph G {
-"tag_1" -> "map"[label=" Broadcaster: /apriltag_to_map\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
-"usb_cam" -> "tag_1"[label=" Broadcaster: /apriltag_ros_continuous_node\nAverage rate: 30.205\nBuffer length: 4.966\nMost recent transform: 1683316128.337\nOldest transform: 1683316123.371\n"];
-"robot_base" -> "usb_cam"[label=" Broadcaster: /camera_to_base\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"robot_base" -> "usb_cam"[label=" Broadcaster: /robot_base_to_camera\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "robot_base"[label=" Broadcaster: /naive_navigator\nAverage rate: 20.163\nBuffer length: 4.91\nMost recent transform: 1683434132.755\nOldest transform: 1683434127.845\n"];
+"map" -> "tag_1"[label=" Broadcaster: /map_to_apriltag\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
 edge [style=invis];
  subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
-"Recorded at time: 1683316128.3581944"[ shape=plaintext ] ;
-}->"robot_base";
+"Recorded at time: 1683434132.7976546"[ shape=plaintext ] ;
+}->"map";
 }

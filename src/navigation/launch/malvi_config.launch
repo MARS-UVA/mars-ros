@@ -108,7 +108,8 @@
             <remap from="image_rect" to="$(arg apriltag_camera_name)/$(arg apriltag_image_topic)" />
             <remap from="camera_info" to="$(arg apriltag_camera_name)/camera_info" />
 
-            <param name="publish_tag_detections_image" type="bool" value="true" /> <!-- default: false --> <!-- TODO disable this once the system works to save processing -->
+            <param name="publish_tag_detections_image" type="bool" value="false" /> <!-- default: false --> <!-- TODO disable this once the system works to save processing -->
+            <param name="publish_tf" type="bool" value="false" />
             <param name="queue_size" type="int" value="$(arg apriltag_queue_size)" />
 
             <!-- load parameters (incl. tag family, tags, etc.) -->
@@ -133,8 +134,8 @@
         <node pkg="navigation" type="naive-nav.py" name="naive_navigator"/>
         <!-- the following two static transforms are inspired by https://github.com/mit212/me212lab3/blob/master/catkin_ws/src/me212bot/launch/frames.launch -->
         <!-- these are placeholder values that cause no transformation to occur -->
-        <node pkg="tf2_ros" name="apriltag_to_map" type="static_transform_publisher" args="0 0 0 1 0 0 0 /tag_1 /map" />
-        <node pkg="tf2_ros" name="camera_to_base" type="static_transform_publisher" args="0 0 0 1 0 0 0 /robot_base /usb_cam" /> 
+        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 /map /tag_1" />
+        <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 1 0 0 0 /robot_base /usb_cam" />
     </group>
 
 </launch>
