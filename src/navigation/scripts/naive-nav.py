@@ -3,6 +3,10 @@
 # in Peter Yu's Sept 2016 Intro to Robotics Lab at MIT
 # https://people.csail.mit.edu/peterkty/teaching/Lab3Handout_Fall_2016.pdf 
 
+## THREADING: https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread
+# idea: don't use threads, but rather just terminate functions based on global autonomy_state var 
+# and call other function at end
+
 import rospy
 import tf2_ros
 import tf2_geometry_msgs # so that geometry_msgs are automatically converted to tf2_geometry_msgs
@@ -13,11 +17,14 @@ from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
 
 from hero_board.msg import MotorCommand
+from navigation.msg import AutonomyState
 from apriltag_ros.msg import AprilTagDetectionArray
 
 nTfRetry = 1
 retryTime = 0.05
 tag_refresh_time = 1 # in seconds
+arrived_buffer_time = 5 # in seconds
+autonomy_mode = False
 
 rospy.init_node('naive_navigator', anonymous=True)
 tfBuffer = tf2_ros.Buffer()
@@ -25,30 +32,33 @@ lr = tf2_ros.TransformListener(tfBuffer)
 br = tf2_ros.TransformBroadcaster()
 debug_publisher = rospy.Publisher("/debug_messages", String, queue_size=1)
 debug_msg = String()
+
     
 def main():
+    global autonomy_mode
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
+    autonomy_mode_sub = rospy.Subscriber("/autonomy_state", AutonomyState, autonomy_state_callback, queue_size=1)
     rospy.sleep(1)
     
-    constant_vel = False
-    if constant_vel:
-        thread = threading.Thread(target = constant_vel_loop)
+    if not autonomy_mode:
+        thread = threading.Thread(target = stall_loop, args=(lambda: autonomy_mode,))
     else:
-        thread = threading.Thread(target = nav_loop)
+        thread = threading.Thread(target = nav_loop, args=(lambda: autonomy_mode,))
     thread.start()
     
     rospy.spin()
 
 ## does nothing
-def constant_vel_loop():
-    # Create a publisher here
+def stall_loop(stop_check):
     rate = rospy.Rate(100) # 100hz
     
     while not rospy.is_shutdown() :
-        # for our robot, I will publish MotorCommand messages
-        # for use in a simulation, I will publish Twist messages (at least, I think so -- would need to look into what turtlebot sim needs)
-        
+        if stop_check():
+            break
         rate.sleep() 
+
+    if not rospy.is_shutdown():
+        instigate_thread(False)
 
 ## apriltag msg handling function
 def apriltag_callback(data):
@@ -66,27 +76,54 @@ def apriltag_callback(data):
             # publish base -> map
             pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
 
+## autonomy mode msg handling function
+def autonomy_state_callback(data):
+    global autonomy_mode
+    if data.naive:
+        if not autonomy_mode:
+            debug_msg.data = "Switching to autonomous mode"
+        autonomy_mode = True
+    else:
+        if autonomy_mode:
+            debug_msg.data = "Switching to non-autonomous mode"
+        autonomy_mode = False
+    debug_publisher.publish(debug_msg)
+
+def instigate_thread(stall=True):
+    global autonomy_mode
+    if stall:
+        thread = threading.Thread(target = stall_loop, args=(lambda: autonomy_mode,))
+    else:
+        thread = threading.Thread(target = nav_loop, args=(lambda: autonomy_mode,))
+    thread.start()
+
 ## navigation control loop
-def nav_loop():
-    # create a publisher here to send motor commands
+def nav_loop(stop_check):
+    command_publisher = rospy.Publisher("/motor/output", MotorCommand, queue_size=1)
+    mc = MotorCommand()
+
     target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
     rate = rospy.Rate(10) # 100hz
     
     arrived = False
     arrived_position = False
+    arrived_time = None
     
     while not rospy.is_shutdown() :
+        if not stop_check():
+            break
+
         # get robot pose
         robot_pose3d = lookupTransform('map', 'robot_base')
         
-        # TODO: if the tag is out of view but we have seen a tag before, then this will NOT be none
-        # so we need a different way to see if the tag is in view
         if robot_pose3d is None:
-            debug_msg.data = "1. Tag not in view, Stop"
-            debug_publisher.publish(debug_msg)
-            # wcv.desiredWV_R = 0  # right, left
-            # wcv.desiredWV_L = 0
-            # velcmd_pub.publish(wcv)  
+            if not arrived:
+                debug_msg.data = "1. Tag not in view, turn right slowly until you see it again"
+                debug_publisher.publish(debug_msg)
+                # wcv.desiredWV_R = 0  # right, left
+                # wcv.desiredWV_L = 0 
+                mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
+                command_publisher.publish(mc)
             rate.sleep()
             continue
         
@@ -115,42 +152,67 @@ def nav_loop():
         if arrived or (np.linalg.norm( pos_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
             debug_msg.data = "Case 2.1  Stop"
             debug_publisher.publish(debug_msg)
+            mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
             # wcv.desiredWV_R = 0  
             # wcv.desiredWV_L = 0
-            # arrived = True # for now, comment this out, because i want to keep doing stuff even if we get to the target once
+
+            # we will only mark the robot as "arrived" if it has been at the target position for a certain # of seconds
+            # this is to prevent false readings from prematurely stopping the navigation
+            if arrived_time is not None: 
+                now = rospy.Time.now()
+                time_difference = now - arrived_time
+                if time_difference.to_sec() > arrived_buffer_time:
+                    debug_msg.data = "Arrived!"
+                    debug_publisher.publish(debug_msg)
+                    arrived = True
+            else:
+                arrived_time = rospy.Time.now()
+
         elif np.linalg.norm( pos_delta ) < 0.08:
             arrived_position = True
+            arrived_time = None
             if diffrad(robot_yaw, target_pose2d[2]) > 0:  
                 debug_msg.data = "Case 2.2.1  Turn right slowly"
                 debug_publisher.publish(debug_msg) 
+                mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
                 # wcv.desiredWV_R = -0.05 
                 # wcv.desiredWV_L = 0.05
             else:
-                debug_msg.data = "Case 2.1  Stop"
+                debug_msg.data = "Case 2.2.2  Turn left slowly"
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = 0.05  
                 # wcv.desiredWV_L = -0.05
+                mc.values = [80, 120, 80, 120, 100, 100, 100, 100, 100]
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
+            arrived_time = None
             debug_msg.data = "Case 2.3  Straight forward"
             debug_publisher.publish(debug_msg)
+            mc.values = [140, 140, 140, 140, 100, 100, 100, 100, 100]
             # wcv.desiredWV_R = 0.1
             # wcv.desiredWV_L = 0.1
+
         else:
+            arrived_time = None
             if heading_err_cross < 0:
                 debug_msg.data = "Case 2.4.1  Turn right"
                 debug_publisher.publish(debug_msg)
+                mc.values = [140, 60, 140, 60, 100, 100, 100, 100, 100]
                 # wcv.desiredWV_R = -0.1
                 # wcv.desiredWV_L = 0.1
             else:
                 debug_msg.data = "Case 2.4.2  Turn left"
                 debug_publisher.publish(debug_msg)
+                mc.values = [60, 140, 60, 140, 100, 100, 100, 100, 100]
                 # wcv.desiredWV_R = 0.1
                 # wcv.desiredWV_L = -0.1
                 
-        # publish motor commands here 
-        
+        # publish motor commands
+        command_publisher.publish(mc)
         rate.sleep()
+    
+    if not rospy.is_shutdown():
+        instigate_thread()
 
 def cross2d(a, b):
     return a[0]*b[1] - a[1]*b[0]
