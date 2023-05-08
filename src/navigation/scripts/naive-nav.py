@@ -17,6 +17,7 @@ from apriltag_ros.msg import AprilTagDetectionArray
 
 nTfRetry = 1
 retryTime = 0.05
+tag_refresh_time = 1 # in seconds
 
 rospy.init_node('naive_navigator', anonymous=True)
 tfBuffer = tf2_ros.Buffer()
@@ -78,6 +79,8 @@ def nav_loop():
         # get robot pose
         robot_pose3d = lookupTransform('map', 'robot_base')
         
+        # TODO: if the tag is out of view but we have seen a tag before, then this will NOT be none
+        # so we need a different way to see if the tag is in view
         if robot_pose3d is None:
             debug_msg.data = "1. Tag not in view, Stop"
             debug_publisher.publish(debug_msg)
@@ -191,7 +194,11 @@ def pubFrame(pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1
 def lookupTransform(sourceFrame, targetFrame):
     for i in range(nTfRetry):
         try:
-            trans = tfBuffer.lookup_transform(sourceFrame, targetFrame, rospy.Time())
+            trans = tfBuffer.lookup_transform(sourceFrame, targetFrame, rospy.Time(0))
+            now = rospy.Time.now()
+            time_difference = now - trans.header.stamp
+            if time_difference.to_sec() > tag_refresh_time: # if the last tag detection was too long ago
+                continue
             transform_list = [trans.transform.translation.x, trans.transform.translation.y, trans.transform.translation.z, trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w]
             return transform_list
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
