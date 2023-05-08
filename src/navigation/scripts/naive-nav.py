@@ -69,6 +69,9 @@ def apriltag_callback(data):
 ## navigation control loop
 def nav_loop():
     # create a publisher here to send motor commands
+    command_publisher = rospy.Publisher("/motor/output", MotorCommand, queue_size=1)
+    mc = MotorCommand()
+
     target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
     rate = rospy.Rate(10) # 100hz
     
@@ -87,6 +90,8 @@ def nav_loop():
             # wcv.desiredWV_R = 0  # right, left
             # wcv.desiredWV_L = 0
             # velcmd_pub.publish(wcv)  
+            mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+            command_publisher.publish(mc)
             rate.sleep()
             continue
         
@@ -115,6 +120,8 @@ def nav_loop():
         if arrived or (np.linalg.norm( pos_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
             debug_msg.data = "Case 2.1  Stop"
             debug_publisher.publish(debug_msg)
+            mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+            command_publisher.publish(mc)
             # wcv.desiredWV_R = 0  
             # wcv.desiredWV_L = 0
             # arrived = True # for now, comment this out, because i want to keep doing stuff even if we get to the target once
@@ -123,6 +130,8 @@ def nav_loop():
             if diffrad(robot_yaw, target_pose2d[2]) > 0:  
                 debug_msg.data = "Case 2.2.1  Turn right slowly"
                 debug_publisher.publish(debug_msg) 
+                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+                command_publisher.publish(mc)
                 # wcv.desiredWV_R = -0.05 
                 # wcv.desiredWV_L = 0.05
             else:
@@ -130,21 +139,29 @@ def nav_loop():
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = 0.05  
                 # wcv.desiredWV_L = -0.05
+                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+                command_publisher.publish(mc)
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
             debug_msg.data = "Case 2.3  Straight forward"
             debug_publisher.publish(debug_msg)
+            mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+            command_publisher.publish(mc)
             # wcv.desiredWV_R = 0.1
             # wcv.desiredWV_L = 0.1
         else:
             if heading_err_cross < 0:
                 debug_msg.data = "Case 2.4.1  Turn right"
                 debug_publisher.publish(debug_msg)
+                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+                command_publisher.publish(mc)
                 # wcv.desiredWV_R = -0.1
                 # wcv.desiredWV_L = 0.1
             else:
                 debug_msg.data = "Case 2.4.2  Turn left"
                 debug_publisher.publish(debug_msg)
+                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+                command_publisher.publish(mc)
                 # wcv.desiredWV_R = 0.1
                 # wcv.desiredWV_L = -0.1
                 
