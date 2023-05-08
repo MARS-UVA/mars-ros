@@ -166,7 +166,7 @@ def pubFrame(pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1
     elif len(pose) == 6:
         ori = tf_conversions.transformations.quaternion_from_euler(*pose[3:6])
     else:
-        print('Bad length of pose')
+        # bad length of pose
         return None
     
     pos = tuple(pose[0:3])
@@ -224,7 +224,6 @@ def transformPose(pose, fromFrame, toFrame):
             o = _pose_target.pose.orientation
             return [p.x, p.y, p.z, o.x, o.y, o.z, o.w]
         except: 
-            print('[transformPose] failed to transform targetFrame %s sourceFrame %s, retry %d' % (targetFrame, sourceFrame, i))
             rospy.sleep(retryTime)
             
     return None
