@@ -86,7 +86,7 @@
         <node name="usb_cam" pkg="cv_camera" type="cv_camera_node" >
             <param name="image_width" value="640" />
             <param name="image_height" value="480" />
-            <param name="frame_id" value="camera_here" />
+            <param name="frame_id" value="usb_cam" />
             <param name="camera_info_url" value="file:///$(find navigation)/config/cameras/xps_webcam_calibration.yaml" />
         </node>
     </group>
@@ -131,7 +131,7 @@
         <node pkg="navigation" type="naive-nav.py" name="naive_navigator"/>
         <!-- the following two static transforms are inspired by https://github.com/mit212/me212lab3/blob/master/catkin_ws/src/me212bot/launch/frames.launch -->
         <!-- these are placeholder values that cause no transformation to occur -->
-        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 1 1 0 0 0 map tag_1" />
+        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 map tag_1" />
         <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base usb_cam" />
     </group>
 
