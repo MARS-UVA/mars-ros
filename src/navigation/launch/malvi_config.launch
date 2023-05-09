@@ -5,7 +5,7 @@
     <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
     <arg name="feedback_cameras" default="false" />
-    <arg name="autonomy_cameras" default="false" />
+    <arg name="autonomy_cameras" default="false" />z
     <arg name="autonomy" default="true" />
     <arg name="webcam_enabled" default="true" />
     <arg name="naive_autonomy" default="true" />
@@ -89,7 +89,7 @@
     <group if="$(eval autonomy)">
 
         <!-- apriltag detection -->
-        <arg name="apriltag_camera_name" default="/usb_cam" />
+        <arg name="apriltag_camera_name" default="/webcam0" />
         <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
         <arg name="apriltag_queue_size" default="1" />
         <!-- apriltag_ros continuous detection node -->
