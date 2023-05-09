@@ -13,12 +13,14 @@ from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
 
 from hero_board.msg import MotorCommand
+from navigation.msg import AutonomyState
 from apriltag_ros.msg import AprilTagDetectionArray
 
 nTfRetry = 1
 retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
+autonomy_mode = False
 
 rospy.init_node('naive_navigator', anonymous=True)
 tfBuffer = tf2_ros.Buffer()
@@ -29,11 +31,11 @@ debug_msg = String()
     
 def main():
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
+    autonomy_mode_sub = rospy.Subscriber("/autonomy_state", AutonomyState, autonomy_state_callback, queue_size=1)
     rospy.sleep(1)
     
-    constant_vel = False
-    if constant_vel:
-        thread = threading.Thread(target = constant_vel_loop)
+    if not autonomy_mode:
+        thread = threading.Thread(target = stall_loop)
     else:
         thread = threading.Thread(target = nav_loop)
     thread.start()
@@ -41,14 +43,10 @@ def main():
     rospy.spin()
 
 ## does nothing
-def constant_vel_loop():
-    # Create a publisher here
+def stall_loop():
     rate = rospy.Rate(100) # 100hz
     
     while not rospy.is_shutdown() :
-        # for our robot, I will publish MotorCommand messages
-        # for use in a simulation, I will publish Twist messages (at least, I think so -- would need to look into what turtlebot sim needs)
-        
         rate.sleep() 
 
 ## apriltag msg handling function
@@ -66,6 +64,19 @@ def apriltag_callback(data):
             poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map')
             # publish base -> map
             pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
+
+## autonomy mode msg handling function
+def autonomy_state_callback(data):
+    if data.naive:
+        debug_msg.data = "switching to autonomous mode"
+        autonomy_mode = True
+        thread = threading.Thread(target = nav_loop)
+    else:
+        debug_msg.data = "switching to non-autonomy mode"
+        autonomy_mode = False
+        thread = threading.Thread(target = stall_loop)
+    debug_publisher.publish(debug_msg)
+    thread.start()
 
 ## navigation control loop
 def nav_loop():
@@ -89,8 +100,7 @@ def nav_loop():
                 debug_msg.data = "1. Tag not in view, turn right slowly until you see it again"
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = 0  # right, left
-                # wcv.desiredWV_L = 0
-                # velcmd_pub.publish(wcv)  
+                # wcv.desiredWV_L = 0 
                 mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
                 command_publisher.publish(mc)
             rate.sleep()

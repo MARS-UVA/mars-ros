@@ -18,6 +18,8 @@
 #include <actions/StartAction.h>
 #include <actions/StartActionResponse.h>
 
+#include <navigation/AutonomyState.h>
+
 // #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <csignal>
@@ -44,18 +46,24 @@ bool SwitchControlState(DriveStateEnum grpcEnum) {
     // must convert between enum used in gRPC and enum used in ROS services
     hero_board::SetStateRequest req;
     std::string stateString;
+    static auto autonomyPub = nh->advertise<navigation::AutonomyState>("/autonomy_state", 1);
+    navigation::AutonomyState autoState;
     if(grpcEnum == DriveStateEnum::DIRECT_DRIVE) {
         req.state = hero_board::SetStateRequest::DIRECT_DRIVE;
         stateString = "DIRECT_DRIVE";
+        autoState.naive = false;
     } else if(grpcEnum == DriveStateEnum::AUTONOMY) {
         req.state = hero_board::SetStateRequest::AUTONOMY;
         stateString = "AUTONOMY";
+        autoState.naive = true;
     } else { // includes DriveStateEnum::IDLE
         req.state = hero_board::SetStateRequest::IDLE;
         stateString = "IDLE";
+        autoState.naive = false;
     }
 
     ROS_INFO("Setting state to %s", stateString.c_str());
+    autonomyPub.publish(autoState);
     hero_board::SetStateResponse res;
     bool success = ros::service::call("/set_state", req, res);
     // ROS_INFO("%s", res.controlResponse.c_str());

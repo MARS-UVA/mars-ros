@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   hero_board
   actions
+  navigation
 )
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
