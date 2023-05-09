@@ -85,13 +85,14 @@ def nav_loop():
         robot_pose3d = lookupTransform('map', 'robot_base')
         
         if robot_pose3d is None:
-            debug_msg.data = "1. Tag not in view, turn right slowly until you see it again"
-            debug_publisher.publish(debug_msg)
-            # wcv.desiredWV_R = 0  # right, left
-            # wcv.desiredWV_L = 0
-            # velcmd_pub.publish(wcv)  
-            mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
-            command_publisher.publish(mc)
+            if not arrived:
+                debug_msg.data = "1. Tag not in view, turn right slowly until you see it again"
+                debug_publisher.publish(debug_msg)
+                # wcv.desiredWV_R = 0  # right, left
+                # wcv.desiredWV_L = 0
+                # velcmd_pub.publish(wcv)  
+                mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
+                command_publisher.publish(mc)
             rate.sleep()
             continue
         
