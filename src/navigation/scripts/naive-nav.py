@@ -3,6 +3,10 @@
 # in Peter Yu's Sept 2016 Intro to Robotics Lab at MIT
 # https://people.csail.mit.edu/peterkty/teaching/Lab3Handout_Fall_2016.pdf 
 
+## THREADING: https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread
+# idea: don't use threads, but rather just terminate functions based on global autonomy_state var 
+# and call other function at end
+
 import rospy
 import tf2_ros
 import tf2_geometry_msgs # so that geometry_msgs are automatically converted to tf2_geometry_msgs
@@ -28,26 +32,33 @@ lr = tf2_ros.TransformListener(tfBuffer)
 br = tf2_ros.TransformBroadcaster()
 debug_publisher = rospy.Publisher("/debug_messages", String, queue_size=1)
 debug_msg = String()
+
     
 def main():
+    global autonomy_mode
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
     autonomy_mode_sub = rospy.Subscriber("/autonomy_state", AutonomyState, autonomy_state_callback, queue_size=1)
     rospy.sleep(1)
     
     if not autonomy_mode:
-        thread = threading.Thread(target = stall_loop)
+        thread = threading.Thread(target = stall_loop, args=(lambda: autonomy_mode,))
     else:
-        thread = threading.Thread(target = nav_loop)
+        thread = threading.Thread(target = nav_loop, args=(lambda: autonomy_mode,))
     thread.start()
     
     rospy.spin()
 
 ## does nothing
-def stall_loop():
+def stall_loop(stop_check):
     rate = rospy.Rate(100) # 100hz
     
     while not rospy.is_shutdown() :
+        if stop_check():
+            break
         rate.sleep() 
+
+    if not rospy.is_shutdown():
+        instigate_thread(False)
 
 ## apriltag msg handling function
 def apriltag_callback(data):
@@ -67,20 +78,27 @@ def apriltag_callback(data):
 
 ## autonomy mode msg handling function
 def autonomy_state_callback(data):
+    global autonomy_mode
     if data.naive:
-        debug_msg.data = "switching to autonomous mode"
+        if not autonomy_mode:
+            debug_msg.data = "Switching to autonomous mode"
         autonomy_mode = True
-        thread = threading.Thread(target = nav_loop)
     else:
-        debug_msg.data = "switching to non-autonomy mode"
+        if autonomy_mode:
+            debug_msg.data = "Switching to non-autonomous mode"
         autonomy_mode = False
-        thread = threading.Thread(target = stall_loop)
     debug_publisher.publish(debug_msg)
+
+def instigate_thread(stall=True):
+    global autonomy_mode
+    if stall:
+        thread = threading.Thread(target = stall_loop, args=(lambda: autonomy_mode,))
+    else:
+        thread = threading.Thread(target = nav_loop, args=(lambda: autonomy_mode,))
     thread.start()
 
 ## navigation control loop
-def nav_loop():
-    # create a publisher here to send motor commands
+def nav_loop(stop_check):
     command_publisher = rospy.Publisher("/motor/output", MotorCommand, queue_size=1)
     mc = MotorCommand()
 
@@ -92,6 +110,9 @@ def nav_loop():
     arrived_time = None
     
     while not rospy.is_shutdown() :
+        if not stop_check():
+            break
+
         # get robot pose
         robot_pose3d = lookupTransform('map', 'robot_base')
         
@@ -132,7 +153,6 @@ def nav_loop():
             debug_msg.data = "Case 2.1  Stop"
             debug_publisher.publish(debug_msg)
             mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
-            command_publisher.publish(mc)
             # wcv.desiredWV_R = 0  
             # wcv.desiredWV_L = 0
 
@@ -155,7 +175,6 @@ def nav_loop():
                 debug_msg.data = "Case 2.2.1  Turn right slowly"
                 debug_publisher.publish(debug_msg) 
                 mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
-                command_publisher.publish(mc)
                 # wcv.desiredWV_R = -0.05 
                 # wcv.desiredWV_L = 0.05
             else:
@@ -164,14 +183,12 @@ def nav_loop():
                 # wcv.desiredWV_R = 0.05  
                 # wcv.desiredWV_L = -0.05
                 mc.values = [80, 120, 80, 120, 100, 100, 100, 100, 100]
-                command_publisher.publish(mc)
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
             arrived_time = None
             debug_msg.data = "Case 2.3  Straight forward"
             debug_publisher.publish(debug_msg)
             mc.values = [140, 140, 140, 140, 100, 100, 100, 100, 100]
-            command_publisher.publish(mc)
             # wcv.desiredWV_R = 0.1
             # wcv.desiredWV_L = 0.1
 
@@ -181,20 +198,21 @@ def nav_loop():
                 debug_msg.data = "Case 2.4.1  Turn right"
                 debug_publisher.publish(debug_msg)
                 mc.values = [140, 60, 140, 60, 100, 100, 100, 100, 100]
-                command_publisher.publish(mc)
                 # wcv.desiredWV_R = -0.1
                 # wcv.desiredWV_L = 0.1
             else:
                 debug_msg.data = "Case 2.4.2  Turn left"
                 debug_publisher.publish(debug_msg)
                 mc.values = [60, 140, 60, 140, 100, 100, 100, 100, 100]
-                command_publisher.publish(mc)
                 # wcv.desiredWV_R = 0.1
                 # wcv.desiredWV_L = -0.1
                 
-        # publish motor commands here 
-        
+        # publish motor commands
+        command_publisher.publish(mc)
         rate.sleep()
+    
+    if not rospy.is_shutdown():
+        instigate_thread()
 
 def cross2d(a, b):
     return a[0]*b[1] - a[1]*b[0]
