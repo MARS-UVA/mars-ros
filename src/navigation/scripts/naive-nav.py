@@ -82,8 +82,7 @@ def nav_loop():
         # get robot pose
         robot_pose3d = lookupTransform('map', 'robot_base')
         
-        # TODO: if the tag is out of view but we have seen a tag before, then this will NOT be none
-        # so we need a different way to see if the tag is in view
+        # TODO: instead of stopping if the tag is out of view, instead rotate slowly until you see it again
         if robot_pose3d is None:
             debug_msg.data = "1. Tag not in view, Stop"
             debug_publisher.publish(debug_msg)
@@ -124,28 +123,28 @@ def nav_loop():
             command_publisher.publish(mc)
             # wcv.desiredWV_R = 0  
             # wcv.desiredWV_L = 0
-            # arrived = True # for now, comment this out, because i want to keep doing stuff even if we get to the target once
+            # arrived = True # TODO - change, implement time buffer. for now, comment this out, because i want to keep doing stuff even if we get to the target once
         elif np.linalg.norm( pos_delta ) < 0.08:
             arrived_position = True
             if diffrad(robot_yaw, target_pose2d[2]) > 0:  
                 debug_msg.data = "Case 2.2.1  Turn right slowly"
                 debug_publisher.publish(debug_msg) 
-                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+                mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
                 command_publisher.publish(mc)
                 # wcv.desiredWV_R = -0.05 
                 # wcv.desiredWV_L = 0.05
             else:
-                debug_msg.data = "Case 2.1  Stop"
+                debug_msg.data = "Case 2.2.2  Turn left slowly"
                 debug_publisher.publish(debug_msg)
                 # wcv.desiredWV_R = 0.05  
                 # wcv.desiredWV_L = -0.05
-                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+                mc.values = [80, 120, 80, 120, 100, 100, 100, 100, 100]
                 command_publisher.publish(mc)
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
             debug_msg.data = "Case 2.3  Straight forward"
             debug_publisher.publish(debug_msg)
-            mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+            mc.values = [140, 140, 140, 140, 100, 100, 100, 100, 100]
             command_publisher.publish(mc)
             # wcv.desiredWV_R = 0.1
             # wcv.desiredWV_L = 0.1
@@ -153,14 +152,14 @@ def nav_loop():
             if heading_err_cross < 0:
                 debug_msg.data = "Case 2.4.1  Turn right"
                 debug_publisher.publish(debug_msg)
-                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+                mc.values = [140, 60, 140, 60, 100, 100, 100, 100, 100]
                 command_publisher.publish(mc)
                 # wcv.desiredWV_R = -0.1
                 # wcv.desiredWV_L = 0.1
             else:
                 debug_msg.data = "Case 2.4.2  Turn left"
                 debug_publisher.publish(debug_msg)
-                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100] # TODO
+                mc.values = [60, 140, 60, 140, 100, 100, 100, 100, 100]
                 command_publisher.publish(mc)
                 # wcv.desiredWV_R = 0.1
                 # wcv.desiredWV_L = -0.1
