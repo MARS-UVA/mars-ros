@@ -15,7 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   nav_msgs
   geometry_msgs
-  # message_generation
+  message_generation
+  hero_board
 )
 
 ## System dependencies are found with CMake's conventions
@@ -76,7 +77,7 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 #generate_messages(
   #DEPENDENCIES
-  #std_msgs  # Or other packages containing msgs
+   # std_msgs  # Or other packages containing msgs
 #)
 
 ################################################
