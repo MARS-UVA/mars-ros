@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # This code heavily inspired by Lab 3 (AprilTag Navigation)
 # in Peter Yu's Sept 2016 Intro to Robotics Lab at MIT
 # https://people.csail.mit.edu/peterkty/teaching/Lab3Handout_Fall_2016.pdf 
@@ -13,7 +13,7 @@ import tf2_geometry_msgs # so that geometry_msgs are automatically converted to 
 import numpy as np
 import threading
 import tf_conversions
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Twist
 from std_msgs.msg import String
 
 from hero_board.msg import MotorCommand
@@ -24,7 +24,7 @@ nTfRetry = 1
 retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
-autonomy_mode = False
+autonomy_mode = True # TODO -- CHANGE BACK TO FALSE!!!
 
 rospy.init_node('naive_navigator', anonymous=True)
 tfBuffer = tf2_ros.Buffer()
@@ -64,7 +64,7 @@ def stall_loop(stop_check):
 def apriltag_callback(data):
     # use apriltag pose detection to find where the robot is
     for detection in data.detections:
-        if 1 in detection.id:   # our apriltag ID is 1
+        if 5 in detection.id:   # our apriltag ID is 1
             poselist_tag_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
 
             # transform the tag -> camera tf into a tag -> base tf
@@ -102,6 +102,9 @@ def nav_loop(stop_check):
     command_publisher = rospy.Publisher("/motor/output", MotorCommand, queue_size=1)
     mc = MotorCommand()
 
+    twist_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+    tw = Twist()
+
     target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
     rate = rospy.Rate(10) # 100hz
     
@@ -114,7 +117,7 @@ def nav_loop(stop_check):
             break
 
         # get robot pose
-        robot_pose3d = lookupTransform('map', 'robot_base')
+        robot_pose3d = lookupTransform('robot_base', 'map')
         
         if robot_pose3d is None:
             if not arrived:
@@ -123,6 +126,13 @@ def nav_loop(stop_check):
                 # wcv.desiredWV_R = 0  # right, left
                 # wcv.desiredWV_L = 0 
                 mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
+                tw.linear.x = 0
+                tw.linear.y = 0
+                tw.linear.z = 0
+                tw.angular.x = 0
+                tw.angular.y = 0
+                tw.angular.z = -0.5
+                twist_publisher.publish(tw)
                 command_publisher.publish(mc)
             rate.sleep()
             continue
@@ -149,10 +159,16 @@ def nav_loop(stop_check):
         # print 'norm delta', np.linalg.norm( pos_delta ), 'diffrad', diffrad(robot_yaw, target_pose2d[2])
         # print 'heading_err_cross', heading_err_cross
         
-        if arrived or (np.linalg.norm( pos_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
+        if arrived or (np.linalg.norm( pos_delta ) < 0.1 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
             debug_msg.data = "Case 2.1  Stop"
             debug_publisher.publish(debug_msg)
             mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+            tw.linear.x = 0
+            tw.linear.y = 0
+            tw.linear.z = 0
+            tw.angular.x = 0
+            tw.angular.y = 0
+            tw.angular.z = 0
             # wcv.desiredWV_R = 0  
             # wcv.desiredWV_L = 0
 
@@ -175,6 +191,12 @@ def nav_loop(stop_check):
                 debug_msg.data = "Case 2.2.1  Turn right slowly"
                 debug_publisher.publish(debug_msg) 
                 mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
+                tw.linear.x = 0
+                tw.linear.y = 0
+                tw.linear.z = 0
+                tw.angular.x = 0
+                tw.angular.y = 0
+                tw.angular.z = -0.5
                 # wcv.desiredWV_R = -0.05 
                 # wcv.desiredWV_L = 0.05
             else:
@@ -183,12 +205,24 @@ def nav_loop(stop_check):
                 # wcv.desiredWV_R = 0.05  
                 # wcv.desiredWV_L = -0.05
                 mc.values = [80, 120, 80, 120, 100, 100, 100, 100, 100]
+                tw.linear.x = 0
+                tw.linear.y = 0
+                tw.linear.z = 0
+                tw.angular.x = 0
+                tw.angular.y = 0
+                tw.angular.z = 0.5
                 
         elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
             arrived_time = None
             debug_msg.data = "Case 2.3  Straight forward"
             debug_publisher.publish(debug_msg)
             mc.values = [140, 140, 140, 140, 100, 100, 100, 100, 100]
+            tw.linear.x = 0.2
+            tw.linear.y = 0
+            tw.linear.z = 0
+            tw.angular.x = 0
+            tw.angular.y = 0
+            tw.angular.z = 0
             # wcv.desiredWV_R = 0.1
             # wcv.desiredWV_L = 0.1
 
@@ -198,17 +232,30 @@ def nav_loop(stop_check):
                 debug_msg.data = "Case 2.4.1  Turn right"
                 debug_publisher.publish(debug_msg)
                 mc.values = [140, 60, 140, 60, 100, 100, 100, 100, 100]
+                tw.linear.x = 0
+                tw.linear.y = 0
+                tw.linear.z = 0
+                tw.angular.x = 0
+                tw.angular.y = 0
+                tw.angular.z = -1.0
                 # wcv.desiredWV_R = -0.1
                 # wcv.desiredWV_L = 0.1
             else:
                 debug_msg.data = "Case 2.4.2  Turn left"
                 debug_publisher.publish(debug_msg)
                 mc.values = [60, 140, 60, 140, 100, 100, 100, 100, 100]
+                tw.linear.x = 0
+                tw.linear.y = 0
+                tw.linear.z = 0
+                tw.angular.x = 0
+                tw.angular.y = 0
+                tw.angular.z = 1.0
                 # wcv.desiredWV_R = 0.1
                 # wcv.desiredWV_L = -0.1
                 
         # publish motor commands
         command_publisher.publish(mc)
+        twist_publisher.publish(tw)
         rate.sleep()
     
     if not rospy.is_shutdown():
