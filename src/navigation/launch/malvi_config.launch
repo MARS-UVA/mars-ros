@@ -1,13 +1,13 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="hero" default="true" />
-    <arg name="actions" default="true" />
-    <arg name="rpc" default="true" />
+    <arg name="hero" default="false" />
+    <arg name="actions" default="false" />
+    <arg name="rpc" default="false" />
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />z
     <arg name="autonomy" default="true" />
-    <arg name="webcam_enabled" default="true" />
+    <arg name="webcam_enabled" default="false" />
     <arg name="naive_autonomy" default="true" />
 
 
@@ -94,7 +94,7 @@
     <group if="$(eval autonomy)">
 
         <!-- apriltag detection -->
-        <arg name="apriltag_camera_name" default="/webcam0" />
+        <arg name="apriltag_camera_name" default="/camera/rgb" /> <!-- TODO change back to webcam0-->
         <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
         <arg name="apriltag_queue_size" default="1" />
         <!-- apriltag_ros continuous detection node -->
