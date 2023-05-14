@@ -18,6 +18,7 @@ from std_msgs.msg import String
 
 from hero_board.msg import MotorCommand
 from navigation.msg import AutonomyState
+from actions.srv import StartAction, StartActionRequest, StartActionResponse
 from apriltag_ros.msg import AprilTagDetectionArray
 
 nTfRetry = 1
@@ -25,7 +26,7 @@ retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
 
-autonomy_mode = True # TODO- back to false!!!
+autonomy_mode = False
 
 rospy.init_node('naive_navigator', anonymous=True)
 motor_command_mode = rospy.get_param('~motor_command_mode')
@@ -106,7 +107,7 @@ def instigate_thread(stall=True):
     thread.start()
 
 ## navigation control loop
-def nav_loop(stop_check):
+def nav_loop(autonomy_check):
     global motor_command_mode
     global twist_mode
 
@@ -126,7 +127,7 @@ def nav_loop(stop_check):
     arrived_time = None
     
     while not rospy.is_shutdown() :
-        if not stop_check():
+        if not autonomy_check():
             break
 
         # get robot pose
@@ -197,6 +198,41 @@ def nav_loop(stop_check):
                         debug_msg.data = "Arrived!"
                         debug_publisher.publish(debug_msg)
                     arrived = True
+                    rospy.wait_for_service("/start_action")
+                    start_action = rospy.ServiceProxy('/start_action', StartAction)
+                    try:
+                        request = StartActionRequest()
+                        request.action_description_json = "{\
+                            \"name\": \"raise_bin\",\
+                            \"update_delay\": 0.05,\
+                            \"speed\": 30\
+                        }"
+                        if debug_mode:
+                            debug_msg.data = "raising bin"
+                            debug_publisher.publish(debug_msg)
+                        response = start_action(request)
+                    except rospy.ServiceException as exc:
+                        if debug_mode:
+                            debug_msg.data = "Service did not process request: " + str(exc)
+                            debug_publisher.publish(debug_msg)
+                    rospy.Rate(0.05).sleep # waits for 20 seconds?
+                    try:
+                        request = StartActionRequest()
+                        request.action_description_json = "{ \
+                            \"name\": \"lower_bin\",\
+                            \"update_delay\": 0.05,\
+                            \"speed\": 30,\
+                            \"lowered_angle\": 40\
+                        }"
+                        if debug_mode:
+                            debug_msg.data = "lowering bin"
+                            debug_publisher.publish(debug_msg)
+                        response = start_action(request)
+                    except rospy.ServiceException as exc:
+                        if debug_mode:
+                            debug_msg.data = "Service did not process request: " + str(exc)
+                            debug_publisher.publish(debug_msg)
+
             else:
                 arrived_time = rospy.Time.now()
 
