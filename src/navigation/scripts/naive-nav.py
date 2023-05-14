@@ -26,12 +26,13 @@ retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
 
-autonomy_mode = False
+autonomy_mode = True # todo - change back to False
 
 rospy.init_node('naive_navigator', anonymous=True)
 motor_command_mode = rospy.get_param('~motor_command_mode')
 twist_mode = rospy.get_param('~twist_mode')
 debug_mode = rospy.get_param('~debug_mode')
+apriltag_id = rospy.get_param('~apriltag_id')
 
 
 tfBuffer = tf2_ros.Buffer()
@@ -73,7 +74,7 @@ def stall_loop(stop_check):
 def apriltag_callback(data):
     # use apriltag pose detection to find where the robot is
     for detection in data.detections:
-        if 5 in detection.id:   # our apriltag ID is 1
+        if apriltag_id in detection.id:
             poselist_tag_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
 
             # transform the tag -> camera tf into a tag -> base tf
@@ -131,7 +132,7 @@ def nav_loop(autonomy_check):
             break
 
         # get robot pose
-        robot_pose3d = lookupTransform('robot_base', 'map')
+        robot_pose3d = lookupTransform('robot_front', 'map') # we want to line up the *front* of the robot with the goal
         
         if robot_pose3d is None:
             if not arrived:

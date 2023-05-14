@@ -5,14 +5,15 @@
     <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
     <arg name="feedback_cameras" default="false" />
-    <arg name="autonomy_cameras" default="false" />z
+    <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="true" />
-    <arg name="webcam_enabled" default="true" />
-    <arg name="naive_autonomy" default="true" />
+    <arg name="webcam_enabled" default="false" />
+    <arg name="naive_autonomy" default="false" />
     <arg name="autonomy_motor_current_mode" default="false" />
     <arg name="autonomy_twist_mode" default="true" />
-    <arg name="debug_mode" default="true" />
-
+    <arg name="debug_mode" default="false" />
+    <arg name="apriltag_id" default="5" />
+    <arg name="apriltag_camera" default="/camera/rgb" />
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -97,7 +98,7 @@
     <group if="$(eval autonomy)">
 
         <!-- apriltag detection -->
-        <arg name="apriltag_camera_name" default="/camera/rgb" /> <!-- TODO change back to webcam0-->
+        <arg name="apriltag_camera_name" default="$(arg apriltag_camera)" /> <!-- TODO change back to webcam0 for webcam on robot--> <!-- /camera/rgb is for simulation, /usb_cam for my webcam-->
         <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
         <arg name="apriltag_queue_size" default="1" />
         <!-- apriltag_ros continuous detection node -->
@@ -116,7 +117,11 @@
             <rosparam command="load" file="$(find navigation)/config/apriltag/settings.yaml"/>
             <rosparam command="load" file="$(find navigation)/config/apriltag/tags.yaml"/>
         </node>
-        
+
+        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 map tag_1" />
+        <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base usb_cam" />
+        <node pkg="tf2_ros" name="robot_base_to_robot_front" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base robot_front" />
+
         <!-- odometry based on apriltag -->
         <rosparam file="$(find navigation)/config/apriltag/tag_positions.yaml" command="load" />
         <node pkg="navigation" type="environment_visualizer" name="environment_visualizer" output="screen" />
@@ -135,11 +140,8 @@
             <param name="motor_command_mode" value="$(arg autonomy_motor_current_mode)"/>
             <param name="twist_mode" value="$(arg autonomy_twist_mode)"/>
             <param name="debug_mode" value="$(arg debug_mode)"/>
+            <param name="apriltag_id" value="$(arg apriltag_id)"/>
         </node>
-        <!-- the following two static transforms are inspired by https://github.com/mit212/me212lab3/blob/master/catkin_ws/src/me212bot/launch/frames.launch -->
-        <!-- these are placeholder values that cause no transformation to occur -->
-        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 map tag_1" />
-        <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base usb_cam" />
     </group>
 
 </launch>
