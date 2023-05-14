@@ -7,8 +7,11 @@
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />z
     <arg name="autonomy" default="true" />
-    <arg name="webcam_enabled" default="false" />
+    <arg name="webcam_enabled" default="true" />
     <arg name="naive_autonomy" default="true" />
+    <arg name="autonomy_motor_current_mode" default="false" />
+    <arg name="autonomy_twist_mode" default="true" />
+    <arg name="debug_mode" default="true" />
 
 
     <!-- hero communication node -->
@@ -128,7 +131,11 @@
     </group>
 
     <group if="$(eval naive_autonomy)">
-        <node pkg="navigation" type="naive-nav.py" name="naive_navigator"/>
+        <node pkg="navigation" type="naive-nav.py" name="naive_navigator">
+            <param name="motor_command_mode" value="$(arg autonomy_motor_current_mode)"/>
+            <param name="twist_mode" value="$(arg autonomy_twist_mode)"/>
+            <param name="debug_mode" value="$(arg debug_mode)"/>
+        </node>
         <!-- the following two static transforms are inspired by https://github.com/mit212/me212lab3/blob/master/catkin_ws/src/me212bot/launch/frames.launch -->
         <!-- these are placeholder values that cause no transformation to occur -->
         <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 map tag_1" />
