@@ -1,17 +1,17 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
-    <arg name="hero" default="false" />
+    <arg name="hero" default="true" />
     <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="true" />
     <arg name="webcam_enabled" default="false" />
-    <arg name="naive_autonomy" default="false" />
+    <arg name="naive_autonomy" default="true" />
     <arg name="autonomy_motor_current_mode" default="false" />
     <arg name="autonomy_twist_mode" default="true" />
-    <arg name="debug_mode" default="false" />
+    <arg name="debug_mode" default="true" />
     <arg name="apriltag_id" default="5" />
     <arg name="apriltag_camera" default="/camera/rgb" />
 
@@ -120,7 +120,7 @@
 
         <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 map tag_1" />
         <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base usb_cam" />
-        <node pkg="tf2_ros" name="robot_base_to_robot_front" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base robot_front" />
+        <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base robot_edge" />
 
         <!-- odometry based on apriltag -->
         <rosparam file="$(find navigation)/config/apriltag/tag_positions.yaml" command="load" />

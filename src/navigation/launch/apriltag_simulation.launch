@@ -3,6 +3,7 @@
   <arg name="x_pos" default="0.0"/>
   <arg name="y_pos" default="0.0"/>
   <arg name="z_pos" default="0.0"/>
+  <arg name="GAZEBO_MODEL_PATH" value="/home/madelyn/mars/gazebo_apriltag/models" />
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find navigation)/apriltag_world.world"/>

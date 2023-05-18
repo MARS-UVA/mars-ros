@@ -132,7 +132,7 @@ def nav_loop(autonomy_check):
             break
 
         # get robot pose
-        robot_pose3d = lookupTransform('robot_front', 'map') # we want to line up the *front* of the robot with the goal
+        robot_pose3d = lookupTransform('robot_base', 'map') # we want to line up the *front* of the robot with the goal
         
         if robot_pose3d is None:
             if not arrived:
@@ -191,7 +191,7 @@ def nav_loop(autonomy_check):
 
             # we will only mark the robot as "arrived" if it has been at the target position for a certain # of seconds
             # this is to prevent false readings from prematurely stopping the navigation
-            if arrived_time is not None: 
+            if not arrived and arrived_time is not None: 
                 now = rospy.Time.now()
                 time_difference = now - arrived_time
                 if time_difference.to_sec() > arrived_buffer_time:
@@ -201,6 +201,26 @@ def nav_loop(autonomy_check):
                     arrived = True
                     rospy.wait_for_service("/start_action")
                     start_action = rospy.ServiceProxy('/start_action', StartAction)
+                    # go forward
+                    # wait
+                    # call raise ladder service
+                    try:
+                        request = StartActionRequest()
+                        request.action_description_json = "{\
+                            \"name\": \"raise_ladder\",\
+                            \"update_delay\": 0.05,\
+                            \"speed\": 30,\
+                            \"raised_angle\": 52.0\
+                        }"
+                        if debug_mode:
+                            debug_msg.data = "raising ladder"
+                            debug_publisher.publish(debug_msg)
+                        response = start_action(request)
+                    except rospy.ServiceException as exc:
+                        if debug_mode:
+                            debug_msg.data = "Service did not process request: " + str(exc)
+                            debug_publisher.publish(debug_msg)
+                    # call raise bin
                     try:
                         request = StartActionRequest()
                         request.action_description_json = "{\
@@ -216,7 +236,8 @@ def nav_loop(autonomy_check):
                         if debug_mode:
                             debug_msg.data = "Service did not process request: " + str(exc)
                             debug_publisher.publish(debug_msg)
-                    rospy.Rate(0.05).sleep # waits for 20 seconds?
+                    rospy.sleep(20.0) # sleeps for 20 seconds
+                    # call lower bin
                     try:
                         request = StartActionRequest()
                         request.action_description_json = "{ \
@@ -314,6 +335,7 @@ def nav_loop(autonomy_check):
             command_publisher.publish(mc)
         if twist_mode:
             twist_publisher.publish(tw)
+
         rate.sleep()
     
     if not rospy.is_shutdown():
