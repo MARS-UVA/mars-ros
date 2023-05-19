@@ -118,9 +118,9 @@
             <rosparam command="load" file="$(find navigation)/config/apriltag/tags.yaml"/>
         </node>
 
-        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0 1 0 0 0 map tag_1" />
-        <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base usb_cam" />
-        <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 1 0 0 0 robot_base robot_edge" />
+        <node pkg="tf2_ros" name="map_to_apriltag" type="static_transform_publisher" args="0 0 0.1 0 -1.5708 0 map tag_1" />
+        <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base usb_cam" />
+        <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base robot_edge" />
 
         <!-- odometry based on apriltag -->
         <rosparam file="$(find navigation)/config/apriltag/tag_positions.yaml" command="load" />

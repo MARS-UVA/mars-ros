@@ -75,17 +75,16 @@ def apriltag_callback(data):
     # use apriltag pose detection to find where the robot is
     for detection in data.detections:
         if apriltag_id in detection.id:
-            poselist_tag_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
-
+            poselist_tag_from_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
             # transform the tag -> camera tf into a tag -> base tf
-            poselist_tag_base = transformPose(poselist_tag_cam, 'usb_cam', 'robot_base')
+            poselist_tag_from_base = transformPose(poselist_tag_from_cam, 'usb_cam', 'robot_base')
             # calculate base -> tag
-            poselist_base_tag = invPoselist(poselist_tag_base)
+            poselist_base_tag = invPoselist(poselist_tag_from_base)
             # transform base -> tag into base -> map
             poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map')
             # publish base -> map
             pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
-
+        
 ## autonomy mode msg handling function
 def autonomy_state_callback(data):
     global autonomy_mode
@@ -120,19 +119,32 @@ def nav_loop(autonomy_check):
         twist_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
         tw = Twist()
 
-    target_pose2d = [0, 0, 0] # this will be at the origin of the map for now
-    rate = rospy.Rate(10) # 100hz
+    target_pose2d = [0, 0, 0] # [x, y, yaw] this will be at the origin of the map for now
+    rate = rospy.Rate(100) # 100hz
     
     arrived = False
     arrived_position = False
     arrived_time = None
     
     while not rospy.is_shutdown() :
-        if not autonomy_check():
+        if not autonomy_check(): # If we should no longer be doing autonomy
+            # stop the robot
+            if motor_command_mode:
+                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+                command_publisher.publish(mc)
+            if twist_mode:
+                tw.linear.x = 0
+                tw.linear.y = 0
+                tw.linear.z = 0
+                tw.angular.x = 0
+                tw.angular.y = 0
+                tw.angular.z = 0
+                twist_publisher.publish(tw)
+                # break out of this while loop
             break
 
-        # get robot pose
-        robot_pose3d = lookupTransform('robot_base', 'map') # we want to line up the *front* of the robot with the goal
+        # get robot pose [*translation(x, y, z), *rotation_quat(x, y, z, w)]
+        robot_pose3d = lookupTransform('map', 'robot_base') # we want to line up the *front* of the robot with the goal
         
         if robot_pose3d is None:
             if not arrived:
@@ -153,11 +165,11 @@ def nav_loop(autonomy_check):
             rate.sleep()
             continue
         
-        robot_position2d  = robot_pose3d[0:2]
+        robot_position2d  = robot_pose3d[0:2] # translation.x, translation.y
         target_position2d = target_pose2d[0:2]
         
         robot_yaw    = tf_conversions.transformations.euler_from_quaternion(robot_pose3d[3:7]) [2]
-        robot_pose2d = robot_position2d + [robot_yaw]
+        robot_pose2d = robot_position2d + [robot_yaw] # this is [translation.x, translation.y, translation.z, yaw]
         
         # 2. navigation policy
         # 2.1 if       in the target, stop
@@ -165,17 +177,29 @@ def nav_loop(autonomy_check):
         # 2.3 else if  in the correct heading, go straight to the target position,
         # 2.4 else     turn in the direction of the target position
         
-        pos_delta         = np.array(target_position2d) - np.array(robot_position2d)
+        # Get how far we are from the goal (x, y)
+        position_delta         = np.array(target_position2d) - np.array(robot_position2d)
+        # Get the direction in which the robot is currently facing (yaw)
         robot_heading_vec = np.array([np.cos(robot_yaw), np.sin(robot_yaw)])
-        heading_err_cross = cross2d( robot_heading_vec, pos_delta / np.linalg.norm(pos_delta) )
+        # Take the vector representing how far we are from the target position and convert to a unit vector
+        pos_delta_unit_vec = position_delta / np.linalg.norm(position_delta)
+        # Take cross product of current heading with correct position delta heading
+        # to see how far off our current yaw is from the goal yaw (0 means yaws are equal)
+        heading_err_cross = cross2d( robot_heading_vec, pos_delta_unit_vec)
         
+        """
+        if debug_mode:
+            debug_msg.data = "robot yaw: " + str(robot_yaw) + ", target yaw: " + str(target_pose2d[2]) + ", difference in radians: " + str(diffrad(robot_yaw, target_pose2d[2]))
+            debug_publisher.publish(debug_msg)
+        """
         # print 'robot_position2d', robot_position2d, 'target_position2d', target_position2d
         # print 'pos_delta', pos_delta
         # print 'robot_yaw', robot_yaw
         # print 'norm delta', np.linalg.norm( pos_delta ), 'diffrad', diffrad(robot_yaw, target_pose2d[2])
         # print 'heading_err_cross', heading_err_cross
         
-        if arrived or (np.linalg.norm( pos_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
+        # if robot is at the target position and facing the right direction
+        if arrived or (np.linalg.norm( position_delta ) < 0.08 and np.fabs(diffrad(robot_yaw, target_pose2d[2]))<0.05) :
             if debug_mode:
                 debug_msg.data = "Case 2.1  Stop"
                 debug_publisher.publish(debug_msg)
@@ -201,8 +225,9 @@ def nav_loop(autonomy_check):
                     arrived = True
                     rospy.wait_for_service("/start_action")
                     start_action = rospy.ServiceProxy('/start_action', StartAction)
-                    # go forward
+                    # go forward with twist message
                     # wait
+                    # stop
                     # call raise ladder service
                     try:
                         request = StartActionRequest()
@@ -258,7 +283,8 @@ def nav_loop(autonomy_check):
             else:
                 arrived_time = rospy.Time.now()
 
-        elif np.linalg.norm( pos_delta ) < 0.08:
+        # if robot is close to target position
+        elif np.linalg.norm( position_delta ) < 0.08: # checks the magnitude of the distance to the target position
             arrived_position = True
             arrived_time = None
             if diffrad(robot_yaw, target_pose2d[2]) > 0:  
@@ -266,7 +292,7 @@ def nav_loop(autonomy_check):
                     debug_msg.data = "Case 2.2.1  Turn right slowly"
                     debug_publisher.publish(debug_msg) 
                 if motor_command_mode:
-                    mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
+                    mc.values = [110, 90, 110, 90, 100, 100, 100, 100, 100]
                 if twist_mode:
                     tw.linear.x = 0
                     tw.linear.y = 0
@@ -279,15 +305,17 @@ def nav_loop(autonomy_check):
                     debug_msg.data = "Case 2.2.2  Turn left slowly"
                     debug_publisher.publish(debug_msg)
                 if motor_command_mode:
-                    mc.values = [80, 120, 80, 120, 100, 100, 100, 100, 100]
+                    mc.values = [90, 110, 90, 110, 100, 100, 100, 100, 100]
                 tw.linear.x = 0
                 tw.linear.y = 0
                 tw.linear.z = 0
                 tw.angular.x = 0
                 tw.angular.y = 0
                 tw.angular.z = 0.5
-                
-        elif arrived_position or np.fabs( heading_err_cross ) < 0.2:
+
+        # if neither of those cases worked, then we need to get to the right position!!
+        # if robot has correct heading
+        elif np.fabs( heading_err_cross ) < 0.2:
             arrived_time = None
             if debug_mode:
                 debug_msg.data = "Case 2.3  Straight forward"
@@ -301,11 +329,13 @@ def nav_loop(autonomy_check):
             tw.angular.y = 0
             tw.angular.z = 0
 
+        # if robot does NOT have correct heading, then turn to the correct heading
         else:
             arrived_time = None
-            if heading_err_cross < 0:
+            if heading_err_cross < 0: 
+                # based on right hand rule, the cross product of robot heading X target heading will be negative if the robot heading is TO THE LEFT of the target
                 if debug_mode:
-                    debug_msg.data = "Case 2.4.1  Turn right"
+                    debug_msg.data = "Case 2.4.1  Turn right" # therefore we would need to turn right
                     debug_publisher.publish(debug_msg)
                 if motor_command_mode:
                     mc.values = [140, 60, 140, 60, 100, 100, 100, 100, 100]
@@ -341,6 +371,7 @@ def nav_loop(autonomy_check):
     if not rospy.is_shutdown():
         instigate_thread()
 
+"""Two dimensional cross product"""
 def cross2d(a, b):
     return a[0]*b[1] - a[1]*b[0]
 

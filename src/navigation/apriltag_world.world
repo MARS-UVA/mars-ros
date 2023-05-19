@@ -87,40 +87,16 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    <model name='Apriltag36_11_00005'>
-      <link name='main'>
-        <pose>0 0 0 0 -0 0</pose>
-        <visual name='main_Visual'>
-          <geometry>
-            <box>
-              <size>1 1 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://Apriltag36_11_00005/materials/scripts</uri>
-              <uri>model://Apriltag36_11_00005/materials/textures</uri>
-              <name>Apriltag36_11_00005</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>1</static>
-      <pose>1.27045 1.03176 0 0 -0 0</pose>
-    </model>
     <state world_name='default'>
-      <sim_time>243 707000000</sim_time>
-      <real_time>87 804997238</real_time>
-      <wall_time>1684104240 926204431</wall_time>
-      <iterations>87228</iterations>
+      <sim_time>1187 994000000</sim_time>
+      <real_time>151 955926934</real_time>
+      <wall_time>1684522589 895364012</wall_time>
+      <iterations>132369</iterations>
       <model name='Apriltag36_11_00005'>
-        <pose>1.27083 1.03176 0.155041 -2.4271 -1.56901 3.14157</pose>
-        <scale>0.22332 0.411336 1</scale>
+        <pose>0.379794 0.634522 0.174748 1.59143 0.032648 -1.00694</pose>
+        <scale>0.109346 0.049022 1</scale>
         <link name='main'>
-          <pose>1.27083 1.03176 0.155041 -2.4271 -1.56901 3.14157</pose>
+          <pose>0.379794 0.634522 0.174748 1.59143 0.032648 -1.00694</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -142,10 +118,34 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>5 -5 2 0 0.275643 2.35619</pose>
+        <pose>-0.326527 -2.18613 1.03393 0 0.32279 1.53759</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
+    <model name='Apriltag36_11_00005'>
+      <link name='main'>
+        <pose>0 0 0 0 -0 0</pose>
+        <visual name='main_Visual'>
+          <geometry>
+            <box>
+              <size>3.2877 4.82192 0.01</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://Apriltag36_11_00005/materials/scripts</uri>
+              <uri>model://Apriltag36_11_00005/materials/textures</uri>
+              <name>Apriltag36_11_00005</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <static>1</static>
+      <pose>1.31453 0.713849 0 0 -0 0</pose>
+    </model>
   </world>
 </sdf>
