@@ -88,15 +88,25 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>1187 994000000</sim_time>
-      <real_time>151 955926934</real_time>
-      <wall_time>1684522589 895364012</wall_time>
-      <iterations>132369</iterations>
-      <model name='Apriltag36_11_00005'>
-        <pose>0.379794 0.634522 0.174748 1.59143 0.032648 -1.00694</pose>
-        <scale>0.109346 0.049022 1</scale>
+      <sim_time>1788 721000000</sim_time>
+      <real_time>93 770402640</real_time>
+      <wall_time>1684605175 788883139</wall_time>
+      <iterations>92757</iterations>
+      <model name='Apriltag5'>
+        <pose>0 -0.2 0.2 0 -1.57079 3.14159</pose>
+        <scale>1 1 1</scale>
         <link name='main'>
-          <pose>0.379794 0.634522 0.174748 1.59143 0.032648 -1.00694</pose>
+          <pose>0 -0.2 0.2 0 -1.57079 3.14159</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='NewApriltag1'>
+        <pose>0 0 0.2 0 -1.57079 3.14159</pose>
+        <scale>1 1 1</scale>
+        <link name='main'>
+          <pose>0 0 0.2 0 -1.57079 3.14159</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -118,18 +128,82 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-0.326527 -2.18613 1.03393 0 0.32279 1.53759</pose>
+        <pose>0.657547 0.042036 1.37044 0 1.2818 2.91808</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
-    <model name='Apriltag36_11_00005'>
+    <model name='NewApriltag1'>
       <link name='main'>
         <pose>0 0 0 0 -0 0</pose>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+        <inertial>
+          <mass>1</mass>
+          <pose>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
         <visual name='main_Visual'>
           <geometry>
             <box>
-              <size>3.2877 4.82192 0.01</size>
+              <size>0.087 0.087 0.001</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://Apriltag36_11_00001/materials/scripts</uri>
+              <uri>model://Apriltag36_11_00001/materials/textures</uri>
+              <name>Apriltag36_11_00001</name>
+            </script>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <pose>0 0 0 0 -0 0</pose>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+      </link>
+      <static>1</static>
+      <allow_auto_disable>1</allow_auto_disable>
+      <pose>0 0 0 0 -0 0</pose>
+    </model>
+    <model name='Apriltag5'>
+      <link name='main'>
+        <pose>0 0 0 0 -0 0</pose>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+        <inertial>
+          <mass>1</mass>
+          <pose>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <visual name='main_Visual'>
+          <geometry>
+            <box>
+              <size>0.1595 0.1595 0.001</size>
             </box>
           </geometry>
           <material>
@@ -138,14 +212,22 @@
               <uri>model://Apriltag36_11_00005/materials/textures</uri>
               <name>Apriltag36_11_00005</name>
             </script>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
           </material>
+          <pose>0 0 0 0 -0 0</pose>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
         </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
       </link>
       <static>1</static>
-      <pose>1.31453 0.713849 0 0 -0 0</pose>
+      <allow_auto_disable>1</allow_auto_disable>
+      <pose>0 0.02 0.05 0 -1.57079 0</pose>
     </model>
   </world>
 </sdf>

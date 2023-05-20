@@ -26,7 +26,7 @@ retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
 
-autonomy_mode = True # todo - change back to False
+autonomy_mode = False
 
 rospy.init_node('naive_navigator', anonymous=True)
 motor_command_mode = rospy.get_param('~motor_command_mode')
