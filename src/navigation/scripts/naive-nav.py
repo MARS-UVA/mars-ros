@@ -26,12 +26,18 @@ retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
 
-autonomy_mode = True # todo - change back to False
+autonomy_mode = True # todo back to False
 
 rospy.init_node('naive_navigator', anonymous=True)
 motor_command_mode = rospy.get_param('~motor_command_mode')
 twist_mode = rospy.get_param('~twist_mode')
 debug_mode = rospy.get_param('~debug_mode')
+simulation_mode = rospy.get_param('~simulation_mode')
+
+if simulation_mode:
+    multiplier = -1
+else:
+    multiplier = 1
 
 tfBuffer = tf2_ros.Buffer()
 lr = tf2_ros.TransformListener(tfBuffer)
@@ -112,7 +118,7 @@ def nav_loop(autonomy_check):
         if not autonomy_check(): # If we should no longer be doing autonomy
             # stop the robot
             if motor_command_mode:
-                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+                mc.values = np.multiply(np.array([100, 100, 100, 100, 100, 100, 100, 100, 100]), multiplier).tolist()
                 command_publisher.publish(mc)
             if twist_mode:
                 tw.linear.x = 0
@@ -134,7 +140,7 @@ def nav_loop(autonomy_check):
                     debug_msg.data = "1. Tag not in view, turn right slowly until you see it again"
                     debug_publisher.publish(debug_msg)
                 if motor_command_mode:
-                    mc.values = [120, 80, 120, 80, 100, 100, 100, 100, 100]
+                    mc.values = np.multiply(np.array([120, 80, 120, 80, 100, 100, 100, 100, 100]), multiplier).tolist()
                     command_publisher.publish(mc)
                 if twist_mode:
                     tw.linear.x = 0
@@ -142,7 +148,7 @@ def nav_loop(autonomy_check):
                     tw.linear.z = 0
                     tw.angular.x = 0
                     tw.angular.y = 0
-                    tw.angular.z = -0.5
+                    tw.angular.z = 0.5 * multiplier
                     twist_publisher.publish(tw)
             rate.sleep()
             continue
@@ -186,7 +192,7 @@ def nav_loop(autonomy_check):
                 debug_msg.data = "Case 2.1  Stop"
                 debug_publisher.publish(debug_msg)
             if motor_command_mode:
-                mc.values = [100, 100, 100, 100, 100, 100, 100, 100, 100]
+                mc.values = np.multiply(np.array([120, 80, 120, 80, 100, 100, 100, 100, 100]), multiplier).tolist()
             if twist_mode:
                 tw.linear.x = 0
                 tw.linear.y = 0
@@ -274,26 +280,26 @@ def nav_loop(autonomy_check):
                     debug_msg.data = "Case 2.2.1  Turn right slowly"
                     debug_publisher.publish(debug_msg) 
                 if motor_command_mode:
-                    mc.values = [110, 90, 110, 90, 100, 100, 100, 100, 100]
+                    mc.values = np.multiply(np.array([110, 90, 110, 90, 100, 100, 100, 100, 100]), multiplier).tolist()
                 if twist_mode:
                     tw.linear.x = 0
                     tw.linear.y = 0
                     tw.linear.z = 0
                     tw.angular.x = 0
                     tw.angular.y = 0
-                    tw.angular.z = -0.5
+                    tw.angular.z = 0.5 * multiplier
             else:
                 if debug_mode:
                     debug_msg.data = "Case 2.2.2  Turn left slowly"
                     debug_publisher.publish(debug_msg)
                 if motor_command_mode:
-                    mc.values = [90, 110, 90, 110, 100, 100, 100, 100, 100]
+                    mc.values = np.multiply(np.array([90, 110, 90, 110, 100, 100, 100, 100, 100]), multiplier).tolist()
                 tw.linear.x = 0
                 tw.linear.y = 0
                 tw.linear.z = 0
                 tw.angular.x = 0
                 tw.angular.y = 0
-                tw.angular.z = 0.5
+                tw.angular.z = -0.5 * multiplier
 
         # if neither of those cases worked, then we need to get to the right position!!
         # if robot has correct heading
@@ -303,8 +309,8 @@ def nav_loop(autonomy_check):
                 debug_msg.data = "Case 2.3  Straight forward"
                 debug_publisher.publish(debug_msg)
             if motor_command_mode:
-                mc.values = [140, 140, 140, 140, 100, 100, 100, 100, 100]
-            tw.linear.x = 0.2
+                mc.values = np.multiply(np.array([140, 140, 140, 140, 100, 100, 100, 100, 100]), multiplier).tolist()
+            tw.linear.x = -0.2 * multiplier
             tw.linear.y = 0
             tw.linear.z = 0
             tw.angular.x = 0
@@ -320,27 +326,27 @@ def nav_loop(autonomy_check):
                     debug_msg.data = "Case 2.4.1  Turn right" # therefore we would need to turn right
                     debug_publisher.publish(debug_msg)
                 if motor_command_mode:
-                    mc.values = [140, 60, 140, 60, 100, 100, 100, 100, 100]
+                    mc.values = np.multiply(np.array([140, 60, 140, 60, 100, 100, 100, 100, 100]), multiplier).tolist()
                 if twist_mode:
                     tw.linear.x = 0
                     tw.linear.y = 0
                     tw.linear.z = 0
                     tw.angular.x = 0
                     tw.angular.y = 0
-                    tw.angular.z = -1.0
+                    tw.angular.z = 1.0 * multiplier
             else:
                 if debug_mode:
                     debug_msg.data = "Case 2.4.2  Turn left"
                     debug_publisher.publish(debug_msg)
                 if motor_command_mode:
-                    mc.values = [60, 140, 60, 140, 100, 100, 100, 100, 100]
+                    mc.values = [60, 140, 60, 140, 100, 100, 100, 100, 100] # TOFO: fix mc arrays. just multiplying by -1 won't do
                 if twist_mode:
                     tw.linear.x = 0
                     tw.linear.y = 0
                     tw.linear.z = 0
                     tw.angular.x = 0
                     tw.angular.y = 0
-                    tw.angular.z = 1.0
+                    tw.angular.z = -1.0 * multiplier
                 
         # publish motor commands
         if motor_command_mode:
