@@ -4,24 +4,24 @@
 # https://people.csail.mit.edu/peterkty/teaching/Lab3Handout_Fall_2016.pdf 
 
 ## THREADING: https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread
-# idea: don't use threads, but rather just terminate functions based on global autonomy_state var 
-# and call other function at end
+# idea: terminate functions based on global autonomy_state var and call other function at end
 
+# general imports
 import rospy
 import tf2_ros
-import tf2_geometry_msgs # so that geometry_msgs are automatically converted to tf2_geometry_msgs
+import tf2_geometry_msgs
 import numpy as np
 import threading
 import tf_conversions
-from geometry_msgs.msg import TransformStamped, Twist
+from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 
+# imports from our ros workspace
 from hero_board.msg import MotorCommand
 from navigation.msg import AutonomyState
-from actions.srv import StartAction, StartActionRequest, StartActionResponse
-from apriltag_ros.msg import AprilTagDetectionArray
+from actions.srv import StartAction, StartActionRequest
 
-nTfRetry = 1
+nTfRetry = 1 # number of retries if a tf operation fails
 retryTime = 0.05
 tag_refresh_time = 1 # in seconds
 arrived_buffer_time = 5 # in seconds
@@ -32,23 +32,19 @@ rospy.init_node('naive_navigator', anonymous=True)
 motor_command_mode = rospy.get_param('~motor_command_mode')
 twist_mode = rospy.get_param('~twist_mode')
 debug_mode = rospy.get_param('~debug_mode')
-apriltag_id = rospy.get_param('~apriltag_id')
-
 
 tfBuffer = tf2_ros.Buffer()
 lr = tf2_ros.TransformListener(tfBuffer)
-br = tf2_ros.TransformBroadcaster()
 
 if debug_mode:
     debug_publisher = rospy.Publisher("/debug_messages", String, queue_size=1)
     debug_msg = String()
-
     
 def main():
     global autonomy_mode
-    apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
     autonomy_mode_sub = rospy.Subscriber("/autonomy_state", AutonomyState, autonomy_state_callback, queue_size=1)
     rospy.sleep(1)
+    rospy.loginfo("STARTING NAV NODE")
     
     if not autonomy_mode:
         thread = threading.Thread(target = stall_loop, args=(lambda: autonomy_mode,))
@@ -58,7 +54,7 @@ def main():
     
     rospy.spin()
 
-## does nothing
+## does nothing while we wait for autonomy mode to be toggled on
 def stall_loop(stop_check):
     rate = rospy.Rate(100) # 100hz
     
@@ -69,23 +65,8 @@ def stall_loop(stop_check):
 
     if not rospy.is_shutdown():
         instigate_thread(False)
-
-## apriltag msg handling function
-def apriltag_callback(data):
-    # use apriltag pose detection to find where the robot is
-    for detection in data.detections:
-        if apriltag_id in detection.id:
-            poselist_tag_from_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
-            # transform the tag -> camera tf into a tag -> base tf
-            poselist_tag_from_base = transformPose(poselist_tag_from_cam, 'usb_cam', 'robot_base')
-            # calculate base -> tag
-            poselist_base_tag = invPoselist(poselist_tag_from_base)
-            # transform base -> tag into base -> map
-            poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map')
-            # publish base -> map
-            pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
         
-## autonomy mode msg handling function
+## handles toggling autonomy mode on/off
 def autonomy_state_callback(data):
     global autonomy_mode
     if data.naive:
@@ -98,6 +79,7 @@ def autonomy_state_callback(data):
         autonomy_mode = False
     debug_publisher.publish(debug_msg)
 
+## determines which function to start (the stall loop or the navigation loop)
 def instigate_thread(stall=True):
     global autonomy_mode
     if stall:
@@ -106,7 +88,7 @@ def instigate_thread(stall=True):
         thread = threading.Thread(target = nav_loop, args=(lambda: autonomy_mode,))
     thread.start()
 
-## navigation control loop
+## does the navigation
 def nav_loop(autonomy_check):
     global motor_command_mode
     global twist_mode
@@ -145,7 +127,7 @@ def nav_loop(autonomy_check):
 
         # get robot pose [*translation(x, y, z), *rotation_quat(x, y, z, w)]
         robot_pose3d = lookupTransform('map', 'robot_base') # we want to line up the *front* of the robot with the goal
-        
+
         if robot_pose3d is None:
             if not arrived:
                 if debug_mode:
@@ -371,10 +353,15 @@ def nav_loop(autonomy_check):
     if not rospy.is_shutdown():
         instigate_thread()
 
-"""Two dimensional cross product"""
+"""
+HELPER FUNCTIONS
+"""
+
+## Two dimensional cross product
 def cross2d(a, b):
     return a[0]*b[1] - a[1]*b[0]
 
+## Computes the difference between two angles in radians (from -pi to pi)
 def diffrad(a,b):
     diff = (a-b)
     while diff < -np.pi:
@@ -383,34 +370,8 @@ def diffrad(a,b):
         diff -= 2*np.pi
     return diff
 
-def pubFrame(pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1):
-    if len(pose) == 7:
-        ori = tuple(pose[3:7])
-    elif len(pose) == 6:
-        ori = tf_conversions.transformations.quaternion_from_euler(*pose[3:6])
-    else:
-        # bad length of pose
-        return None
-    
-    pos = tuple(pose[0:3])
-    
-    for j in range(npub):
-        t = TransformStamped()
-        t.header.stamp = rospy.Time.now()
-        t.header.frame_id = parent_frame_id
-        t.child_frame_id = frame_id
-        t.transform.translation.x = pose[0]
-        t.transform.translation.y = pose[1]
-        t.transform.translation.z = pose[2]
-        t.transform.rotation.x = ori[0]
-        t.transform.rotation.y = ori[1]
-        t.transform.rotation.z = ori[2]
-        t.transform.rotation.w = ori[3]
-
-        br.sendTransform(t)
-        rospy.sleep(0.01)
-
-# http://wiki.ros.org/tf2/Tutorials/tf2%20and%20time%20%28Python%29
+## Looks up an existing tf transform
+## http://wiki.ros.org/tf2/Tutorials/tf2%20and%20time%20%28Python%29
 def lookupTransform(sourceFrame, targetFrame):
     for i in range(nTfRetry):
         try:
@@ -425,55 +386,6 @@ def lookupTransform(sourceFrame, targetFrame):
             rospy.sleep(retryTime)
             continue
     return None
-
-# https://answers.ros.org/question/323075/transform-the-coordinate-frame-of-a-pose-from-one-fixed-frame-to-another/ 
-def transformPose(pose, fromFrame, toFrame):
-    _pose = tf2_geometry_msgs.PoseStamped()
-    _pose.header.frame_id = fromFrame
-    if len(pose) == 6:
-        pose.append(0)
-        pose[3:7] = tf_conversions.transformations.quaternion_from_euler(pose[3], pose[4], pose[5]).tolist()
-    
-    _pose.pose.position.x = pose[0]
-    _pose.pose.position.y = pose[1]
-    _pose.pose.position.z = pose[2]
-    _pose.pose.orientation.x = pose[3]
-    _pose.pose.orientation.y = pose[4]
-    _pose.pose.orientation.z = pose[5]
-    _pose.pose.orientation.w = pose[6]
-    
-    for i in range(nTfRetry):
-        try:
-            t = rospy.Time.now()
-            _pose.header.stamp = t
-            _pose_target = tfBuffer.transform(_pose, toFrame, rospy.Duration(1))
-            p = _pose_target.pose.position
-            o = _pose_target.pose.orientation
-            return [p.x, p.y, p.z, o.x, o.y, o.z, o.w]
-        except: 
-            rospy.sleep(retryTime)
-            
-    return None
-
-def invPoselist(poselist):
-    return xyzquat_from_matrix(np.linalg.inv(matrix_from_xyzquat(poselist)))
-
-def xyzquat_from_matrix(matrix):
-    return tf_conversions.transformations.translation_from_matrix(matrix).tolist() + tf_conversions.transformations.quaternion_from_matrix(matrix).tolist()
-
-def matrix_from_xyzquat(arg1, arg2=None):
-    return matrix_from_xyzquat_np_array(arg1, arg2).tolist()
-
-def matrix_from_xyzquat_np_array(arg1, arg2=None):
-    if arg2 is not None:
-        translate = arg1
-        quaternion = arg2
-    else:
-        translate = arg1[0:3]
-        quaternion = arg1[3:7]
-
-    return np.dot(tf_conversions.transformations.compose_matrix(translate=translate) ,
-                   tf_conversions.transformations.quaternion_matrix(quaternion))
 
 if __name__=='__main__':
     main()
