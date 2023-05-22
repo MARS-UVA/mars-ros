@@ -9,7 +9,17 @@ class ActionRaiseBin(ActionBase):
 
     def execute(self):
         rospy.loginfo("action raisebin executing...")
-        msg = [100]*7 + [100 - self.description["speed"]] + [100]
+        '''
+        msg1 = [100]*8 + [100 + (0.15*self.description["speed"])]
+        self.pub.publish(MotorCommand(msg1))
+        time.sleep(2)
+
+        msg2 = [100]*7 + [100 + self.description["speed"]] + [100 + (0.15*self.description["speed"])]
+        self.pub.publish(MotorCommand(msg2))
+        time.sleep(self.description["update_delay"])
+        '''
+
+        msg = [100]*7 + [100 - self.description["speed"]] + [100 + (0.15*self.description["speed"])]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
@@ -23,7 +33,17 @@ class ActionLowerBin(ActionBase):
 
     def execute(self):
         rospy.loginfo("action lowerbin executing...")
-        msg = [100]*7 + [100 + self.description["speed"]] + [100]
+        '''
+        msg1 = [100]*7 + [100 + self.description["speed"]] + [100]
+        self.pub.publish(MotorCommand(msg1))
+        time.sleep(self.description["update_delay"])
+
+        msg2 = [100]*8 + [100 + (0.15*self.description["speed"])]
+        self.pub.publish(MotorCommand(msg2))
+        time.sleep(self.description["update_delay"])
+        '''
+
+        msg = [100]*7 + [100 + self.description["speed"]]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
