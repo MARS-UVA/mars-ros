@@ -33,7 +33,7 @@ class ActionLowerBin(ActionBase):
 
     def execute(self):
         rospy.loginfo("action lowerbin executing...")
-        '''
+        
         msg1 = [100]*7 + [100 + self.description["speed"]] + [100]
         self.pub.publish(MotorCommand(msg1))
         time.sleep(self.description["update_delay"])
@@ -41,11 +41,11 @@ class ActionLowerBin(ActionBase):
         msg2 = [100]*8 + [100 + (0.15*self.description["speed"])]
         self.pub.publish(MotorCommand(msg2))
         time.sleep(self.description["update_delay"])
-        '''
+        
 
-        msg = [100]*7 + [100 + self.description["speed"]]
+        '''msg = [100]*7 + [100 + self.description["speed"]]
         self.pub.publish(MotorCommand(msg))
-        time.sleep(self.description["update_delay"])
+        time.sleep(self.description["update_delay"])'''
 
     def is_completed(self):
         return (self.feedback_data.depositBinLowered == True)
