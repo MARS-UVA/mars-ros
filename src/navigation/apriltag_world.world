@@ -88,25 +88,25 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>1788 721000000</sim_time>
-      <real_time>93 770402640</real_time>
-      <wall_time>1684605175 788883139</wall_time>
-      <iterations>92757</iterations>
+      <sim_time>1933 872000000</sim_time>
+      <real_time>148 334745658</real_time>
+      <wall_time>1684781129 70490825</wall_time>
+      <iterations>145151</iterations>
       <model name='Apriltag5'>
-        <pose>0 -0.2 0.2 0 -1.57079 3.14159</pose>
+        <pose>0 -0.2 0.1 -1e-06 -1.57079 0</pose>
         <scale>1 1 1</scale>
         <link name='main'>
-          <pose>0 -0.2 0.2 0 -1.57079 3.14159</pose>
+          <pose>0 -0.2 0.1 -1e-06 -1.57079 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='NewApriltag1'>
-        <pose>0 0 0.2 0 -1.57079 3.14159</pose>
+        <pose>0 0 0.1 -1e-06 -1.57079 0</pose>
         <scale>1 1 1</scale>
         <link name='main'>
-          <pose>0 0 0.2 0 -1.57079 3.14159</pose>
+          <pose>0 0 0.1 -1e-06 -1.57079 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>

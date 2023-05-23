@@ -9,7 +9,7 @@ from geometry_msgs.msg import TransformStamped
 from apriltag_ros.msg import AprilTagDetectionArray
 
 rospy.init_node('apriltag_computation', anonymous=True)
-apriltag_id = rospy.get_param('~apriltag_id')
+apriltag_ids = rospy.get_param('~apriltag_ids').split()
 
 tfBuffer = tf2_ros.Buffer()
 lr = tf2_ros.TransformListener(tfBuffer)
@@ -20,24 +20,30 @@ retryTime = 0.05
 
 def main():
     apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
-    rospy.loginfo("STARTING APRILTAG COMP NODE")
     rospy.sleep(1)
     rospy.spin()
 
 ## apriltag msg handling function
 def apriltag_callback(data):
     # use apriltag pose detection to find where the robot is
+    aggregated_base_map_transform = np.zeros(7)
+    count = 0
     for detection in data.detections:
-        if apriltag_id in detection.id:
+        if str(detection.id[0]) in apriltag_ids:
+            count +=1 
+            apriltag_frame_id = "tag_" + str(detection.id[0])
             poselist_tag_from_cam = [detection.pose.pose.pose.position.x, detection.pose.pose.pose.position.y, detection.pose.pose.pose.position.z, detection.pose.pose.pose.orientation.x, detection.pose.pose.pose.orientation.y, detection.pose.pose.pose.orientation.z, detection.pose.pose.pose.orientation.w]
             # transform the tag -> camera tf into a tag -> base tf
             poselist_tag_from_base = transformPose(poselist_tag_from_cam, 'usb_cam', 'robot_base')
             # calculate base -> tag
             poselist_base_tag = invPoselist(poselist_tag_from_base)
             # transform base -> tag into base -> map
-            poselist_base_map = transformPose(poselist_base_tag, 'tag_1', 'map')
+            poselist_base_map = transformPose(poselist_base_tag, apriltag_frame_id, 'map')
             # publish base -> map
-            pubFrame(pose = poselist_base_map, frame_id = 'robot_base', parent_frame_id = 'map')
+            aggregated_base_map_transform = np.add(aggregated_base_map_transform, poselist_base_map)
+    if count > 0:
+        base_map_transform = np.divide(np.array(aggregated_base_map_transform), count)
+        pubFrame(pose = base_map_transform, frame_id = 'robot_base', parent_frame_id = 'map')
         
 """
 HELPER FUNCTIONS

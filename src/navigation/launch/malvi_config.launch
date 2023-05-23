@@ -12,7 +12,7 @@
     <arg name="autonomy_motor_current_mode" default="false" />
     <arg name="autonomy_twist_mode" default="true" />
     <arg name="debug_mode" default="false" />
-    <arg name="apriltag_id" default="5" />
+    <arg name="apriltag_ids" default="1 5" />
     <arg name="apriltag_camera" default="/camera/rgb" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
 
     <!-- hero communication node -->
@@ -119,14 +119,14 @@
         </node>
 
         <!-- defining static transforms -->
-        <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.2 0 -1.5708 3.14159 map tag_1" />
-        <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 -0.2 0.2 0 -1.5708 3.14159 map tag_5" />
+        <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.1 0 -1.5708 0 map tag_1" />
+        <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 -0.2 0.1 0 -1.5708 0 map tag_5" />
         <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base usb_cam" />
         <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base robot_edge" />
 
         <!-- computing robot location based on tag detections -->
         <node pkg="navigation" type="apriltag_computation.py" name="apriltag_computation">
-            <param name="apriltag_id" value="$(arg apriltag_id)"/>
+            <param name="apriltag_ids" value="$(arg apriltag_ids)"/>
         </node>
 
         <!-- odometry based on apriltag -->
