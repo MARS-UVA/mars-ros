@@ -196,8 +196,8 @@ if __name__ == "__main__":
                 floats_combined = struct.unpack("%df"%(NUM_MOTOR_CURRENTS+NUM_ANGLES), packet_data[0:(NUM_MOTOR_CURRENTS*4 + NUM_ANGLES*4)]) # each float is 4 bytes
                 val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
                                                                                                 # float to int and make sure it fits in one byte by clamping to range [0, 255]
-                averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
-                averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
+                averaged_converted_angle_L = floats_combined[NUM_MOTOR_CURRENTS + 0] # convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
+                averaged_converted_angle_R = floats_combined[NUM_MOTOR_CURRENTS + 1] # convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
                 val.bucketLadderAngleL = averaged_converted_angle_L
                 val.bucketLadderAngleR = averaged_converted_angle_R
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
