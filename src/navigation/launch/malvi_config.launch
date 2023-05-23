@@ -127,11 +127,10 @@
             <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base robot_edge" />
         </group>
         <group if="$(eval not simulation_mode)">
-            <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.1 0 -1.5708 0 map tag_1" />
-            <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 -0.2 0.1 0 -1.5708 0 map tag_5" />
-            <node pkg="tf2_ros" name="map_to_apriltag4" type="static_transform_publisher" args="0.0 0.2 0.1 0 -1.5708 0 map tag_4" />
-            <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base usb_cam" />
-            <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base robot_edge" />
+            <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.236 0 -1.5708 0 map tag_1" />
+            <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 0.33675 0.24475 0 -1.5708 0 map tag_5" />
+            <node pkg="tf2_ros" name="map_to_apriltag4" type="static_transform_publisher" args="0.0 -0.33675 0.25475 0 -1.5708 0 map tag_4" />
+            <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0.40005 0 0 0 robot_base usb_cam" /> <!-- for now, the robot base is on the ground under the back edge of the robot (the edge under the camera) -->
         </group>
 
 
@@ -156,6 +155,7 @@
             <param name="motor_command_mode" value="$(arg autonomy_motor_current_mode)"/>
             <param name="twist_mode" value="$(arg autonomy_twist_mode)"/>
             <param name="debug_mode" value="$(arg debug_mode)"/>
+            <param name="simulation_mode" value="$(arg simulation_mode)"/>
         </node>
     </group>
 

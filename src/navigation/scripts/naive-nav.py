@@ -32,7 +32,7 @@ rospy.init_node('naive_navigator', anonymous=True)
 motor_command_mode = rospy.get_param('~motor_command_mode')
 twist_mode = rospy.get_param('~twist_mode')
 debug_mode = rospy.get_param('~debug_mode')
-simulation_mode = rospy.get_param('simulation_mode')
+simulation_mode = rospy.get_param('~simulation_mode')
 
 if simulation_mode:
     multiplier = -1
