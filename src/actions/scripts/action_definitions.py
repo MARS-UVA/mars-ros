@@ -30,6 +30,7 @@ class ActionRaiseBin(ActionBase):
 class ActionLowerBin(ActionBase):
     def __init__(self, description):
         super().__init__(description)
+        self.initial_time = int(time.time()) #gets the time when the action was started
 
     def execute(self):
         rospy.loginfo("action lowerbin executing...")
@@ -48,18 +49,15 @@ class ActionLowerBin(ActionBase):
         time.sleep(self.description["update_delay"])'''
 
     def is_completed(self):
-        return (self.feedback_data.depositBinLowered == True)
+        #the way we check that the action is completed is if we've been digging for the specified duration
+        current_time = time.time()
+        return current_time - self.initial_time >= self.description["duration"]
 
 
 class ActionRaiseLadder(ActionBase):
     def __init__(self, description):
         super().__init__(description)
-        self.left_raised = False
-        self.right_raised = False
-
-        if self.description["raised_angle"] > 51:
-            self.left_raised = True
-            self.right_raised = True
+        self.initial_time = int(time.time()) #gets the time when the action was started
 
     def execute(self):
         rospy.loginfo("action raiseladder executing...")
@@ -67,52 +65,31 @@ class ActionRaiseLadder(ActionBase):
         # Note that the measured angle increases as the ladder is raised ("raised" meaning the ladder becoming vertical)
         # The angle should be between around 10 and 52
         msg = [100]*9
-        if not self.left_raised and self.feedback_data.bucketLadderAngleL > self.description["raised_angle"]:
-            self.left_raised = True
-        else:
-            msg[4] = 100 + self.description["speed"]
-
-        if not self.right_raised and self.feedback_data.bucketLadderAngleR > self.description["raised_angle"]:
-            self.right_raised = True
-        else:
-            msg[4] = 100 - self.description["speed"]
+        msg[4] = 100 + self.description["speed"]
 
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return self.left_raised and self.right_raised
+        current_time = time.time()
+        return current_time - self.initial_time >= self.description["duration"]
 
 
 class ActionLowerLadder(ActionBase):
     def __init__(self, description):
         super().__init__(description)
-        self.left_lowered = False
-        self.right_lowered = False
-
-        if self.description["lowered_angle"] < 10:
-            self.left_lowered = True
-            self.right_lowered = True
-
+ 
     def execute(self):
         rospy.loginfo("action lowerladder executing...")
 
         msg = [100]*9
-        if not self.left_lowered and self.feedback_data.bucketLadderAngleL < self.description["lowered_angle"]:
-            self.left_lowered = True
-        else:
-            msg[4] = 100 - self.description["speed"]
-
-        if not self.right_lowered and self.feedback_data.bucketLadderAngleR < self.description["lowered_angle"]:
-            self.right_lowered = True
-        else:
-            msg[4] = 100 + self.description["speed"]
+        msg[4] = 100 - self.description["speed"]
 
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return self.left_lowered and self.right_lowered
+        return (self.feedback_data.bucketLadderLowered == True)
 
 # msg format:
 '''

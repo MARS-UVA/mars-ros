@@ -5,4 +5,4 @@ uint8[] currents # uint8[] is the ros version of Python bytes()
 float32 bucketLadderAngleL
 float32 bucketLadderAngleR
 bool depositBinRaised
-bool depositBinLowered
+bool bucketLadderLowered

@@ -34,8 +34,8 @@ def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 #converts one potentiometer value to an angle. Can be used for either side of the bucket ladder, but assumes they have the same geometry
-def convert_ladder_pot_to_angle(old_average, pot):
-    # print("converting pot= {0:.4f}".format(pot))
+def convert_ladder_pot_to_angle(old_average, sensor_value):
+    # print("converting pot= {0:.4f}".format(sensor_value))
     """
     Approximate potentiometer readings: top=0.362, bottom=0.160
     Bottom length (along frame): 16 in
@@ -46,16 +46,18 @@ def convert_ladder_pot_to_angle(old_average, pot):
     Bucket ladder length: 31?
     """
     # To find the angle between the ladder and the actuator, use law of cosines:
-    act_length = map(pot, 0.160, 0.362, 1.0, 10.0) + 14.5 # side c
+    # extended_acutator_length = 10.0
+    # non_ex
+    actuator_length = map(sensor_value, 0.160, 0.362, 1.0, 10.0) + 14.5 # side c
     a = 31
     b = 17
     angle_deg = old_average
     try:
-        cosc = (pow(a, 2) + pow(b, 2) - pow(act_length, 2)) / (2*a*b)
+        cosc = (pow(a, 2) + pow(b, 2) - pow(actuator_length, 2)) / (2*a*b)
         angle_rad = math.acos(cosc)
-        angle_deg = angle_rad * (180.0/3.14)
+        angle_deg = angle_rad * (180.0/3.14) # convert from radians to degrees
     except ValueError:
-        rospy.logwarn("Failed converting angle with actuator reading=%f, skipping this reading" % pot)
+        rospy.logwarn("Failed converting angle with actuator reading=%f, skipping this reading" % sensor_value)
 
     # angle_deg is now either the old average angle (if there was a math error) or the new angle just calculated
     # next, return and save a weighted average of the previous angle and the new angle. more weight is put on previous calculations
@@ -201,7 +203,7 @@ if __name__ == "__main__":
                 val.bucketLadderAngleL = averaged_converted_angle_L
                 val.bucketLadderAngleR = averaged_converted_angle_R
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
-                val.depositBinLowered = (packet_data[-1] != 0) # last value
+                val.bucketLadderLowered = (packet_data[-1] != 0) # last value
 
                 pub.publish(val)
         
