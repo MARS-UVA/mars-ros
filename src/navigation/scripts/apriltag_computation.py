@@ -42,8 +42,9 @@ def apriltag_callback(data):
             # publish base -> map
             aggregated_base_map_transform = np.add(aggregated_base_map_transform, poselist_base_map)
     if count > 0:
+        # average the poses found by each apriltag
         base_map_transform = np.divide(np.array(aggregated_base_map_transform), count)
-        pubFrame(pose = base_map_transform, frame_id = 'robot_base', parent_frame_id = 'map')
+        pubFrame(pose = base_map_transform, frame_id = 'robot_base', parent_frame_id = 'map') # update the map to robot_base tf transform
         
 """
 HELPER FUNCTIONS

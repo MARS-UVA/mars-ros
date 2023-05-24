@@ -1,20 +1,23 @@
 <launch>
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
+    <!-- NODES -->
     <arg name="hero" default="true" />
     <arg name="actions" default="true" />
     <arg name="rpc" default="true" />
-    <arg name="feedback_cameras" default="true" />
-    <arg name="realsense_cameras" default="false" />
+    <arg name="feedback_cameras" default="true" /> <!-- starts the depstech webcam -->
+    <arg name="realsense_cameras" default="true" /> 
     <arg name="apriltags" default="true" />
+
+    <!-- ARGUMENTS -->
     <arg name="webcam_enabled" default="false" />
-    <arg name="naive_autonomy" default="true" />
+    <arg name="naive_autonomy" default="false" />
     <arg name="autonomy_motor_current_mode" default="false" />
     <arg name="autonomy_twist_mode" default="true" />
     <arg name="debug_mode" default="false" />
     <arg name="simulation_mode" default="false" />
-    <arg name="apriltag_ids" default="1 5" />
-    <arg name="apriltag_camera" default="/camera/rgb" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
+    <arg name="apriltag_ids" default="1 4 5" />
+    <arg name="apriltag_camera" default="webcam0" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -82,7 +85,8 @@
     </group>
 
     <group if="$(eval realsense_cameras)">
-        <include file="$(find navigation)/launch/cameras.launch"></include>
+        <include file="$(find navigation)/launch/depth_camera.launch"></include>
+        <!-- <include file="$(find realsense2_camera)/launch/demo_t265.launch"></include>  -->  
     </group>
 
     <!-- testing webcam -->
@@ -103,7 +107,7 @@
         <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
         <arg name="apriltag_queue_size" default="1" />
 
-        <!-- apriltag_ros continuous detection node -->
+        <!-- apriltag_ros continuous detection node; this looks for the apriltags -->
         <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen">
 
             <!-- Remap topics from those used in code to those on the ROS network -->
@@ -119,7 +123,7 @@
             <rosparam command="load" file="$(find navigation)/config/apriltag/tags.yaml"/>
         </node>
 
-        <!-- defining static transforms -->
+        <!-- defining static transforms; define where the tags are in the world -->
         <group if="$(eval simulation_mode)">
             <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.1 0 -1.5708 0 map tag_1" />
             <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 -0.2 0.1 0 -1.5708 0 map tag_5" />
