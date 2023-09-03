@@ -7,22 +7,8 @@ source /opt/ros/noetic/setup.bash
 # source our catkin workspace
 # there are two possible ways that the ros packages may have been compiled; this block lets us source in either case
 if [ -f "devel/setup.bash" ]; then
-=======
-echo "Enter this device's IP address (laptop): (without http:// or port)"
-echo "    (if running this in a VM, enter the guest computer's IP)"
-echo "    (find IP using 'hostname -I')"
-read IP
-
-source /opt/ros/melodic/setup.bash
-=======
-source /opt/ros/noetic/setup.bash
->>>>>>> Cleaned up repository
-
-if [ -f "devel/setup.bash" ]; then
-    # echo "Sourcing devel/setup.bash"
     source devel/setup.bash
 elif [ -f "devel_isolated/setup.bash" ]; then
-    # echo "Sourcing devel_isolated/setup.bash"
     source devel_isolated/setup.bash
 elif [ -f "devel/setup.bash" ]; then
     # echo "Sourcing devel/setup.bash"
