@@ -3,7 +3,6 @@
 
     <arg name="hero" default="true" />
     <arg name="actions" default="false" />
-    <arg name="rpc" default="true" />
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
@@ -19,11 +18,6 @@
     <!-- actions -->
     <group if="$(eval actions)">
         <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
-    </group>
-
-    <!-- rpc server -->
-    <group if="$(eval rpc)">
-        <node name="rpc_server" pkg="rpc-server" type="grpc-server" output="screen" />
     </group>
 
     <group if="$(eval feedback_cameras)">

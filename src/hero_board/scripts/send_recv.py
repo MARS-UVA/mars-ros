@@ -67,7 +67,7 @@ def convert_ladder_pot_to_angle(old_average, pot):
 def stop_motors_non_emergency():
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, [100]*8)) # 100 is the neutral value
 
-# Both of these subscriber functions take a MotorCommand ROS msg as a parameter, not anything related to RPC
+# Both of these subscriber functions take a MotorCommand ROS msg as a parameter
 def process_manual_motor_values(command): 
     # command type is hero_board::MotorCommand
     vals = command.values
