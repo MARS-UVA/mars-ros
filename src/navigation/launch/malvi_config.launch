@@ -8,6 +8,7 @@
 =======
     <arg name="hero" default="true" />
     <arg name="actions" default="false" />
+<<<<<<< HEAD
 >>>>>>> code stub for incoming kinematic calculation
     <arg name="rpc" default="false" />
     <arg name="realsense_cameras" default="false" /> 
@@ -23,6 +24,12 @@
     <arg name="apriltag_ids" default="2 5 4" />
     <arg name="apriltag_camera_device_id" default="2" />
     <arg name="apriltag_camera" default="usb_cam" /> <!-- usb_cam for webcam on robot or control station, /camera/rgb for simulation -->
+=======
+    <arg name="feedback_cameras" default="false" />
+    <arg name="autonomy_cameras" default="false" />
+    <arg name="autonomy" default="false" />
+
+>>>>>>> Cleaned up repository
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -36,6 +43,7 @@
         <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
     </group>
 
+<<<<<<< HEAD
     <group if="$(eval realsense_cameras)">
         <include file="$(find navigation)/launch/depth_camera.launch"></include>
         <!-- <include file="$(find realsense2_camera)/launch/demo_t265.launch"></include>  -->  
@@ -43,6 +51,55 @@
 
     <!-- testing webcam -->
     <group if="$(eval webcam_enabled)">
+=======
+    <group if="$(eval feedback_cameras)">
+        <include file="$(find video_stream_opencv)/launch/camera.launch" >
+            <!-- node name and ros graph name -->
+            <arg name="camera_name" value="webcam0" />
+            <!-- means video device 0, /dev/video0 -->
+            <arg name="video_stream_provider" value="/dev/video0" />
+            <!-- <arg name="video_stream_provider" value="/home/ethan/Downloads/video.mp4" /> -->
+
+            <!-- set camera fps to (if the device allows) -->
+            <arg name="set_camera_fps" value="5"/>
+            <!-- set buffer queue size of frame capturing to -->
+            <arg name="buffer_queue_size" value="1" />
+            <!-- throttling the querying of frames to -->
+            <arg name="fps" value="5" />
+            <!-- setting frame_id -->
+            <arg name="frame_id" value="webcam0" />
+            <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
+            "file:///$(find your_camera_package)/config/your_camera.yaml" -->
+            <!-- <arg name="camera_info_url" value="" /> -->
+            <!-- flip the image horizontally (mirror it) -->
+            <arg name="flip_horizontal" value="false" />
+            <!-- flip the image vertically -->
+            <arg name="flip_vertical" value="false" />
+            <!-- visualize on an image_view window the stream generated -->
+            <arg name="visualize" value="false" />
+        </include>
+
+        <include file="$(find video_stream_opencv)/launch/camera.launch" >
+            <arg name="camera_name" value="webcam1" />
+            <arg name="video_stream_provider" value="/dev/video1" />
+            <arg name="set_camera_fps" value="5"/>
+            <arg name="buffer_queue_size" value="1" />
+            <arg name="fps" value="5" />
+            <arg name="frame_id" value="webcam1" />
+            <arg name="flip_horizontal" value="false" />
+            <arg name="flip_vertical" value="false" />
+            <arg name="visualize" value="false" />
+        </include>
+
+        <!-- This doesn't seem to be needed because the theora topic comes up automatically -->
+        <!-- <node name="image_transport" pkg="image_transport" type="republish" output="screen" 
+            args="raw in:=/webcam0/image_raw theora out:=/transport/webcam0_theora" /> -->
+
+        <!-- Sets the initial camera parameters to the ones in the config file -->
+        <include file="$(find camera_streamer)/launch/load_config.launch" />
+        
+
+>>>>>>> Cleaned up repository
 
         <node name="usb_cam" pkg="cv_camera" type="cv_camera_node" >
             <param name="image_width" value="640" />
