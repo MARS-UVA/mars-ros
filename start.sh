@@ -1,6 +1,11 @@
 #Instructions: sudo ./start.sh <jetson's IP address>
-#Step 5 - authorization probably doesn't work
-gnome-terminal -e "bash -c 'echo "nvidiauva" | ssh nvidia@$1; cd mars-ros; ./setup.sh; roslaunch navigation malvi_config.launch;'"
+#Step 5
+sshpass
+if [ $? = 127 ]
+then
+	apt install sshpass
+fi
+gnome-terminal -e "bash -c 'sshpass -p nvidiauva ssh nvidia@$1; cd mars-ros; ./setup.sh; roslaunch navigation malvi_config.launch;'"
 
 
 #Step 6 - Tested
