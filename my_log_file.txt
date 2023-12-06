@@ -1,0 +1,3 @@
+192.168.0.2
+nvidia already in hosts
+Ethernet IP is 192.168.0.109 
