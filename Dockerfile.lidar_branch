@@ -21,8 +21,8 @@ RUN apt install -y python3-catkin-tools
 RUN rosdep update
 RUN rosdep install -y --from-paths src --ignore-src --rosdistro noetic
 
-RUN apt install ros-noetic-rplidar-ros
-RUN apt install ros-noetic-realsense2-camera
+RUN apt install -y ros-noetic-rplidar-ros
+RUN apt install -y ros-noetic-realsense2-camera
 
 # Build ROS packages
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin build"
