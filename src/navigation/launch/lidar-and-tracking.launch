@@ -1,0 +1,29 @@
+<launch>
+    <arg name="apriltags" default="false" />
+    <arg name="lidar" default="true" />
+    <arg name="tracking" default="true" />
+
+    <!-- static transforms -->
+    <!-- <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node> -->
+
+    <group if="$(eval apriltags)">
+        <!-- apriltag detection -->
+        <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+            <arg name="camera_name" value="/d435/color" />
+            <arg name="camera_frame" value="d435_link" />
+            <arg name="image_topic" value="image_raw" />
+        </include>
+    </group>
+
+    <group if="$(eval lidar)">
+        <include file="$(find rplidar_ros)/launch/view_rplidar_a1.launch">
+        </include>
+    </group>
+
+    <group if="$(eval tracking)">
+        <!-- apriltag detection -->
+        <include file="$(find realsense2_camera)/launch/rs_t265.launch">
+        </include>
+    </group>
+
+</launch>
