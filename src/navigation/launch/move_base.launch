@@ -1,10 +1,11 @@
 <launch>
+    <master auto="start"/>
+
     <!-- Run the map server -->
-    <include file="$(find navigation)/launch/camera.launch" />
     <!-- <node name="map_server" pkg="map_server" type="map_server" args="$(find my_map_package)/my_map.pgm my_map_resolution"/> -->
 
     <!--- Run AMCL -->
-    <!-- <include file="$(find amcl)/examples/amcl_diff.launch" /> -->
+    <include file="$(find amcl)/examples/amcl_omni.launch" />
 
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
         <rosparam file="$(find navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
@@ -15,3 +16,5 @@
     </node>
 
 </launch> 
+
+<!-- TODO: add amcl as dependency for this package -->
