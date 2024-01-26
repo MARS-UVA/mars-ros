@@ -4,9 +4,9 @@
     <arg name="tracking" default="true" /> <!-- publishes odom information and also tf transforms? -->
 
     <!-- static transforms -->
-    <node pkg="tf2_ros" name="robot_base_to_tracking_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base tracking_cam" />
+    <!--<node pkg="tf2_ros" name="robot_base_to_tracking_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base tracking_cam" />-->
     <node pkg="tf2_ros" name="robot_base_to_lidar" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base lidar" />
-    <node pkg="tf2_ros" name="robot_base_to_map" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base map" />
+    <node pkg="tf2_ros" name="robot_base_to_camera_odom" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base camera_odom_frame" />
     <!-- <node pkg="navigation" type="static_tf" name="static_tf" output="screen"></node> -->
 
     <group if="$(eval apriltags)">

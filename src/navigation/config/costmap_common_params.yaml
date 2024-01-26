@@ -6,6 +6,7 @@ raytrace_range: 3.0
 robot_radius: 0.25
 inflation_radius: 0.5 
 
+# this is only for sources that produce /LaserScan or /PointCloud messages
 observation_sources: laser_scan_sensor
 
 #point_cloud_sensor: {
@@ -25,3 +26,6 @@ laser_scan_sensor: {
   marking: true,
   clearing: true
 }
+
+# /camera/odom/sample of type nav_msgs/Odometry
+# tf is called camera_odom_frame
