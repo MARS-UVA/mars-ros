@@ -8,6 +8,10 @@ These packages are installed on the team's robot.
 - hero_board: communication between the hero board and the jetson
 - navigation: used for autonomous navigation
 
+## Usage on Robot
+To run ROS nodes on the robot and connect to them from the control station, navigate to the root directory of this project and run 
+`./start1.sh` in one terminal and `./start2.sh` in another.
+
 ## Direct Usage: Launch Files
 Once these ROS packages are built and sourced, any nodes in them can be run like any other ROS node. However, we recommend using the code via the launch files we have created.
 
