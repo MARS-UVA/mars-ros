@@ -6,7 +6,7 @@ Instructions: ./start2.sh or ./start2.sh <jetson's IP address>
 instructions
 
 # Define the IP address of the Jetson
-JETSON_IP=${1:-"192.168.0.2"}
+JETSON_IP=${1:-"192.168.0.102"}
 
 # Set environment variables that will allow the control station to find the Jetson on the network
 cd
@@ -25,3 +25,7 @@ gnome-terminal -- bash -c "source mars/mars-ros/devel_isolated/setup.bash; expor
 
 # Start the user interface we use to control the robot
 gnome-terminal -- bash -c "cd mars/mars-ui-web; source ../mars-ros/devel_isolated/setup.bash; npm start"
+
+# Configure the existing terminal so that we can see information about ROS nodes and topics on the Jetson
+source mars/mars-ros/devel_isolated/setup.bash
+export ROS_MASTER_URI=http://nvidia:11311
