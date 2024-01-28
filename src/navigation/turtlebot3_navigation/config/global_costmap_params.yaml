@@ -7,4 +7,4 @@ global_costmap:
   transform_tolerance: 0.5
 
   static_map: false
- 
+  rolling_window: true # added to fix error with robot start pose being outside of map bounds
