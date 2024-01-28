@@ -5,3 +5,4 @@ float32 bucketLadderAngleL
 float32 bucketLadderAngleR
 bool depositBinRaised
 bool depositBinLowered
+double irSensor

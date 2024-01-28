@@ -202,6 +202,7 @@ if __name__ == "__main__":
                 val.bucketLadderAngleR = averaged_converted_angle_R
                 val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                 val.depositBinLowered = (packet_data[-1] != 0) # last value
+                val.irSensor = struct.unpack('d', packet_data[-8:])[0]
 
                 pub.publish(val)
         
