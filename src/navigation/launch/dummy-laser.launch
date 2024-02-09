@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="map_to_dummy_scan" args="1 0 0 0 0 0 1 map dummy_laser_frame 100" />
+  <node pkg="navigation" type="dummy_laser_scan" name="dummy_laser_scan"/>
+</launch>

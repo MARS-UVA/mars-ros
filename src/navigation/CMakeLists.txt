@@ -143,6 +143,7 @@ include_directories(
 ## add_executable(apriltag_odom "src/apriltag_odom.cpp") ## TODO - what was this for??
 add_executable(fake_odom "src/fake_odom.cpp")
 add_executable(environment_visualizer "src/environment_visualizer.cpp")
+add_executable(dummy_laser_scan "src/dummy_laser_scan.cpp")
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,6 +159,7 @@ add_executable(environment_visualizer "src/environment_visualizer.cpp")
 ## target_link_libraries(apriltag_odom ${catkin_LIBRARIES})
 target_link_libraries(fake_odom ${catkin_LIBRARIES})
 target_link_libraries(environment_visualizer ${catkin_LIBRARIES})
+target_link_libraries(dummy_laser_scan ${catkin_LIBRARIES})
 
 #############
 ## Install ##

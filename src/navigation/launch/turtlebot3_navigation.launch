@@ -8,8 +8,8 @@
   <arg name="simulation" default="true"/>
   <arg name="urdf_file" default="$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro"/>
   <!-- <arg name="world_name" default="$(find navigation)/worlds/crater-and-boulders.world"/> -->
-  <!-- <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/> -->
-  <arg name="world_name" default="$(find navigation)/worlds/more-craters.world"/>
+  <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/>
+  <!--<arg name="world_name" default="$(find navigation)/worlds/more-craters.world"/>-->
 
   <group if="$(arg simulation)"> 
     <!-- open simulated world -->
@@ -26,6 +26,17 @@
         <arg name="urdf_file" value="$(arg urdf_file)" />
     </include>
   </group>
+
+  <!-- negative obstacles -->
+  <node pkg="navigation" type="dummy_laser_scan" name="dummy_laser_scan"/>
+
+  <!-- combining laser scans -->
+  <node pkg="ira_laser_tools" name="laserscan_multi_merger" type="laserscan_multi_merger" output="screen">
+       <param name="destination_frame" value="base_link" />
+       <param name="cloud_destination_topic" value="/merged_cloud" />
+       <param name="scan_destination_topic"  value="/scan_multi" />
+       <param name="laserscan_topics" value="/dummy_scan /scan" />
+  </node>
 
   <!-- AMCL -->
   <include file="$(find navigation)/launch/amcl.launch"/>
