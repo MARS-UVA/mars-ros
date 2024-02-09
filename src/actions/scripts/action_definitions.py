@@ -114,6 +114,7 @@ class ActionDig(ActionBase):
 
     def execute(self):
         rospy.loginfo("action dig executing...")
+        #start buckets spinning
         msg = [100]*9
         msg[6] = 100 - self.description["speed"]
         self.pub.publish(MotorCommand(msg))
@@ -122,4 +123,5 @@ class ActionDig(ActionBase):
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
         current_time = time.time()
+        #stop if duration has been reached or if bucket is completed or error thrown, power level
         return current_time - self.initial_time >= self.description["duration"]
