@@ -16,12 +16,23 @@ scan: {
   marking: true, 
   clearing: true
   }
-depth_cam: {
-  sensor_frame: camera_depth_optical_frame, 
+
+depth_info: {
+  sensor_frame: camera_depth_optical_frame, # same frame as og camera-produced pointcloud is in
   data_type: PointCloud2, 
-  topic: /camera/depth/points, 
+  topic: /ana/point_cloud_hole_detection/hole_obs_cloud_out, 
   marking: true, 
   clearing: true,
   min_obstacle_height: -2.0,
   max_obstacle_height: 0.0
-  }
+}
+  
+#depth_cam: {
+#  sensor_frame: camera_depth_optical_frame, 
+#  data_type: PointCloud2, 
+#  topic: /camera/depth/points, 
+#  marking: true, 
+#  clearing: true,
+#  min_obstacle_height: -2.0,
+#  max_obstacle_height: 0.0
+#  }

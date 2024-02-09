@@ -10,6 +10,7 @@
   <!-- <arg name="world_name" default="$(find navigation)/worlds/crater-and-boulders.world"/> -->
   <!-- <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/> -->
   <arg name="world_name" default="$(find navigation)/worlds/more-craters.world"/>
+  <arg name="do_nav" default="true"/>
 
   <group if="$(arg simulation)"> 
     <!-- open simulated world -->
@@ -26,6 +27,12 @@
         <arg name="urdf_file" value="$(arg urdf_file)" />
     </include>
   </group>
+
+  <!-- hole detection -->
+  <include file="$(find iri_point_cloud_hole_detection)/launch/node.launch">
+        <arg name="cloud_in" default="/camera/depth/points"/>
+        <arg name="config_file" value="$(find iri_point_cloud_hole_detection)/config/far_config.yaml"/>
+  </include>
 
   <!-- AMCL -->
   <include file="$(find navigation)/launch/amcl.launch"/>

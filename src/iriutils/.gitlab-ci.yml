@@ -1,0 +1,12 @@
+  image: docker.io/labrobotica/labrobotica:20.04
+
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    FROM_RDEPENDS_CI: "false"
+    TAG_VERSION: $CI_COMMIT_TAG
+    PACKAGE_NAME: "iriutils"
+  
+  include:
+    remote: 'https://gitlab.iri.upc.edu/labrobotica/packaging_ci/-/raw/master/packaging-ci.yml'
+
+

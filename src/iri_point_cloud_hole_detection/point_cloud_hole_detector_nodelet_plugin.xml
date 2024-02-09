@@ -1,0 +1,7 @@
+<library path="lib/libiri_point_cloud_hole_detection_nodelet">
+  <class name="iri_point_cloud_hole_detection/PointCloudHoleDetectionAlgNodelet" type="PointCloudHoleDetectionAlgNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelete for the IRI navigation Velodyne angle filter 
+    </description>
+  </class>
+</library>

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+  remove)
+    echo "   Trying to remove library from ldconfig..."
+    /usr/share/iri/remove_lib_from_ld_config.sh -l iriutils -p && echo "   Done." || echo "   /usr/share/iri/remove_lib_from_ld_config.sh doesn't exists. Download it from iriutils and execute it."
+
+  ;;
+  upgrade)
+
+  ;;
+  deconfigure)
+
+  ;;
+  failed-upgrade)
+
+  ;;
+esac    
+
+exit 0

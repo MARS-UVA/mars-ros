@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+  configure)
+
+    echo "  Adding iri-scripts-path.sh to /etc/profile.d..."
+    FILE="/etc/profile.d/iri-scripts-path.sh"
+    sudo echo "# Expand PATH to include the directory where IRI scripts go." > $FILE
+    sudo echo "iri_script_path=\"/usr/local/share/iri:/usr/share/iri\"" >> $FILE
+    sudo echo "if [ -n \"\${PATH##*\${iri_script_path}}\" -a -n \"\${PATH##*\${iri_script_path}:*}\" ]; then" >> $FILE
+    sudo echo "    export PATH=\$PATH:\${iri_script_path}" >> $FILE
+    sudo echo "fi" >> $FILE
+    echo "  Done. It's necessary a log out for changes to take effect."
+
+    echo "   Trying to add library to ldconfig..."
+    /usr/share/iri/add_lib_to_ld_config.sh -l iriutils -p && echo "   Done." || echo "   /usr/share/iri/add_lib_to_ld_config.sh doesn't exists. Download it from iriutils and execute it."
+    
+  ;;
+  abort-upgrade)
+
+  ;;
+  abort-remove)
+
+  ;;
+  abort-deconfigure)
+
+  ;;
+esac   
+
+exit 0

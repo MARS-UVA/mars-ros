@@ -1,0 +1,7 @@
+hole_min_p: 50
+num_cells: 10
+box_y: 3.0
+box_z_ini: -0.5
+box_z_end: 0.5
+box_x_ini: -3.1
+box_x_end: 3.1

@@ -1,0 +1,12 @@
+\subsubsection usage Usage
+\verbatim
+<node name="HoleDetectionAlgorithm" pkg="iri_hole_detection" type="HoleDetectionAlgorithm">
+  <param name="hole_min_p" type="int" value="30" />
+  <param name="box_x" type="double" value="0.6" />
+  <param name="box_y_ini" type="double" value="0.0" />
+  <param name="box_y_end" type="double" value="0.1" />
+  <param name="box_z_ini" type="double" value="0.8" />
+  <param name="box_z_end" type="double" value="0.9" />
+</node>
+\endverbatim
+

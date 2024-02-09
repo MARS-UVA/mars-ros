@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <arg name="ns" default="ana"/>
+  <arg name="node_name" default="point_cloud_hole_detection"/>
+  <arg name="camera_nodelet_manager" default="camera_nodelet_manager"/>
+  <arg name="config_file" default="$(find iri_point_cloud_hole_detection)/config/default_config.yaml"/>
+  <arg name="output" default="screen"/>
+  <arg name="launch_prefix" default=""/>
+  <arg name="cloud_in" default="~pointcloud_in"/>
+  <arg name="hole_zone_cloud_out" default="~hole_zone_cloud_out"/>
+  <arg name="hole_obs_cloud_out" default="~hole_obs_cloud_out"/>
+
+  <group ns="$(arg ns)">
+
+    <node name="$(arg node_name)"
+          pkg="nodelet"
+          type="nodelet"
+          args="load iri_point_cloud_hole_detection/PointCloudHoleDetectionAlgNodelet $(arg camera_nodelet_manager)"
+          output="$(arg output)">
+      <remap from="~input" to="$(arg cloud_in)"/>
+      <remap from="~hole_zone" to="$(arg hole_zone_cloud_out)"/>
+      <remap from="~hole_obstacle" to="$(arg hole_obs_cloud_out)"/>
+      <rosparam file="$(arg config_file)" command="load"/>
+    </node>
+
+  </group>
+
+</launch>

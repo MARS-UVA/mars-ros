@@ -1,0 +1,10 @@
+<launch>
+    <include file="$(find iri_point_cloud_hole_detection)/launch/node.launch">
+        <arg name="ns" value="$(arg ns)"/>
+        <arg name="node_name" value="$(arg near_hole_detection_node_name)"/>
+        <arg name="config_file" value="$(arg near_hole_detection_config_file)"/>
+        <arg name="output" value="$(arg output)"/>
+        <arg name="launch_prefix" default="$(arg launch_prefix)"/>
+        <arg name="cloud_in" default="$(arg hole_detection_cloud_in)"/>
+    </include>
+</launch>
