@@ -123,3 +123,31 @@ class ActionDig(ActionBase):
         #the way we check that the action is completed is if we've been digging for the specified duration
         current_time = time.time()
         return current_time - self.initial_time >= self.description["duration"]
+
+# Actions to raise and lower floor of despotic bin
+class ActionLowerFloor(ActionBase):
+    def __init__(self, description):
+        super().__init__(description)
+
+    def execute(self):
+        rospy.loginfo("action lowerfloor executing...")
+        msg = [100]*7 - [100 - self.description["speed"]] + [100]  # might have to change the first - to +
+        self.pub.publish(MotorCommand(msg))
+        time.sleep(self.description["update_delay"])
+
+    def is_completed(self):
+        return (self.feedback_data.depositBinLowered == True)
+
+
+class ActionRaiseFloor(ActionBase):
+    def __init__(self, description):
+        super().__init__(description)
+
+    def execute(self):
+        rospy.loginfo("action raisefloor executing...")
+        msg = [100]*7 + [100 - self.description["speed"]] + [100]  # might have to change the first + to -
+        self.pub.publish(MotorCommand(msg))
+        time.sleep(self.description["update_delay"])
+
+    def is_completed(self):
+        return (self.feedback_data.depositBinRaised == True)
