@@ -11,8 +11,8 @@ def onStart():
     global controlHeight
     controlHeight = getAvgHeight()
 
-def getAvgHeight():
-    readings = getReadings()
+def getAvgHeight(readings):
+    #takes in array of tuples (height, angle)
     totalHeight = 0.
     for (dist, angle) in readings:
         totalHeight += dist * sin(angle)

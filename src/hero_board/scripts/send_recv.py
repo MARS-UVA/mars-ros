@@ -9,6 +9,7 @@ from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest
 from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 from geometry_msgs.msg import Twist
+from ir_computation import getAvgHeight
 
 
 NODE_NAME = "hero_send_recv"
