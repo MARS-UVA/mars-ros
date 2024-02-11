@@ -109,23 +109,20 @@ class ActionLowerLadder(ActionBase):
 class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
-        self.initial_time = int(time.time()) #gets the time when the action was started
-        #the dig action description has fields: name, update_delay, duration, speed
 
     def execute(self):
         rospy.loginfo("action dig executing...")
-        #start buckets spinning
-        msg = [100]*9
+        msg = [100]*9 #start buckets spinning
         msg[6] = 100 - self.description["speed"]
         self.pub.publish(MotorCommand(msg))
-        time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
+        time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you listen for the next command
 
     def is_completed(self):
-        #the way we check that the action is completed is if we've been digging for the specified duration
-        current_time = time.time()
-        #stop if duration has been reached or if bucket is completed or error thrown, power level
-        return current_time - self.initial_time >= self.description["duration"]
-
+        #action is completed if the ir sensor distance is in the correct range
+        #placeholder value for the correct distance, 
+        #could hardcode it here or add it to the action description in the mars-ui-web repo
+        return self.feedback_data.irSensorDistance > 100 or self.feedback_data.currents[6] > 100
+    
 # Actions to raise and lower floor of despotic bin
 class ActionLowerFloor(ActionBase):
     def __init__(self, description):
