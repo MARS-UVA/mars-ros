@@ -6,6 +6,8 @@
   <arg name="open_rviz" default="true"/>
   <arg name="move_forward_only" default="false"/>
   <arg name="simulation" default="true"/>
+  <arg name="do_nav" default="true"/>
+  <arg name="ira_convert_depth_to_laser" default="false"/> <!-- this was here to try to use another ira tool, but it's not working, so keep this false -->
   <arg name="urdf_file" default="$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro"/>
   <!-- <arg name="world_name" default="$(find navigation)/worlds/crater-and-boulders.world"/> -->
   <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/>
@@ -38,20 +40,34 @@
        <param name="laserscan_topics" value="/dummy_scan /scan" />
   </node>
 
-  <!-- AMCL -->
-  <include file="$(find navigation)/launch/amcl.launch"/>
+  <!-- convert depth to laser scan -->
+  <group if="$(arg ira_convert_depth_to_laser)"> 
+    <node pkg="tf" type="static_transform_publisher" name="ira_static_broadcaster" args="1 0 0 3.14 0 0 1 camera_rgb_optical_frame depth_laser_scan 100" />
+      
+      <node pkg="ira_laser_tools" name="laserscan_virtualizer" type="laserscan_virtualizer" output="screen">
+        <param name="cloud_topic" value="/camera/depth/points"/>       <!-- INPUT POINT CLOUD -->
+        <param name="base_frame" value="/camera_rgb_optical_frame"/>     <!-- REFERENCE FRAME WHICH LASER(s) ARE RELATED-->
+        <param name="output_laser_topic" value ="/depth_laser_scan_topic" />  <!-- VIRTUAL LASER OUTPUT TOPIC, LEAVE VALUE EMPTY TO PUBLISH ON THE VIRTUAL LASER NAMES (param: output_laser_scan) -->
+        <param name="virtual_laser_scan" value ="depth_laser_scan" /> <!-- LIST OF THE VIRTUAL LASER SCANS. YOU MUST PROVIDE THE STATIC TRANSFORMS TO TF, SEE ABOVE -->
+    </node>
+  </group>
 
-  <!-- SLAM -->
-  <include file="$(find turtlebot3_slam)/launch/turtlebot3_$(arg slam_methods).launch">
-    <arg name="model" value="$(arg model)" />
-    <arg name="configuration_basename" value="$(arg configuration_basename)"/>
-  </include>
+  <group if="$(arg do_nav)"> 
+    <!-- AMCL -->
+    <include file="$(find navigation)/launch/amcl.launch"/>
 
-  <!-- move_base -->
-  <include file="$(find navigation)/launch/move_base.launch">
-    <arg name="model" value="$(arg model)" />
-    <arg name="move_forward_only" value="$(arg move_forward_only)"/>
-  </include>
+    <!-- SLAM -->
+    <include file="$(find turtlebot3_slam)/launch/turtlebot3_$(arg slam_methods).launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="configuration_basename" value="$(arg configuration_basename)"/>
+    </include>
+
+    <!-- move_base -->
+    <include file="$(find navigation)/launch/move_base.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+    </include>
+  </group>
 
   <!-- rviz -->
   <group if="$(arg open_rviz)"> 
