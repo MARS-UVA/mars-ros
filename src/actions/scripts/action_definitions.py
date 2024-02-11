@@ -138,7 +138,7 @@ class ActionLowerFloor(ActionBase):
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return (self.feedback_data.depositBinLowered == True)
+        return (self.feedback_data.floorAngle <= actuator_motor_angle)  # Actuator motor angle will need to be updated
 
 
 class ActionRaiseFloor(ActionBase):
@@ -152,4 +152,4 @@ class ActionRaiseFloor(ActionBase):
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return (self.feedback_data.depositBinRaised == True)
+        return (self.feedback_data.floorAngle >= actuator_motor_angle)  # Actuator motor angle will need to be updated
