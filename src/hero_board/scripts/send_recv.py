@@ -9,6 +9,7 @@ from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest
 from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 from geometry_msgs.msg import Twist
+from enum import Enum
 
 
 NODE_NAME = "hero_send_recv"
@@ -19,7 +20,13 @@ HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents a
 NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
 NUM_ANGLES = 2 # 2 angles for bucket ladder angle, one from each actuator
 NUM_BOOLS = 2 # 2 bools total for bucket pressing upper and lower limit switch
-EXPECTED_PACKET_LENGTH = 4*NUM_MOTOR_CURRENTS + 4*NUM_ANGLES + 1*NUM_BOOLS # currents and angles are 4 bytes each, bools are 1 byte each
+FEEDBACK_PACKET_LENGTH = 4*NUM_MOTOR_CURRENTS + 4*NUM_ANGLES + 1*NUM_BOOLS # currents and angles are 4 bytes each, bools are 1 byte each
+SPECIAL_PACKET_LENGTH = 1
+PAYLOAD_PACKET_LENGTH = 4
+
+class Special_signal(Enum):
+    IR_START = 0xA0
+    IR_STOP = 0xA1
 
 manual_sub = None
 auto_sub = None
@@ -174,13 +181,15 @@ if __name__ == "__main__":
         # ros publisher queue can be used to limit the number of messages
         rospy.loginfo("starting hero status publisher")
         pub = rospy.Publisher(HERO_FEEDBACK_TOPIC, HeroFeedback, queue_size=5)
+        in_ir_stream = False
         while not rospy.is_shutdown():
             # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
             if pub.get_num_connections() == 0: # don't publish if there are no subscribers
                 time.sleep(0.01)
                 continue
+            
             to_send_raw = serial_manager.read_in_waiting()
-            to_send = var_len_proto_recv(to_send_raw)
+            to_send = var_len_proto_recv(to_send_raw) #0xff, opcode (00, 01, 10, 11), length of package
             val = HeroFeedback()
             for packet in to_send:
                 packet_opcode = packet[0]
@@ -188,22 +197,35 @@ if __name__ == "__main__":
                 if packet_opcode != Opcode.FEEDBACK:
                     rospy.logwarn("got packet from hero with the wrong opcode, not publishing this packet")
                     continue
-                if len(packet_data) != EXPECTED_PACKET_LENGTH:
-                    rospy.logwarn("got packet from hero with an unexpected length, not publishing this packet (got length {}, expected {})".format(len(packet_data), EXPECTED_PACKET_LENGTH))
-                    continue
+                            
+                if len(packet_data) == FEEDBACK_PACKET_LENGTH:
+                    # TODO verify the order of the floats and bools
+                    floats_combined = struct.unpack("%df"%(NUM_MOTOR_CURRENTS+NUM_ANGLES), packet_data[0:(NUM_MOTOR_CURRENTS*4 + NUM_ANGLES*4)]) # each float is 4 bytes
+                    val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
+                                                                                                    # float to int and make sure it fits in one byte by clamping to range [0, 255]
+                    averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
+                    averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
+                    val.bucketLadderAngleL = averaged_converted_angle_L
+                    val.bucketLadderAngleR = averaged_converted_angle_R
+                    val.depositBinRaised = (packet_data[-2] != 0) # second to last value
+                    val.depositBinLowered = (packet_data[-1] != 0) # last value
 
-                # TODO verify the order of the floats and bools
-                floats_combined = struct.unpack("%df"%(NUM_MOTOR_CURRENTS+NUM_ANGLES), packet_data[0:(NUM_MOTOR_CURRENTS*4 + NUM_ANGLES*4)]) # each float is 4 bytes
-                val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert 
-                                                                                                # float to int and make sure it fits in one byte by clamping to range [0, 255]
-                averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
-                averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
-                val.bucketLadderAngleL = averaged_converted_angle_L
-                val.bucketLadderAngleR = averaged_converted_angle_R
-                val.depositBinRaised = (packet_data[-2] != 0) # second to last value
-                val.depositBinLowered = (packet_data[-1] != 0) # last value
-
-                pub.publish(val)
+                    pub.publish(val)
+                    
+                elif len(packet_data) == SPECIAL_PACKET_LENGTH:
+                    if packet_data[0] == Special_signal.IR_START:
+                        in_ir_stream = True
+                        ir_readings = []
+                    
+                    if packet_data[0] == Special_signal.IR_STOP:
+                        in_ir_stream = False
+                        #-------------------output data to method-----------------------------
+                        del ir_readings
+                        
+                elif len(packet_data) == PAYLOAD_PACKET_LENGTH:
+                    if in_ir_stream:
+                        ir_readings.append(packet_data)
+                    
         
     except KeyboardInterrupt as k:
         traceback.print_exc()
