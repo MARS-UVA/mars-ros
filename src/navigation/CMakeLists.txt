@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   geometry_msgs
   message_generation
-  hero_board
+  # hero_board # TODO - see if commenting this out will break stuff
 )
 
 ## System dependencies are found with CMake's conventions

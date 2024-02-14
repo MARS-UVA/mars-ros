@@ -8,6 +8,7 @@
   <arg name="simulation" default="true"/>
   <arg name="do_nav" default="true"/>
   <arg name="ira_convert_depth_to_laser" default="false"/> <!-- this was here to try to use another ira tool, but it's not working, so keep this false -->
+  
   <arg name="urdf_file" default="$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro"/>
   <!-- <arg name="world_name" default="$(find navigation)/worlds/crater-and-boulders.world"/> -->
   <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/>
