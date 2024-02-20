@@ -10,6 +10,7 @@ from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
 from geometry_msgs.msg import Twist
 from enum import Enum
+from typings import List
 
 
 NODE_NAME = "hero_send_recv"
@@ -23,6 +24,7 @@ NUM_BOOLS = 2 # 2 bools total for bucket pressing upper and lower limit switch
 FEEDBACK_PACKET_LENGTH = 4*NUM_MOTOR_CURRENTS + 4*NUM_ANGLES + 1*NUM_BOOLS # currents and angles are 4 bytes each, bools are 1 byte each
 SPECIAL_PACKET_LENGTH = 1
 PAYLOAD_PACKET_LENGTH = 4
+ir_readings: List[Float] = []
 
 class Special_signal(Enum):
     IR_START = 0xA0
@@ -209,18 +211,19 @@ if __name__ == "__main__":
                     val.bucketLadderAngleR = averaged_converted_angle_R
                     val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                     val.depositBinLowered = (packet_data[-1] != 0) # last value
+                    
 
                     pub.publish(val)
                     
                 elif len(packet_data) == SPECIAL_PACKET_LENGTH:
                     if packet_data[0] == Special_signal.IR_START:
                         in_ir_stream = True
-                        ir_readings = []
+                        #ir_readings = []
                     
                     if packet_data[0] == Special_signal.IR_STOP:
                         in_ir_stream = False
                         #-------------------output data to method-----------------------------
-                        del ir_readings
+                        ir_readings = []
                         
                 elif len(packet_data) == PAYLOAD_PACKET_LENGTH:
                     if in_ir_stream:
