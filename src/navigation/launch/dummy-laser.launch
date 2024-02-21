@@ -2,8 +2,8 @@
   <arg name="model" default="waffle" doc="model type [burger, waffle, waffle_pi]"/>
   <arg name="urdf_file" default="$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro"/>
   <!-- <arg name="world_name" default="$(find navigation)/worlds/crater-and-boulders.world"/> -->
-  <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/>
-  <!--<arg name="world_name" default="$(find navigation)/worlds/more-craters.world"/>-->
+  <!-- <arg name="world_name" default="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/> -->
+  <arg name="world_name" default="$(find navigation)/worlds/more-craters.world"/>
 
   <!-- open simulated world -->
   <include file="$(find navigation)/launch/turtlebot3_world.launch">
@@ -19,6 +19,6 @@
       <arg name="urdf_file" value="$(arg urdf_file)" />
   </include>
 
-  <node pkg="tf" type="static_transform_publisher" name="map_to_dummy_scan" args="1 0 0 0 0 0 1 map dummy_laser_frame 100" />
-  <!-- <node pkg="navigation" type="dummy_laser_scan" name="dummy_laser_scan"/> -->
+  <!-- Define where the robot is in relation to the map so that we can display the readings from the sensors on the robot -->
+  <node pkg="tf" type="static_transform_publisher" name="map_to_base_link_of_robot" args="0 0 0 0 0 0 map base_link 100" />
 </launch>
