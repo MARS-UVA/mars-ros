@@ -8,7 +8,7 @@
 
 ros::Publisher scan_pub;
 double cam_fov = -1.0; // a positive angle (in radians) indicating the field of view of the camera
-
+double camera_noise_in_meters = 0.03;
 /*
 Converts a PointCloud2 message into a LaserScan message.
 
@@ -39,7 +39,7 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
   scan.angle_min = -1 * (cam_fov/2);
   scan.angle_max = (cam_fov/2);
   scan.angle_increment = (scan.angle_max - scan.angle_min) / num_readings;
-  scan.time_increment = (1/120); // set as 1/60 because simulated depth camera (rs200) can achieve 60 fps // (1 / laser_frequency) / (num_readings);
+  scan.time_increment = (1/300); // set as 1/60 because simulated depth camera (rs200) can achieve 60 fps // (1 / laser_frequency) / (num_readings);
   scan.range_min = 0.0;
   scan.range_max = 100.0;
 
@@ -58,34 +58,41 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
   // double x, y, z;
   double xPrime, yPrime, zPrime;
 
-  yPrime = 0.018; // how high the depth camera is above the ground, based on the turtlebot waffle urdf file
+  yPrime = 0.094; // how high the depth camera is above the ground, based on the turtlebot waffle urdf file
 
   sensor_msgs::PointCloud2ConstIterator<float> xIt(*depth_cloud_msg, "x");
   sensor_msgs::PointCloud2ConstIterator<float> yIt(*depth_cloud_msg, "y");
   sensor_msgs::PointCloud2ConstIterator<float> zIt(*depth_cloud_msg, "z");
   for (xIt; xIt != xIt.end(); ++xIt) {
-    if(!isnan(xIt[0])) {
-      // ROS_INFO("a real value, not NAN");
-      xPrime = yPrime * xIt[0] / yIt[0]; // x' = y' * x/y
-      zPrime = xPrime * zIt[0] / xIt[0]; // z' = x' * z/x
-
-      // currently doing strategy a,
-      // will need to update eqns for zprime and xprime to reflect that x goes forward and z goes right
+    if(!isnan(xIt[0])) { // only look at points with valid readings
+      // ROS_INFO_STREAM("point: ("<<xIt[0] << ", " << yIt[0] << ", " << zIt[0]);
+      
       // x goes forward, z to right, y upward
-      angle = atan(xIt[0]/zIt[0]); // angle = arctan(x/z)
+      angle = atan(xIt[0]/(-1*zIt[0])); // angle = arctan(x/z)
       step = (angle - scan.angle_min)/ scan.angle_increment;
-      a_range = sqrt(pow(zIt[0], 2) + pow(xIt[0], 2)); // og, was z and x
-      // ROS_INFO_STREAM("point: ("<<xIt[0] << ", " << yIt[0] << ", " << zIt[0] << ")\nrange: " << range);
-      b_range = sqrt(pow(zPrime, 2) + pow(xPrime, 2)); //new pts
+
+      // strategy a
+      a_range = sqrt(pow(zIt[0], 2) + pow(xIt[0], 2));
+      
       if(a_ranges[step] < a_range) {
         a_ranges[step] = a_range;
       }
 
-      if(b_ranges[step] > b_range) {
-        b_ranges[step] = b_range;
+      // strategy b - only look at points below the floor plane
+      // currently not working
+      if(yIt[0] < camera_noise_in_meters) {
+        xPrime = yPrime * xIt[0] / (yIt[0] + yPrime); // x' = y' * x/y
+        zPrime = xPrime * (-1*zIt[0]) / xIt[0]; // z' = x' * z/x
+
+        b_range = sqrt(pow(zPrime, 2) + pow(xPrime, 2)); //new pts
+
+        if(b_ranges[step] > b_range) {
+          b_ranges[step] = b_range;
+        }
       }
       
     }
+
     ++yIt;
     ++zIt;
   }
