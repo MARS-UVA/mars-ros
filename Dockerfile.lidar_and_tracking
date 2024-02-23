@@ -33,4 +33,4 @@ RUN sed --in-place --expression \
 	/ros_entrypoint.sh
 
 # Start the mars-ros main launch file when the container runs
-CMD [ "/bin/bash", "-c", "roslaunch navigation lidar-and-tracking.launch" ]
+CMD [ "/bin/bash", "-c", "roslaunch navigation cameras.launch" ]
