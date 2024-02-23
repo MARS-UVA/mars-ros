@@ -48,7 +48,7 @@ docker run --rm -it --network host mars-ros
 Runs the `navigation/launch/lidar-and-tracking.launch` launch file.\
 Build:
 ```bash
-docker build . -t mars-lidar-and-tracking -f Docker.lidar_and_tracking
+docker build . -t mars-lidar-and-tracking -f Dockerfile.lidar_and_tracking
 ```
 Run:
 ```bash
