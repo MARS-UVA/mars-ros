@@ -228,7 +228,7 @@ if __name__ == "__main__":
                         
                 elif len(packet_data) == PAYLOAD_PACKET_LENGTH:
                     if in_ir_stream:
-                        ir_readings.append( (float(packet_data[0]), packet_data[1]) )
+                        ir_readings.append( (float(packet_data[0]), packet_data[1]) ) # (distance, angle)
              
                     
         
