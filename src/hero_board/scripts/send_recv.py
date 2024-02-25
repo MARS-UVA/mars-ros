@@ -4,7 +4,7 @@ import rospy
 import struct
 import time
 import traceback
-from hero_board.msg import HeroFeedback, MotorCommand
+from hero_board.msg import HeroFeedback, MotorCommand, IRSensorFeedback
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
 from serial_manager import SerialManager
 from utils.protocol import var_len_proto_recv, var_len_proto_send, Opcode
