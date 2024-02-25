@@ -193,6 +193,7 @@ if __name__ == "__main__":
             to_send_raw = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(to_send_raw) #0xff, opcode (00, 01, 10, 11), length of package
             val = HeroFeedback()
+            ir_feed = IRSensorFeedback()
             for packet in to_send:
                 packet_opcode = packet[0]
                 packet_data = packet[1]
@@ -211,8 +212,7 @@ if __name__ == "__main__":
                     val.bucketLadderAngleR = averaged_converted_angle_R
                     val.depositBinRaised = (packet_data[-2] != 0) # second to last value
                     val.depositBinLowered = (packet_data[-1] != 0) # last value
-                    
-
+                   
                     pub.publish(val)
                     
                 elif len(packet_data) == SPECIAL_PACKET_LENGTH:
@@ -222,7 +222,8 @@ if __name__ == "__main__":
                     
                     if packet_data[0] == Special_signal.IR_STOP:
                         in_ir_stream = False
-                        #-------------------output data to method-----------------------------
+                        ir_feed.ir1_readings = ir_readings
+                        pub.publish(ir_feed) #ir feed is being published
                         ir_readings = []
                         
                 elif len(packet_data) == PAYLOAD_PACKET_LENGTH:
