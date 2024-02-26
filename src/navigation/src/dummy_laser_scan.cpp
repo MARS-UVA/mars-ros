@@ -81,8 +81,9 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
       // strategy b - only look at points below the floor plane
       // currently not working
       if(yIt[0] < camera_noise_in_meters) {
-        xPrime = yPrime * xIt[0] / (yIt[0] + yPrime); // x' = y' * x/y
-        zPrime = xPrime * (-1*zIt[0]) / xIt[0]; // z' = x' * z/x
+	y = -yIt[0] + yPrime
+        xPrime = yPrime * xIt[0] / y; // x' = y' * x/y
+        zPrime = xPrime * (-zIt[0]) / xIt[0]; // z' = x' * z/x
 
         b_range = sqrt(pow(zPrime, 2) + pow(xPrime, 2)); //new pts
 
