@@ -103,7 +103,7 @@
         </link>
       </model>
       <model name='NewApriltag1'>
-        <pose>0 0 0.1 -1e-06 -1.57079 0</pose>
+        <pose>0 0.2 0.1 -1e-06 -1.57079 0</pose>
         <scale>1 1 1</scale>
         <link name='main'>
           <pose>0 0 0.1 -1e-06 -1.57079 0</pose>
