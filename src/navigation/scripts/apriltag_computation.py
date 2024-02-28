@@ -7,6 +7,8 @@ import numpy as np
 import tf_conversions
 from geometry_msgs.msg import TransformStamped
 from apriltag_ros.msg import AprilTagDetectionArray
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
 
 rospy.init_node('apriltag_computation', anonymous=True)
 apriltag_ids = rospy.get_param('~apriltag_ids').split()
@@ -17,11 +19,18 @@ br = tf2_ros.TransformBroadcaster()
 
 nTfRetry = 1
 retryTime = 0.05
+initial_pose_publisher = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=1)
 
 def main():
-    apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size = 1)
+    global initial_pose_publisher
+    apriltag_sub = rospy.Subscriber("/tag_detections", AprilTagDetectionArray, apriltag_callback, queue_size=1)
     rospy.sleep(1)
+
+    # Initialize the initial pose publisher
+    initial_pose_publisher = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=1)
+
     rospy.spin()
+
 
 ## apriltag msg handling function
 def apriltag_callback(data):
@@ -75,6 +84,26 @@ def pubFrame(pose=[0,0,0,0,0,0,1], frame_id='obj', parent_frame_id='map', npub=1
 
         br.sendTransform(t)
         rospy.sleep(0.01)
+        
+    for j in range(npub):
+        # ... (existing code)
+
+        # Create PoseWithCovarianceStamped message
+        initial_pose_msg = PoseWithCovarianceStamped()
+        initial_pose_msg.header.stamp = rospy.Time.now()
+        initial_pose_msg.header.frame_id = parent_frame_id
+        initial_pose_msg.pose.pose.position.x = pose[0]
+        initial_pose_msg.pose.pose.position.y = pose[1]
+        initial_pose_msg.pose.pose.position.z = pose[2]
+        initial_pose_msg.pose.pose.orientation.x = ori[0]
+        initial_pose_msg.pose.pose.orientation.y = ori[1]
+        initial_pose_msg.pose.pose.orientation.z = ori[2]
+        initial_pose_msg.pose.pose.orientation.w = ori[3]
+
+        # Publish the initial pose to the "initialpose" topic
+        initial_pose_publisher.publish(initial_pose_msg)
+        rospy.sleep(0.01)
+
 
 # https://answers.ros.org/question/323075/transform-the-coordinate-frame-of-a-pose-from-one-fixed-frame-to-another/ 
 def transformPose(pose, fromFrame, toFrame):
