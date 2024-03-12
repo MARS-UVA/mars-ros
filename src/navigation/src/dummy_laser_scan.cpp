@@ -8,7 +8,7 @@
 
 ros::Publisher scan_pub;
 double cam_fov = -1.0; // a positive angle (in radians) indicating the field of view of the camera
-double camera_noise_in_meters = 0.03;
+double camera_noise_in_meters = 0.00;
 /*
 Converts a PointCloud2 message into a LaserScan message.
 
@@ -26,7 +26,7 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
     return;
   }
 
-  unsigned int num_readings = 100;
+  unsigned int num_readings = 180;
   double a_ranges[num_readings]; // strategy A, farthest point
   double b_ranges[num_readings]; // strategy B, virtual floor projection
   double intensities[num_readings];
@@ -41,7 +41,7 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
   scan.angle_increment = (scan.angle_max - scan.angle_min) / num_readings;
   scan.time_increment = (1/300); // set as 1/60 because simulated depth camera (rs200) can achieve 60 fps // (1 / laser_frequency) / (num_readings);
   scan.range_min = 0.0;
-  scan.range_max = 100.0;
+  scan.range_max = 10.0;
 
   for(unsigned int i = 0; i < num_readings; i++) {
     a_ranges[i] = scan.range_min;
@@ -56,7 +56,7 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
   int step;
   double a_range, b_range;
   // double x, y, z;
-  double xPrime, yPrime, zPrime;
+  double xPrime, yPrime, zPrime, y;
 
   yPrime = 0.094; // how high the depth camera is above the ground, based on the turtlebot waffle urdf file
 
@@ -68,7 +68,7 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
       // ROS_INFO_STREAM("point: ("<<xIt[0] << ", " << yIt[0] << ", " << zIt[0]);
       
       // x goes forward, z to right, y upward
-      angle = atan(xIt[0]/(-1*zIt[0])); // angle = arctan(x/z)
+      angle = atan(xIt[0]/(-zIt[0])); // angle = arctan(x/z)
       step = (angle - scan.angle_min)/ scan.angle_increment;
 
       // strategy a
@@ -80,12 +80,12 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
 
       // strategy b - only look at points below the floor plane
       // currently not working
-      if(yIt[0] < camera_noise_in_meters) {
-	y = -yIt[0] + yPrime
+      if(yIt[0] >  camera_noise_in_meters) {
+	y = yIt[0] + yPrime;
         xPrime = yPrime * xIt[0] / y; // x' = y' * x/y
-        zPrime = xPrime * (-zIt[0]) / xIt[0]; // z' = x' * z/x
+        //zPrime = xPrime * (-zIt[0]) / xIt[0]; // z' = x' * z/x
 
-        b_range = sqrt(pow(zPrime, 2) + pow(xPrime, 2)); //new pts
+        b_range = sqrt(pow(zIt[0], 2) + pow(xPrime, 2)); //new pts
 
         if(b_ranges[step] > b_range) {
           b_ranges[step] = b_range;
@@ -101,7 +101,7 @@ void depth_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& depth_cloud_ms
   scan.ranges.resize(num_readings);
   scan.intensities.resize(num_readings);
   for(unsigned int i = 0; i < num_readings; ++i){
-    scan.ranges[i] = a_ranges[i];
+    scan.ranges[i] = b_ranges[i];
     scan.intensities[i] = intensities[i];
     // ROS_INFO_STREAM(i<<": "<< scan.ranges[i]);
   }
