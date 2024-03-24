@@ -22,11 +22,20 @@ NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over seria
 NUM_ANGLES = 2 # 2 angles for bucket ladder angle, one from each actuator
 NUM_BOOLS = 2 # 2 bools total for bucket pressing upper and lower limit switch
 FEEDBACK_PACKET_LENGTH = 4*NUM_MOTOR_CURRENTS + 4*NUM_ANGLES + 1*NUM_BOOLS # currents and angles are 4 bytes each, bools are 1 byte each
-SPECIAL_PACKET_LENGTH = 1
-PAYLOAD_PACKET_LENGTH = 8
-ir_readings: List[tuple()] = []
+IR_SIGNAL_PACKET_LENGTH = 1
+IR_PAYLOAD_PACKET_LENGTH = 16
+#PAYLOAD_PACKET_LENGTH = 8
 
-class Special_signal(Enum):
+class IR_Data_Struct:
+    def __init__(self, sensor1=[], sensor2=[], sensor3=[], angle=[]):
+        self.sensor1 = sensor1
+        self.sensor2 = sensor2
+        self.sensor3 = sensor3
+        self.angle = angle
+
+ir_data = IR_Data_Struct()
+
+class IR_signals(Enum):
     IR_START = 0xA0
     IR_STOP = 0xA1
 
@@ -193,7 +202,7 @@ if __name__ == "__main__":
             to_send_raw = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(to_send_raw) #0xff, opcode (00, 01, 10, 11), length of package
             val = HeroFeedback()
-            ir_feed = IRSensorFeedback()
+            ir_vector = IRVector()  #IR feedback for distance data
             for packet in to_send:
                 packet_opcode = packet[0]
                 packet_data = packet[1]
@@ -215,19 +224,21 @@ if __name__ == "__main__":
                    
                     pub.publish(val)
                     
-                elif len(packet_data) == SPECIAL_PACKET_LENGTH:
-                    if packet_data[0] == Special_signal.IR_START:
-                        in_ir_stream = True
-                        #ir_readings = []
-                    
-                    if packet_data[0] == Special_signal.IR_STOP:
+                elif len(packet_data) == IR_SIGNAL_PACKET_LENGTH:
+                    if packet_data[0] == IR_signals.IR_START:
+                    	# ir_distance_readings = [[] for _ in range(3)]
+                       in_ir_stream = True
+                    elif packet_data[0] == IR_signals.IR_STOP:
                         in_ir_stream = False
-                        ir_feed.ir1_readings = ir_readings
-                        pub.publish(ir_feed) #ir feed is being published
-                        ir_readings = []
+                        # = ir_readings
+                        ir_vector.sensor_1_feed = ir_data.sensor1
+                        ir_vector.sensor_2_feed = ir_data.sensor2
+                        ir_vector.sensor_3_feed = ir_data.sensor3
+                        ir_vector.angle_feed = ir_data.angle
+                        pub.publish(ir_vector) #ir feed is being published
+                        ir_data = IR_Data_Struct()
                         
-                elif len(packet_data) == PAYLOAD_PACKET_LENGTH:
-                    if in_ir_stream:
+                elif len(packet_data) == IR_PAYLOAD_PACKET_LENGTH and in_ir_stream:
                         ir_readings.append( (float(packet_data[0]), packet_data[1]) )
              
                     

@@ -2,11 +2,12 @@ from math import sin
 controlHeight = 0
 def onStart():
     global controlHeight
+    global 
     controlHeight = getAvgHeight()
 
 def getAvgHeight():
     readings = getReadings()
-    totalHeight = 0.
+    totalHeight = 0
     for (dist, angle) in readings:
         totalHeight += dist * sin(angle)
     avgHeight = totalHeight / len(readings)
