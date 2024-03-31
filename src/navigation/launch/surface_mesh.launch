@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="navigation" type="surface_mesh.py" name="surface_mesh" output="screen"></node>
+</launch>
