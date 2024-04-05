@@ -166,6 +166,7 @@ catkin_install_python(PROGRAMS
 
 catkin_install_python(PROGRAMS
   scripts/gpio_read.py
+  scripts/ir-adc-node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
