@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# note: if you're getting a permissions error, you will need to give the user who starts this launchfile 
+# permissions to read and write on the i2c port. See https://lexruee.ch/setting-i2c-permissions-for-non-root-users.html 
+
 import rospy
 import ctypes
 import pylibi2c
@@ -25,8 +28,8 @@ def setup():
     # Set flags
     adc.flags = pylibi2c.I2C_M_IGNORE_NAK
     global pub
-    pub = rospy.Publisher("ir-adc", Int32, queue_size=0)
-    rospy.init_node("ir-adc-node", anonymous=True)
+    pub = rospy.Publisher("ir_adc_readings", Int32, queue_size=0)
+    rospy.init_node("ir_adc_node", anonymous=True)
 
     # set config register
     adc.write(0x1, buf)
@@ -37,6 +40,7 @@ def publish_ir():
     data = adc.ioctl_read(0x0, 2)
     result = (data[0] << 8) | data[1] # combine the 2 bytes of data into a single integer to output
     pub.publish(result)
+    rospy.loginfo(result)
 
 if __name__ == "__main__":
     setup()
