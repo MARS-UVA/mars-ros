@@ -1,0 +1,5 @@
+<launch>
+    <!-- run the IR processing node -->
+    <node pkg="actions" type="ir_adc_node.py" respawn="false" name="ir_adc_node" output="screen"></node>
+
+</launch> 
