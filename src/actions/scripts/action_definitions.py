@@ -122,6 +122,14 @@ class ActionDig(ActionBase):
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
-        current_time = time.time()
         #stop if duration has been reached or if bucket is completed or error thrown, power level
+        return self.is_duration_reached() or self.is_bucket_full() 
+
+    def is_duration_reached(self):
+        current_time = time.time()
         return current_time - self.initial_time >= self.description["duration"]
+    
+    def is_bucket_full(self):
+        close_ir = 30000
+        if self.ir_data.data >= close_ir:
+            return True
