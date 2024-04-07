@@ -12,7 +12,7 @@ class ActionBase:
         rospy.wait_for_service("/get_state")
         self.get_state = rospy.ServiceProxy("/get_state", GetState)
 
-        self.feedback_data = None
+        self.ir_data = None
         self.sub = rospy.Subscriber("ir_adc_readings", Int32, self.callback)
 
         # For now, all the actions publish motor commmands as direct drive commands, mainly 
@@ -20,7 +20,7 @@ class ActionBase:
         self.pub = rospy.Publisher("/motor/cmd_vel", MotorCommand, queue_size=0) 
 
     def callback(self, data):
-        self.feedback_data = data
+        self.ir_data_data = data
         ## process ir data
         # print("callback setting data to " + str(list(self.feedback_data.currents)))
 
