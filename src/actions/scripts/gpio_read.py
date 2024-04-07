@@ -22,7 +22,7 @@ def publish():
     feedback.bucket_spinning = gpio_state_bucket
     feedback.construction_bin_raised = gpio_state_bin
     pub.publish(feedback)
-    rospy.loginfo("bucket state: %s, bin state: %s" % feedback.bucket_spinning, feedback.construction_bin_raised)
+    rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_spinning, feedback.construction_bin_raised))
 
 if __name__ == "__main__":
     setup_node()
