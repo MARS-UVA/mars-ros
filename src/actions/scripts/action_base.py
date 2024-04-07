@@ -2,6 +2,7 @@ from hero_board.srv import GetState, GetStateResponse
 from hero_board.msg import HeroFeedback, MotorCommand
 import rospy
 import time
+from std_msgs.msg import Int32
 
 class ActionBase:
 
@@ -12,7 +13,7 @@ class ActionBase:
         self.get_state = rospy.ServiceProxy("/get_state", GetState)
 
         self.feedback_data = None
-        self.sub = rospy.Subscriber("/motor/feedback", HeroFeedback, self.callback)
+        self.sub = rospy.Subscriber("ir_adc_readings", Int32, self.callback)
 
         # For now, all the actions publish motor commmands as direct drive commands, mainly 
         # because the hero board isn't set up for autonomy messages (messages that rely on feedback)
@@ -20,6 +21,7 @@ class ActionBase:
 
     def callback(self, data):
         self.feedback_data = data
+        ## process ir data
         # print("callback setting data to " + str(list(self.feedback_data.currents)))
 
     def is_running(self):
@@ -33,6 +35,7 @@ class ActionBase:
     def is_completed(self):
         # Determines whether the action is completed/satisfied/expired
         # Raising an error like this is a way to enforce virtual methods in Python
+        # check if array values are at the limit
         raise NotImplementedError()
 
     def execute(self):
