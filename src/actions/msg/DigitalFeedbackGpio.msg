@@ -1,0 +1,2 @@
+bool bucket_spinning
+bool construction_bin_raised
