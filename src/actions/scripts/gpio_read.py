@@ -1,5 +1,6 @@
 import rospy
 from std_msgs.msg import String
+import Jetson.GPIO as GPIO
 
 pub = None
 def setup_node():
