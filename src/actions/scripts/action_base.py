@@ -20,7 +20,7 @@ class ActionBase:
         self.pub = rospy.Publisher("/motor/cmd_vel", MotorCommand, queue_size=0) 
 
     def callback(self, data):
-        self.ir_data_data = data
+        self.ir_data = data
         ## process ir data
         # print("callback setting data to " + str(list(self.feedback_data.currents)))
 
