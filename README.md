@@ -1,21 +1,60 @@
 # MARS - ROS
-ROS packages for the MARS club
+ROS packages for the Mechatronics and Robotics Society at the University of Virginia.
 
-## Package Description
+These packages are installed on the team's robot.
+
+## Package Descriptions
 - actions: handles motor routines like raising bucket ladder, digging, etc. 
-- camera_streamer: 
 - hero_board: communication between the hero board and the jetson
 - navigation: used for autonomous navigation
-- ~~processing: ROS nodes for processing sensors data~~
-- rpc-server: RPC server for communication with the remote control station (the laptop)
-- ~~segmentation: uses machine learning to differntiate ground and environment~~
 
-## Launch files
-Under navigation/launch, the file malvi_config.launch is the main launch file that is used to start the robot. Refer to the launch file for possible parameters. The default parameters assume all aspects of the robot should be run. 
+## Usage on Robot
+To run ROS nodes on the robot and connect to them from the control station, navigate to the root directory of this project and run 
+`./start1.sh` in one terminal and `./start2.sh` in another.
+
+## Direct Usage: Launch Files
+Once these ROS packages are built and sourced, any nodes in them can be run like any other ROS node. However, we recommend using the code via the launch files we have created.
+
+### Main launch file
+The `navigation/launch/malvi_config.launch` launch file is used to start the robot. Refer to the launch file for possible parameters.
 
 ```bash
 roslaunch navigation malvi_config.launch
 ```
+
+### Additional launch files
+We have provided several other launch files for running other ROS nodes outside the typical robot-control use case.
+
+#### lidar-and-tracking-branch
+Runs nodes to start an RP LiDAR and Intel Realsense Tracking Camera T265 that will be mounted on the robot.
+```bash
+roslaunch navigation lidar-and-tracking.launch
+```
+
+## Containerized Usage: Docker 
+For a consistent production environment, we deploy our ROS code in Docker containers. These containers install ROS, set up required packages, and run one of the aforementioned launch files.
+
+### Main image
+The main Docker image (which can be built using `Dockerfile`) runs our main launch file, `navigation/launch/malvi_config.launch`.\
+Build:
+```bash
+docker build . -t mars-ros
+```
+Run:
+```bash
+docker run --rm -it --network host mars-ros
+```
+### Lidar and tracking camera image
+Runs the `navigation/launch/lidar-and-tracking.launch` launch file.\
+Build:
+```bash
+docker build . -t mars-lidar-and-tracking -f Docker.lidar_and_tracking
+```
+Run:
+```bash
+docker run --rm -it --network host --volume=/dev:/dev --privileged mars-lidar-and-tracking
+```
+The USB devices for the camera and LiDAR must be passed through to the container. Due to a quirk of the tracking camera where it is only recognized after its ROS node is started, we must mount /dev on the host to /dev in the container.
 
 ## Cloning and Pulling
 Because this repository uses submodules, care must be taken when pulling/pushing. To clone this repository, you need to add the `--recursive` flag:
@@ -24,7 +63,7 @@ Because this repository uses submodules, care must be taken when pulling/pushing
 git clone --recursive https://github.com/MARS-UVA/mars-ros.git
 ```
 
-If you forgot the `--recursive` flag, you need to run submodule init manually after cloning
+If you forgot the `--recursive` flag, you need to run `submodule init` manually after cloning
 
 ```bash
 git submodule update --init
@@ -37,8 +76,7 @@ git pull
 git submodule update --init
 ```
 
-
-## Note for development
+## Note for Development
 When developing for specific packages, you do not need to compile all other packages. You can specify the name of the packages you want to build as arguments. 
 
 ### VSCode Remote Development on Jetson
@@ -50,7 +88,7 @@ Microsoft Python Language Server does not support arm64. Therefore, you need to 
 #### C++:
 Microsoft C++ extension does not support arm64. You need to install the `vscode-clangd` plugin from llvm instead. Follow the plugin README to get started?
 
-## Compile all packages
+## Compiling All Packages
 If you need to compile all packages, refer to the [compile guide](./CompileGuide.md)
 
 ### Managing package dependencies

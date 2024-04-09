@@ -14,8 +14,7 @@ def start_action_in_background(action):
     rospy.loginfo("Starting action name=%s" % action.description["name"])
     t = Thread(target=action.start, args=())
     t.start()
-    # Don't want to join here because we don't wait to wait for it to finish executing. 
-    # Anything in this function that blocks causes the UI to freeze waiting for the rpc call to finish
+    # Don't want to join here because we don't wait to wait for it to finish executing.
 
 def start_action_callback(req):
     data = json.loads(req.action_description_json)

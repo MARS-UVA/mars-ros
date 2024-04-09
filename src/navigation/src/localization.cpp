@@ -27,8 +27,6 @@ private:
   ros::NodeHandle& nodeHandle;
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener tfListener;
- 
-//   XmlRpc::XmlRpcValue standalone_positions;
 
 //   geometry_msgs::PointStamped getTagConfigPosition(int);
 };
