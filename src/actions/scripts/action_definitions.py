@@ -129,15 +129,6 @@ class ActionLowerLadder(ActionBase):
 '''
 
 
-class ActionIrDetect(ActionBase):
-    def __init__(self, description):
-        super().__init__(description)
-        #self.initial_time = int(time.time()) #gets the time when the action was started
-        #the dig action description has fields: name, update_delay, duration, speed
-
-    def 
-
-
 '''
 IR sensor action description:
 1) Run bucket ladder chain to dig
