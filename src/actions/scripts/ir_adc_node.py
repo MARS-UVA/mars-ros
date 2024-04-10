@@ -39,6 +39,7 @@ def publish_ir():
     # From i2c 0x0(internal address) read 2 bytes of data. 
     data = adc.ioctl_read(0x0, 2)
     result = (data[0] << 8) | data[1] # combine the 2 bytes of data into a single integer to output
+    
     pub.publish(result)
     rospy.loginfo(result)
 

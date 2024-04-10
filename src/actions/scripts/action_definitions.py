@@ -3,6 +3,7 @@ from hero_board.msg import MotorCommand
 import rospy
 import time
 
+IR_THRESHOLD  = 30
 class ActionRaiseBin(ActionBase):
     def __init__(self, description):
         super().__init__(description)
@@ -126,20 +127,44 @@ class ActionLowerLadder(ActionBase):
 7: raise/lower collection bin
 8:
 '''
+
+
+class ActionIrDetect(ActionBase):
+    def __init__(self, description):
+        super().__init__(description)
+        #self.initial_time = int(time.time()) #gets the time when the action was started
+        #the dig action description has fields: name, update_delay, duration, speed
+
+    def 
+
+
+'''
+IR sensor action description:
+1) Run bucket ladder chain to dig
+2) Once the chain runs, start IR scan
+3) Once the IR sensor detects something within threshold, set a condition to complete
+'''
 class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
         self.initial_time = int(time.time()) #gets the time when the action was started
         #the dig action description has fields: name, update_delay, duration, speed
+        self.stop_digging = False
 
     def execute(self):
         rospy.loginfo("action dig executing...")
         msg = [100]*9
-        msg[6] = 100 - self.description["speed"]
+        msg[6] = 100 - self["speed"]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
+        self.ir_scan()
+
+    def ir_scan(self):
+        #Control servo to spin to a certain point
+        if self.ir_data < IR_THRESHOLD:
+            self.stop_digging = True
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
         current_time = time.time()
-        return current_time - self.initial_time >= self.description["duration"]
+        return current_time - self.initial_time >= self.description["duration"] or self.stop_digging
