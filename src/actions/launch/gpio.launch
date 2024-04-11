@@ -1,0 +1,5 @@
+<launch>
+    <!-- run the IR processing node -->
+    <node pkg="actions" type="gpio_read.py" respawn="false" name="gpio_read" output="screen"></node>
+
+</launch> 
