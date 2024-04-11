@@ -3,8 +3,11 @@ import Jetson.GPIO as GPIO
 from actions.msg import DigitalFeedbackGpio
 
 pub = None
+
+#Limit Switches:
 channel_bucket = 12 
 channel_bin = 16 
+
 feedback = DigitalFeedbackGpio()
 
 def setup_node():

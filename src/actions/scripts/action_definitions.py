@@ -162,18 +162,25 @@ class ActionDig(ActionBase):
     def execute(self):
         rospy.loginfo("action dig executing...")
         self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
+        rospy.loginfo("")
         msg = [100]*8
         msg[6] = 100 - self["speed"]
         msg[8] = self.ir_servo_angle
-        self.pub.publish(MotorCommand(msg))
+        #self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
-        self.ir_scan()
+        self.sensor_scan()
 
-    def ir_scan(self):
+    def sensor_scan(self):
         #Control servo to spin to a certain point
+        rospy.loginfo("Scanning with IR sensor and limit switch status...")
+        rospy.loginfo("IR sensor angle: %d" % self.ir_servo_angle)
         height = self.ir_data * sin(self.ir_servo_angle)
+        rospy.loginfo("IR sensor data: %d" % self.ir_data)
         if height < IR_DITANCE_THRESHOLD:
             self.stop_digging = True
+            rospy.loginfo("IR sensor detected something within threshold, stopping dig action")
+        rospy.loginfo("Bucket Limit Switch status: %d" % self.gpio_data.bucket_spinning)
+        rospy.loginfo("Bin Limit Switch status: %d" % self.gpio_data.construction_bin_raised)
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
