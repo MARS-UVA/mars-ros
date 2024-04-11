@@ -2,8 +2,38 @@ from action_base import ActionBase
 from hero_board.msg import MotorCommand
 import rospy
 import time
+from math import sin
 
-IR_THRESHOLD  = 30
+
+# Old msg format:
+'''
+0: raise/lower ladder
+1:
+2:
+3:
+4:
+5:
+6:
+7: raise/lower collection floor
+8:
+'''
+
+# New msg format:
+'''
+0: front left wheel
+1: front right wheel
+2: back left wheel
+3: back right wheel
+4: raise/lower ladder - left actuator
+5: raise/lower ladder - right actuator
+6: rotate ladder chain
+7: raise/lower collection bin floor
+8: ir sensor servo motor
+'''
+
+
+IR_DITANCE_THRESHOLD  = 30
+IR_SERVO_ANGLE_HOP = 5  #Change later, in degrees for now
 class ActionRaiseBin(ActionBase):
     def __init__(self, description):
         super().__init__(description)
@@ -115,20 +145,6 @@ class ActionLowerLadder(ActionBase):
     def is_completed(self):
         return self.left_lowered and self.right_lowered
 
-# msg format:
-'''
-0: raise/lower ladder
-1:
-2:
-3:
-4:
-5:
-6:
-7: raise/lower collection bin
-8:
-'''
-
-
 '''
 IR sensor action description:
 1) Run bucket ladder chain to dig
@@ -139,23 +155,27 @@ class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
         self.initial_time = int(time.time()) #gets the time when the action was started
+        self.ir_servo_angle = 0  #Initial angle - change to whatever starting reference angle is 
         #the dig action description has fields: name, update_delay, duration, speed
         self.stop_digging = False
 
     def execute(self):
         rospy.loginfo("action dig executing...")
-        msg = [100]*9
+        self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
+        msg = [100]*8
         msg[6] = 100 - self["speed"]
+        msg[8] = self.ir_servo_angle
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
         self.ir_scan()
 
     def ir_scan(self):
         #Control servo to spin to a certain point
-        if self.ir_data < IR_THRESHOLD:
+        height = self.ir_data * sin(self.ir_servo_angle)
+        if height < IR_DITANCE_THRESHOLD:
             self.stop_digging = True
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
         current_time = time.time()
-        return current_time - self.initial_time >= self.description["duration"] or self.stop_digging
+        return (current_time - self.initial_time >= self.description["duration"]) or self.stop_digging
