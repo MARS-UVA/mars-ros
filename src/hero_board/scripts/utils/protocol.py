@@ -52,3 +52,6 @@ def var_len_proto_recv(data: bytes) -> typing.List[typing.Tuple[int, bytearray]]
         else:  # no single matching byte, remove all
             temp.clear()
     return output
+
+#take first byte, first two bit is opcode, last 6 bits represent length. 
+# Use length to read the following bytes of information, then append and return the actual bytedata.

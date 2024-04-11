@@ -2,6 +2,7 @@ from hero_board.srv import GetState, GetStateResponse
 from hero_board.msg import HeroFeedback, MotorCommand
 import rospy
 import time
+from std_msgs.msg import Int32
 
 class ActionBase:
 
@@ -12,12 +13,16 @@ class ActionBase:
         self.get_state = rospy.ServiceProxy("/get_state", GetState)
 
         self.feedback_data = None
+        self.ir_sub = rospy.Subscriber("/ir_adc_readings", Int32, self.ir_callback)
         self.sub = rospy.Subscriber("/motor/feedback", HeroFeedback, self.callback)
 
         # For now, all the actions publish motor commmands as direct drive commands, mainly 
         # because the hero board isn't set up for autonomy messages (messages that rely on feedback)
         self.pub = rospy.Publisher("/motor/cmd_vel", MotorCommand, queue_size=0) 
 
+    def ir_callback(self, data):
+        self.ir_data = data
+    
     def callback(self, data):
         self.feedback_data = data
         # print("callback setting data to " + str(list(self.feedback_data.currents)))
