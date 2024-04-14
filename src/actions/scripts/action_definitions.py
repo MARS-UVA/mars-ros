@@ -32,8 +32,11 @@ from math import sin
 '''
 
 
-IR_DITANCE_THRESHOLD  = 30
+IR_DITANCE_THRESHOLD  = 30 #Change later after measurement, distance in cm
 IR_SERVO_ANGLE_HOP = 5  #Change later, in degrees for now
+BUCKET_LIMIT_CONTACT_TIME_LOWER_THRESH = 0.5  #0.5 seconds - unit is in nanoseconds
+BUCKET_LIMIT_CONTACT_TIME_UPPER_THRESH = 2  #2 seconds - unit is in nanoseconds
+
 class ActionRaiseBin(ActionBase):
     def __init__(self, description):
         super().__init__(description)
@@ -155,6 +158,7 @@ class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
         self.initial_time = int(time.time()) #gets the time when the action was started
+        self.last_bucket_contact_time = None
         self.ir_servo_angle = 0  #Initial angle - change to whatever starting reference angle is 
         #the dig action description has fields: name, update_delay, duration, speed
         self.stop_digging = False
@@ -181,6 +185,18 @@ class ActionDig(ActionBase):
             rospy.loginfo("IR sensor detected something within threshold, stopping dig action")
         rospy.loginfo("Bucket Limit Switch status: %d" % self.gpio_data.bucket_spinning)
         rospy.loginfo("Bin Limit Switch status: %d" % self.gpio_data.construction_bin_raised)
+        if self.last_bucket_contact_time is None and self.gpio_data.bucket_spinning == 1:
+            self.last_bucket_contact_time = self.gpio_data.bucket_contact_timestamp
+        elif self.contact_within_allowable_period():  #If bucket ladder switch contact within an allowable/normal operation priod (0.5-2 seconds - may need to change later)
+            rospy.loginfo("Bucket ladder belt operating normally")
+
+    def contact_within_allowable_period(self):
+        '''Implement this function'''
+        seconds = self.gpio_data.bucket_contact_timestamp.sec - self.last_bucket_contact_time.sec
+        nanosecs = self.gpio_data.bucket_contact_timestamp.nanosec - self.last_bucket_contact_time.nanosec
+        elapsed_time = seconds + nanosecs/1e9
+        return BUCKET_LIMIT_CONTACT_TIME_LOWER_THRESH <= elapsed_time <= BUCKET_LIMIT_CONTACT_TIME_UPPER_THRESH
+
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
