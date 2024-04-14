@@ -1,3 +1,5 @@
+#!/bin/bash
+
 <<instructions
 Run this script on the control station when you want to connect the control station 
 to the Jetson (the computer onboard the robot). This should be run BEFORE start2.sh.
