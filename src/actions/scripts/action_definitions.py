@@ -149,6 +149,7 @@ class ActionLowerLadder(ActionBase):
         return self.left_lowered and self.right_lowered
 
 '''
+ActionDig class description -
 IR sensor action description:
 1) Run bucket ladder chain to dig
 2) Once the chain runs, start IR scan
@@ -156,11 +157,11 @@ IR sensor action description:
 '''
 class ActionDig(ActionBase):
     def __init__(self, description):
+        #the dig action description has fields: name, update_delay, duration, speed
         super().__init__(description)
         self.initial_time = int(time.time()) #gets the time when the action was started
         self.last_bucket_contact_time = None
         self.ir_servo_angle = 0  #Initial angle - change to whatever starting reference angle is 
-        #the dig action description has fields: name, update_delay, duration, speed
         self.stop_digging = False
 
     def execute(self):
@@ -170,12 +171,12 @@ class ActionDig(ActionBase):
         msg = [100]*8
         msg[6] = 100 - self["speed"]
         msg[8] = self.ir_servo_angle
-        #self.pub.publish(MotorCommand(msg))
-        time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
-        self.sensor_scan()
+        #self.pub.publish(MotorCommand(msg)) - commented out so buckets do not move during test
+        time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you update the motors
+        self.check_sensors()
 
-    def sensor_scan(self):
-        #Control servo to spin to a certain point
+    def check_sensors(self):
+        '''Checking IR sensor readings:'''
         rospy.loginfo("Scanning with IR sensor and limit switch status...")
         rospy.loginfo("IR sensor angle: %d" % self.ir_servo_angle)
         height = self.ir_data * sin(self.ir_servo_angle)
@@ -183,22 +184,36 @@ class ActionDig(ActionBase):
         if height < IR_DITANCE_THRESHOLD:
             self.stop_digging = True
             rospy.loginfo("IR sensor detected something within threshold, stopping dig action")
-        rospy.loginfo("Bucket Limit Switch status: %d" % self.gpio_data.bucket_spinning)
-        rospy.loginfo("Bin Limit Switch status: %d" % self.gpio_data.construction_bin_raised)
+        
+        '''Checking bucket ladder limit switch readings:'''
+        rospy.loginfo("Bucket Limit Switch status: %d" % self.gpio_data.bucket_contact)
+        rospy.loginfo("Bin Limit Switch status: %d" % self.gpio_data.construction_bin_contact)
         if self.last_bucket_contact_time is None and self.gpio_data.bucket_spinning == 1:
-            self.last_bucket_contact_time = self.gpio_data.bucket_contact_timestamp
-        elif self.contact_within_allowable_period():  #If bucket ladder switch contact within an allowable/normal operation priod (0.5-2 seconds - may need to change later)
+            self.last_bucket_contact_time = self.gpio_data.publish_timestamp
+        elif self.normal_behavior:
             rospy.loginfo("Bucket ladder belt operating normally")
+        else:
+            rospy.loginfo("Bucket ladder belt operating abnormally, check if bucket may be jammed")
 
-    def contact_within_allowable_period(self):
-        '''Implement this function'''
-        seconds = self.gpio_data.bucket_contact_timestamp.sec - self.last_bucket_contact_time.sec
-        nanosecs = self.gpio_data.bucket_contact_timestamp.nanosec - self.last_bucket_contact_time.nanosec
+
+    '''Description: If bucket ladder switch contact within an allowable/normal operation period (0.5-2 seconds - may need to change period later)'''
+    def normal_behavior(self):
+        return (self.gpio_data.bucket_contact == 1 and 
+                BUCKET_LIMIT_CONTACT_TIME_LOWER_THRESH <= 
+                self.elapsed_since_last_contact <= 
+                BUCKET_LIMIT_CONTACT_TIME_UPPER_THRESH)  
+
+    def abnormal_behavior(self):  #This funcion is not usd as of yet but could be used to check whether buckets ar jammed
+        return (self.gpio_data.bucket_contact == 0 and
+                self.elapsed_since_last_contact > BUCKET_LIMIT_CONTACT_TIME_UPPER_THRESH)
+
+    def elapsed_since_last_contact(self):
+        seconds = self.gpio_data.publish_timestamp.sec - self.last_bucket_contact_time.sec
+        nanosecs = self.gpio_data.publish_timestamp.nanosec - self.last_bucket_contact_time.nanosec
         elapsed_time = seconds + nanosecs/1e9
-        return BUCKET_LIMIT_CONTACT_TIME_LOWER_THRESH <= elapsed_time <= BUCKET_LIMIT_CONTACT_TIME_UPPER_THRESH
-
+        return elapsed_time
 
     def is_completed(self):
-        #the way we check that the action is completed is if we've been digging for the specified duration
+        #the way we check that the action is completed is if we've been digging for the specified duration or if we've been told to stop digging
         current_time = time.time()
         return (current_time - self.initial_time >= self.description["duration"]) or self.stop_digging
