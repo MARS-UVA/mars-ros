@@ -22,12 +22,12 @@ def publish():
     global pub
     gpio_state_bucket = GPIO.input(channel_bucket)
     gpio_state_bin = GPIO.input(channel_bin)
-    feedback.bucket_spinning = gpio_state_bucket
-    if gpio_state_bucket == 1:
-        feedback.bucket_contact_timestamp = rospy.Time.now()
-    feedback.construction_bin_raised = gpio_state_bin
-    if gpio_state_bin == 1:
-        feedback.construction_bin_raised_timestamp = rospy.Time.now()
+    feedback.bucket_contact = gpio_state_bucket
+    #if gpio_state_bucket == 1:
+    feedback.publish_timestamp = rospy.Time.now()
+    feedback.construction_bin_contact = gpio_state_bin
+    #if gpio_state_bin == 1:
+    #feedback.construction_bin_raised_timestamp = rospy.Time.now()
     pub.publish(feedback)
     rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_spinning, feedback.construction_bin_raised))
 
