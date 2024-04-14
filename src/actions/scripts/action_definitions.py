@@ -188,7 +188,7 @@ class ActionDig(ActionBase):
         '''Checking bucket ladder limit switch readings:'''
         rospy.loginfo("Bucket Limit Switch status: %d" % self.gpio_data.bucket_contact)
         rospy.loginfo("Bin Limit Switch status: %d" % self.gpio_data.construction_bin_contact)
-        if self.last_bucket_contact_time is None and self.gpio_data.bucket_spinning == 1:
+        if self.last_bucket_contact_time is None and self.gpio_data.bucket_contact == 1:
             self.last_bucket_contact_time = self.gpio_data.publish_timestamp
         elif self.normal_behavior:
             rospy.loginfo("Bucket ladder belt operating normally")
