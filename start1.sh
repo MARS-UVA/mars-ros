@@ -17,4 +17,4 @@ then
 	echo "mars2324" | sudo -S apt install sshpass
 fi
 
-sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged malvi-config"
+sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged dig"
