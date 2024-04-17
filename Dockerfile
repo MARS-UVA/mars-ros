@@ -9,7 +9,7 @@ RUN git clone https://github.com/MARS-UVA/mars-ros.git mars-ros
 WORKDIR /mars-ros
 
 RUN git fetch
-RUN git checkout autonomous_dig_development_4/11
+RUN git checkout origin/autonomous_dig_development_4/11
 
 # Install python3-serial using pip3
 RUN apt install -y python3-pip && \
