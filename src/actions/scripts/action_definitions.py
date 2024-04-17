@@ -169,8 +169,8 @@ class ActionDig(ActionBase):
         self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
         rospy.loginfo("")
         msg = [100]*8
-        msg[6] = 100 - self["speed"]
-        msg[8] = self.ir_servo_angle
+        msg[5] = 100 - self["speed"]
+        msg[7] = self.ir_servo_angle
         #self.pub.publish(MotorCommand(msg)) - commented out so buckets do not move during test
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you update the motors
         self.check_sensors()

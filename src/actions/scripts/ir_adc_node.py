@@ -27,9 +27,9 @@ def setup():
 
     # Set flags
     adc.flags = pylibi2c.I2C_M_IGNORE_NAK
+
     global pub
     pub = rospy.Publisher("ir_adc_readings", Int32, queue_size=0)
-    rospy.init_node("ir_adc_node", anonymous=True)
 
     # set config register
     adc.write(0x1, buf)
@@ -44,9 +44,10 @@ def publish_ir():
     rospy.loginfo(result)
 
 if __name__ == "__main__":
+    rospy.init_node("ir_adc_node", anonymous=True)
+    rospy.loginfo("Starting IR")
     setup()
+    rospy.loginfo("Passed setup")
     while not rospy.is_shutdown():
         publish_ir()
-
-    
-    rospy.spin()
+        rospy.spin()

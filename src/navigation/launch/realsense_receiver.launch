@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="navigation" type="realsense_receiver.py" respawn="false" name="realsense_pcl" output="screen"></node>
+</launch>
