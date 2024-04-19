@@ -32,6 +32,7 @@ def publish():
     rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_contact, feedback.construction_bin_contact))
 
 if __name__ == "__main__":
+    rospy.loginfo("Starting gpio reader...")
     setup_node()
     while not rospy.is_shutdown():
         publish()
