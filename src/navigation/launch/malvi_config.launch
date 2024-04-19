@@ -19,7 +19,7 @@
     <group if="$(eval actions)">
         <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
         <node name="gpio_read" pkg="actions" type="gpio_read.py" output="screen" />
-        <node name="ir_adc" pkg="actions" type="ir_adc_node.py" output="screen" />
+        <node name="ir_adc_node" pkg="actions" type="ir_adc_node.py" output="screen" />
     </group>
 
     <group if="$(eval feedback_cameras)">
