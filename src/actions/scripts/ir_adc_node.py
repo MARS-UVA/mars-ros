@@ -49,5 +49,4 @@ if __name__ == "__main__":
     setup()
     while not rospy.is_shutdown():
         publish_ir()
-
-    rospy.spin()
+        rospy.spin()
