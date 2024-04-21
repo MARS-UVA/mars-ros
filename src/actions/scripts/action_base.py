@@ -3,6 +3,7 @@ from hero_board.msg import HeroFeedback, MotorCommand
 import rospy
 import time
 from std_msgs.msg import Int32
+from actions.msg import DigitalFeedbackGpio
 
 class ActionBase:
 

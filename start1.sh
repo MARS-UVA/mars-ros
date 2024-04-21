@@ -1,3 +1,5 @@
+#!/bin/bash
+
 <<instructions
 Run this script on the control station when you want to connect the control station 
 to the Jetson (the computer onboard the robot). This should be run BEFORE start2.sh.
@@ -15,4 +17,4 @@ then
 	echo "mars2324" | sudo -S apt install sshpass
 fi
 
-sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged malvi-config"
+sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged dig"
