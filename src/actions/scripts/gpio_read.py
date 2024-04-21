@@ -34,6 +34,7 @@ if __name__ == "__main__":
     rospy.init_node("gpio_read", anonymous = True)
     rospy.loginfo("Starting gpio reader...")
     setup_node()
+    rospy.loginfo("Passed setup")
     while not rospy.is_shutdown():
         publish()
         rospy.spin()

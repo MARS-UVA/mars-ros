@@ -47,6 +47,7 @@ if __name__ == "__main__":
     rospy.init_node("ir_adc_node", anonymous=True)
     rospy.loginfo("Starting IR")
     setup()
+    rospy.loginfo("Passed setup")
     while not rospy.is_shutdown():
         publish_ir()
         rospy.spin()
