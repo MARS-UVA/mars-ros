@@ -57,7 +57,7 @@ def main():
     else:
         thread = threading.Thread(target = nav_loop, args=(lambda: autonomy_mode,))
     thread.start()
-    
+
     rospy.spin()
 
 ## does nothing while we wait for autonomy mode to be toggled on
@@ -114,7 +114,7 @@ def nav_loop(autonomy_check):
     arrived_position = False
     arrived_time = None
     
-    while not rospy.is_shutdown() :
+    while not rospy.is_shutdown():
         if not autonomy_check(): # If we should no longer be doing autonomy
             # stop the robot
             if motor_command_mode:
@@ -133,7 +133,6 @@ def nav_loop(autonomy_check):
 
         # get robot pose [*translation(x, y, z), *rotation_quat(x, y, z, w)]
         robot_pose3d = lookupTransform('map', 'robot_base') # we want to line up the *front* of the robot with the goal
-
         if robot_pose3d is None:
             if not arrived:
                 if debug_mode:
@@ -155,6 +154,22 @@ def nav_loop(autonomy_check):
         
         robot_position2d  = robot_pose3d[0:2] # translation.x, translation.y
         target_position2d = target_pose2d[0:2]
+
+        delimiter = ", "
+        list1 = [str(element) for element in robot_pose3d]
+        list2 = [str(element) for element in target_position2d]
+        list3 = [str(element) for element in robot_position2d]
+        robot_3d_pose_str = delimiter.join(list1)
+        target_2d_pose_str = delimiter.join(list2)
+        robot_2d_pose_str = delimiter.join(list3)
+
+        if debug_mode:
+            debug_msg.data = "This is the robot 3d pos:" + robot_3d_pose_str
+            debug_publisher.publish(debug_msg)
+            debug_msg.data = "This is the target 2d pos:" + target_2d_pose_str
+            debug_publisher.publish(debug_msg)
+            debug_msg.data = "This is the robot 2d pos:" + robot_2d_pose_str
+            debug_publisher.publish(debug_msg)
         
         robot_yaw    = tf_conversions.transformations.euler_from_quaternion(robot_pose3d[3:7]) [2]
         robot_pose2d = robot_position2d + [robot_yaw] # this is [translation.x, translation.y, translation.z, yaw]
@@ -320,6 +335,10 @@ def nav_loop(autonomy_check):
         # if robot does NOT have correct heading, then turn to the correct heading
         else:
             arrived_time = None
+            if debug_mode:
+                debug_msg.data = "This is the heading error:" + str(heading_err_cross)
+                debug_publisher.publish(debug_msg)
+
             if heading_err_cross < 0: 
                 # based on right hand rule, the cross product of robot heading X target heading will be negative if the robot heading is TO THE LEFT of the target
                 if debug_mode:

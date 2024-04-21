@@ -2,22 +2,22 @@
     <env name="ROSCONSOLE_FORMAT" value="[${node}] [${severity}] [WallTime: ${time}]: ${message}" />
 
     <!-- NODES -->
-    <arg name="hero" default="true" />
+    <arg name="hero" default="false" />
     <arg name="actions" default="true" />
-    <arg name="rpc" default="true" />
-    <arg name="feedback_cameras" default="true" /> <!-- starts the depstech webcam -->
-    <arg name="realsense_cameras" default="true" /> 
+    <arg name="rpc" default="false" />
+    <arg name="feedback_cameras" default="false" /> <!-- starts the depstech webcam -->
+    <arg name="realsense_cameras" default="false" /> 
     <arg name="apriltags" default="true" />
 
     <!-- ARGUMENTS -->
     <arg name="webcam_enabled" default="false" />
-    <arg name="naive_autonomy" default="false" />
+    <arg name="naive_autonomy" default="true" />
     <arg name="autonomy_motor_current_mode" default="false" />
     <arg name="autonomy_twist_mode" default="true" />
-    <arg name="debug_mode" default="false" />
-    <arg name="simulation_mode" default="false" />
+    <arg name="debug_mode" default="true" />
+    <arg name="simulation_mode" default="true" />
     <arg name="apriltag_ids" default="1 4 5" />
-    <arg name="apriltag_camera" default="webcam0" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
+    <arg name="apriltag_camera" default="/camera/rgb" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -120,8 +120,8 @@
 
         <!-- defining static transforms; define where the tags are in the world -->
         <group if="$(eval simulation_mode)">
-            <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.1 0 -1.5708 0 map tag_1" />
-            <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 -0.2 0.1 0 -1.5708 0 map tag_5" />
+            <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.6 0.0 0.1 0 -1.5708 0 map tag_1" />
+            <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="-0.6 0.0 0.1 0 -1.5708 0 map tag_5" />
             <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base usb_cam" />
             <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base robot_edge" />
         </group>
