@@ -10,14 +10,14 @@
     <arg name="apriltags" default="true" />
 
     <!-- ARGUMENTS -->
-    <arg name="webcam_enabled" default="false" />
+    <arg name="webcam_enabled" default="true" />
     <arg name="naive_autonomy" default="true" />
-    <arg name="autonomy_motor_current_mode" default="false" />
+    <arg name="autonomy_motor_current_mode" default="true" />
     <arg name="autonomy_twist_mode" default="true" />
     <arg name="debug_mode" default="true" />
-    <arg name="simulation_mode" default="true" />
+    <arg name="simulation_mode" default="false" />
     <arg name="apriltag_ids" default="1 4 5" />
-    <arg name="apriltag_camera" default="/camera/rgb" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
+    <arg name="apriltag_camera" default="webcam0" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -129,7 +129,7 @@
             <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.236 0 -1.5708 0 map tag_1" />
             <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 0.33675 0.24475 0 -1.5708 0 map tag_5" />
             <node pkg="tf2_ros" name="map_to_apriltag4" type="static_transform_publisher" args="0.0 -0.33675 0.25475 0 -1.5708 0 map tag_4" />
-            <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0.40005 0 0 0 robot_base usb_cam" /> <!-- for now, the robot base is on the ground under the back edge of the robot (the edge under the camera) -->
+            <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0.2 0.34 0.41 0 0 0 robot_base usb_cam" /> <!-- for now, the robot base is on the ground under the back edge of the robot (the edge under the camera) -->
         </group>
 
 
