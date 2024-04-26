@@ -1,6 +1,6 @@
 image_width: 640
 image_height: 480
-camera_name: webcam0
+camera_name: video2
 camera_matrix:
   rows: 3
   cols: 3

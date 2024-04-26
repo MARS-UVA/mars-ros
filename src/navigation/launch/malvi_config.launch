@@ -17,7 +17,7 @@
     <arg name="debug_mode" default="true" />
     <arg name="simulation_mode" default="false" />
     <arg name="apriltag_ids" default="1 4 5" />
-    <arg name="apriltag_camera" default="webcam0" /> <!-- webcam0 for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
+    <arg name="apriltag_camera" default="usb_cam" /> <!-- usb_cam for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -90,7 +90,8 @@
         <node name="usb_cam" pkg="cv_camera" type="cv_camera_node" >
             <param name="image_width" value="640" />
             <param name="image_height" value="480" />
-            <param name="frame_id" value="usb_cam" />
+            <param name="frame_id" value="$(arg apriltag_camera)" />
+            <param name="device_id" value="2" />
             <param name="camera_info_url" value="file:///$(find navigation)/config/cameras/xps_webcam_calibration.yaml" />
         </node>
     </group>
