@@ -10,12 +10,13 @@
 
     <!-- ARGUMENTS -->
     <arg name="webcam_enabled" default="true" />
-    <arg name="naive_autonomy" default="false" />
+    <arg name="naive_autonomy" default="true" />
     <arg name="autonomy_motor_current_mode" default="true" />
     <arg name="autonomy_twist_mode" default="true" />
     <arg name="debug_mode" default="true" />
     <arg name="simulation_mode" default="false" />
     <arg name="apriltag_ids" default="2 5 4" />
+    <arg name="apriltag_camera_device_id" default="2" />
     <arg name="apriltag_camera" default="usb_cam" /> <!-- usb_cam for webcam on robot or control station, /camera/rgb for simulation -->
 
     <!-- hero communication node -->
@@ -42,7 +43,7 @@
             <param name="image_width" value="640" />
             <param name="image_height" value="480" />
             <param name="frame_id" value="$(arg apriltag_camera)" />
-            <param name="device_id" value="2" /> <!-- gets the video feed from /dev/video2 -->
+            <param name="device_id" value="$(arg apriltag_camera_device_id)" /> <!-- gets the video feed from /dev/video2 -->
             <param name="camera_info_url" value="file:///$(find navigation)/config/cameras/xps_webcam_calibration.yaml" />
         </node>
     </group>
