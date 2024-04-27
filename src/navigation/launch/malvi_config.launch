@@ -5,19 +5,18 @@
     <arg name="hero" default="false" />
     <arg name="actions" default="true" />
     <arg name="rpc" default="false" />
-    <arg name="feedback_cameras" default="false" /> <!-- starts the depstech webcam -->
     <arg name="realsense_cameras" default="false" /> 
     <arg name="apriltags" default="true" />
 
     <!-- ARGUMENTS -->
     <arg name="webcam_enabled" default="true" />
-    <arg name="naive_autonomy" default="true" />
+    <arg name="naive_autonomy" default="false" />
     <arg name="autonomy_motor_current_mode" default="true" />
     <arg name="autonomy_twist_mode" default="true" />
     <arg name="debug_mode" default="true" />
     <arg name="simulation_mode" default="false" />
-    <arg name="apriltag_ids" default="1 4 5" />
-    <arg name="apriltag_camera" default="usb_cam" /> <!-- usb_cam for webcam on robot, /camera/rgb for simulation, /usb_cam for laptop webcam -->
+    <arg name="apriltag_ids" default="2 5 4" />
+    <arg name="apriltag_camera" default="usb_cam" /> <!-- usb_cam for webcam on robot or control station, /camera/rgb for simulation -->
 
     <!-- hero communication node -->
     <group if="$(eval hero)">
@@ -29,54 +28,6 @@
     <!-- actions -->
     <group if="$(eval actions)">
         <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
-    </group>
-
-    <group if="$(eval feedback_cameras)">
-        <!-- To calibrate: rosrun camera_calibration cameracalibrator.py - -pattern=chessboard - -size=6x8 - -square=0.024 image:=/webcam0/image_raw -->
-        <include file="$(find video_stream_opencv)/launch/camera.launch" >
-            <!-- node name and ros graph name -->
-            <arg name="camera_name" value="webcam0" />
-            <!-- means video device 0, /dev/video0 -->
-            <arg name="video_stream_provider" value="/dev/video0" />
-            <!-- <arg name="video_stream_provider" value="/home/ethan/Downloads/video.mp4" /> -->
-
-            <!-- set camera fps to (if the device allows) -->
-            <arg name="set_camera_fps" value="5"/>
-            <!-- set buffer queue size of frame capturing to -->
-            <arg name="buffer_queue_size" value="1" />
-            <!-- throttling the querying of frames to -->
-            <arg name="fps" value="5" />
-            <!-- setting frame_id -->
-            <arg name="frame_id" value="webcam0" />
-            <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
-            "file:///$(find your_camera_package)/config/your_camera.yaml" -->
-            <arg name="camera_info_url" value="file:///$(find navigation)/config/cameras/depstech_webcam_calibration.yaml" />
-            <!-- flip the image horizontally (mirror it) -->
-            <arg name="flip_horizontal" value="false" />
-            <!-- flip the image vertically -->
-            <arg name="flip_vertical" value="false" />
-            <!-- visualize on an image_view window the stream generated -->
-            <arg name="visualize" value="false" />
-        </include>
-
-        <!-- <include file="$(find video_stream_opencv)/launch/camera.launch" >
-            <arg name="camera_name" value="webcam1" />
-            <arg name="video_stream_provider" value="/dev/video1" />
-            <arg name="set_camera_fps" value="5"/>
-            <arg name="buffer_queue_size" value="1" />
-            <arg name="fps" value="5" />
-            <arg name="frame_id" value="webcam1" />
-            <arg name="flip_horizontal" value="false" />
-            <arg name="flip_vertical" value="false" />
-            <arg name="visualize" value="false" />
-        </include> -->
-
-        <!-- This doesn't seem to be needed because the theora topic comes up automatically -->
-        <!-- <node name="image_transport" pkg="image_transport" type="republish" output="screen" 
-            args="raw in:=/webcam0/image_raw theora out:=/transport/webcam0_theora" /> -->
-
-        <!-- Sets the initial camera parameters to the ones in the config file -->
-        <!-- <include file="$(find camera_streamer)/launch/load_config.launch" /> -->
     </group>
 
     <group if="$(eval realsense_cameras)">
@@ -91,7 +42,7 @@
             <param name="image_width" value="640" />
             <param name="image_height" value="480" />
             <param name="frame_id" value="$(arg apriltag_camera)" />
-            <param name="device_id" value="2" />
+            <param name="device_id" value="2" /> <!-- gets the video feed from /dev/video2 -->
             <param name="camera_info_url" value="file:///$(find navigation)/config/cameras/xps_webcam_calibration.yaml" />
         </node>
     </group>
@@ -101,7 +52,7 @@
         <!-- arguments -->
         <arg name="apriltag_camera_name" default="$(arg apriltag_camera)" /> 
         <arg name="apriltag_image_topic" default="image_raw" /> <!-- TODO use recitified image -->
-        <arg name="apriltag_queue_size" default="1" />
+        <arg name="apriltag_queue_size" default="1 " />
 
         <!-- apriltag_ros continuous detection node; this looks for the apriltags -->
         <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="apriltag_ros_continuous_node" clear_params="true" output="screen">
@@ -110,8 +61,8 @@
             <remap from="image_rect" to="$(arg apriltag_camera_name)/$(arg apriltag_image_topic)" />
             <remap from="camera_info" to="$(arg apriltag_camera_name)/camera_info" />
 
-            <param name="publish_tag_detections_image" type="bool" value="false" />
-            <param name="publish_tf" type="bool" value="false" />
+            <param name="publish_tag_detections_image" type="bool" value="false" /> <!-- if true, publishes a video feed with apriltags in it -->
+            <param name="publish_tf" type="bool" value="false" /> <!-- publishes a tf transform from the camera to each detected tag - false because doing so interferes with the apriltag computation node -->
             <param name="queue_size" type="int" value="$(arg apriltag_queue_size)" />
 
             <!-- load parameters (incl. tag family, tags, etc.) -->
@@ -126,11 +77,15 @@
             <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base usb_cam" />
             <node pkg="tf2_ros" name="robot_base_to_robot_edge" type="static_transform_publisher" args="0 0 0 0 0 0 1 robot_base robot_edge" />
         </group>
+        
         <group if="$(eval not simulation_mode)">
-            <node pkg="tf2_ros" name="map_to_apriltag1" type="static_transform_publisher" args="0.0 0.0 0.236 0 -1.5708 0 map tag_1" />
-            <node pkg="tf2_ros" name="map_to_apriltag5" type="static_transform_publisher" args="0.0 0.33675 0.24475 0 -1.5708 0 map tag_5" />
-            <node pkg="tf2_ros" name="map_to_apriltag4" type="static_transform_publisher" args="0.0 -0.33675 0.25475 0 -1.5708 0 map tag_4" />
-            <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="0.2 0.34 0.41 0 0 0 robot_base usb_cam" /> <!-- for now, the robot base is on the ground under the back edge of the robot (the edge under the camera) -->
+            <!-- in rviz, the green axis is y, red is x, blue is z -->
+            
+            <node pkg="tf2_ros" name="map_to_apriltag2" type="static_transform_publisher" args="0.0 0.0 0.5588 0 0 1.5708 map tag_2" />
+            <node pkg="tf2_ros" name="apriltag2_to_apriltag5" type="static_transform_publisher" args="-0.33675 -0.0635 0 0 0 0 tag_2 tag_5" />
+            <node pkg="tf2_ros" name="apriltag2_to_apriltag4" type="static_transform_publisher" args="0.33675 -0.0635 0 0 0 0 tag_2 tag_4" />
+        
+            <node pkg="tf2_ros" name="robot_base_to_camera" type="static_transform_publisher" args="-0.2 0.34 0.41 0 0.0 -1.5708 robot_base usb_cam" />
         </group>
 
 
@@ -139,15 +94,6 @@
             <param name="apriltag_ids" value="$(arg apriltag_ids)"/>
         </node>
 
-        <!-- odometry based on apriltag -->
-        <rosparam file="$(find navigation)/config/apriltag/tag_positions.yaml" command="load" />
-        <node pkg="navigation" type="environment_visualizer" name="environment_visualizer" output="screen" />
-        <!-- <node pkg="navigation" type="apriltag_odom" name="localization_node" output="screen" /> -->
-
-        <!-- fake odometry and tf based on /cmd_vel alone -->
-        <!-- <node pkg="navigation" type="fake_odom" name="odom_node" output="screen">
-            <param name="odom_param" value="param_value" />
-        </node> -->
     </group>
 
     <group if="$(eval naive_autonomy)">
