@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   nav_msgs
+  geometry_msgs
+  message_generation
+  hero_board
 )
 
 ## System dependencies are found with CMake's conventions
@@ -49,11 +52,12 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+add_message_files(
+  FILES
 #   Message1.msg
 #   Message2.msg
-# )
+  AutonomyState.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -70,10 +74,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -108,6 +112,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES navigation
 #  CATKIN_DEPENDS move_base roscpp rospy tf2 tf2_ros
+   CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
@@ -135,9 +140,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(static_tf "src/static_tf.cpp")
+## add_executable(apriltag_odom "src/apriltag_odom.cpp") ## TODO - what was this for??
 add_executable(fake_odom "src/fake_odom.cpp")
-add_executable(localization "src/localization.cpp")
+add_executable(environment_visualizer "src/environment_visualizer.cpp")
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,9 +155,9 @@ add_executable(localization "src/localization.cpp")
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(static_tf ${catkin_LIBRARIES})
+## target_link_libraries(apriltag_odom ${catkin_LIBRARIES})
 target_link_libraries(fake_odom ${catkin_LIBRARIES})
-target_link_libraries(localization ${catkin_LIBRARIES})
+target_link_libraries(environment_visualizer ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -163,10 +168,9 @@ target_link_libraries(localization ${catkin_LIBRARIES})
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(PROGRAMS scripts/naive-nav scripts/apriltag_computation
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html

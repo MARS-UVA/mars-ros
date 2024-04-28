@@ -1,9 +1,10 @@
 global_costmap:
-  global_frame: t265_odom_frame
-  robot_base_frame: t265_link
-  update_frequency: 5.0
+  global_frame: map
+  robot_base_frame: base_footprint
+
+  update_frequency: 10.0
+  publish_frequency: 10.0
+  transform_tolerance: 0.5
+
   static_map: false
-  origin_x: -10
-  origin_y: -10
-  width: 20
-  height: 20
+  rolling_window: true # added to fix error with robot start pose being outside of map bounds

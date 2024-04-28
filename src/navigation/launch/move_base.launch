@@ -1,17 +1,21 @@
 <launch>
-    <!-- Run the map server -->
-    <include file="$(find navigation)/launch/camera.launch" />
-    <!-- <node name="map_server" pkg="map_server" type="map_server" args="$(find my_map_package)/my_map.pgm my_map_resolution"/> -->
+  <!-- Arguments -->
+  <arg name="model" default="burger" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="cmd_vel_topic" default="/cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <arg name="move_forward_only" default="false"/>
 
-    <!--- Run AMCL -->
-    <!-- <include file="$(find amcl)/examples/amcl_diff.launch" /> -->
-
-    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-        <rosparam file="$(find navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-        <rosparam file="$(find navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-        <rosparam file="$(find navigation)/config/local_costmap_params.yaml" command="load" />
-        <rosparam file="$(find navigation)/config/global_costmap_params.yaml" command="load" />
-        <rosparam file="$(find navigation)/config/base_local_planner_params.yaml" command="load" />
-    </node>
-
-</launch> 
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(find navigation)/config/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find navigation)/config/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find navigation)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find navigation)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find navigation)/config/move_base_params.yaml" command="load" />
+    <rosparam file="$(find navigation)/config/dwa_local_planner_params_$(arg model).yaml" command="load" />
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+  </node>
+</launch>
