@@ -1,9 +1,0 @@
-digraph G {
-"map" -> "tag_1"[label=" Broadcaster: /map_to_apriltag\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
-"map" -> "robot_base"[label=" Broadcaster: /naive_navigator\nAverage rate: 20.051\nBuffer length: 4.987\nMost recent transform: 1683436505.784\nOldest transform: 1683436500.796\n"];
-"robot_base" -> "usb_cam"[label=" Broadcaster: /robot_base_to_camera\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
-edge [style=invis];
- subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
-"Recorded at time: 1683436505.7976692"[ shape=plaintext ] ;
-}->"map";
-}

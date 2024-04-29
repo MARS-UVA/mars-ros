@@ -59,17 +59,28 @@
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>tf2</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
+  <exec_depend>apriltag_ros</exec_depend>
+  <exec_depend>cv_camera</exec_depend>
+  <exec_depend>gazebo_dev</exec_depend>
+  <exec_depend>gazebo_msgs</exec_depend>
+  <exec_depend>gazebo_plugins</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>gazebo_ros_control</exec_depend>
   <exec_depend>move_base</exec_depend>
   <exec_depend>python3-serial</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
-
+  <exec_depend>turtlebot3_bringup</exec_depend>
+  <exec_depend>turtlebot3_description</exec_depend>
+  <exec_depend>turtlebot3_gazebo</exec_depend>
+  <exec_depend>turtlebot3_msgs</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <gazebo_ros gazebo_model_path="/home/${USER}/mars/mars-ros/src/navigation/models"/>
+    <gazebo_ros gazebo_media_path="/home/${USER}/mars/mars-ros/src/navigation/models"/>
   </export>
 </package>
