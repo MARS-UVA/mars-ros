@@ -1,7 +1,11 @@
-# Message documentation: https://wiki.ros.org/msg
+# Feedback from motors and actuators on the robot
 
-uint8[] currents # uint8[] is the ros version of Python bytes()
-float32 bucketLadderAngleL
-float32 bucketLadderAngleR
-bool depositBinRaised
-bool depositBinLowered
+float32 forwardLWheelCurrent
+float32 rearLWheelCurrent
+float32 forwardRWheelCurrent
+float32 rearRWheelCurrent
+
+float32 bucketLadderChainCurrent
+
+float32 bucketLadderLeftActuator
+float32 bucketLadderRightActuator
