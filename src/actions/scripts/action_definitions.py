@@ -24,11 +24,10 @@ from math import sin
 1: front right wheel
 2: back left wheel
 3: back right wheel
-4: raise/lower ladder - left actuator
-5: raise/lower ladder - right actuator
-6: rotate ladder chain
-7: raise/lower collection bin floor
-8: ir sensor servo motor
+4: raise/lower ladder - both actuator
+5: rotate ladder chain
+6: raise/lower collection bin floor
+7: ir sensor servo motor
 '''
 
 
@@ -53,7 +52,7 @@ class ActionRaiseBin(ActionBase):
         time.sleep(self.description["update_delay"])
         '''
 
-        msg = [100]*7 + [100 - self.description["speed"]] + [100 + (0.15*self.description["speed"])]
+        msg = [100]*6 + [100 - self.description["speed"]]  #Add servos
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
@@ -77,12 +76,12 @@ class ActionLowerBin(ActionBase):
         time.sleep(self.description["update_delay"])
         '''
 
-        msg = [100]*7 + [100 + self.description["speed"]]
+        msg = [100]*6 + [100 + self.description["speed"]]  #Add servos
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return (self.feedback_data.depositBinLowered == True)
+        return (self.feedback_data.depositBinLowered == True or self.gpio_data.construction_bin_contact == 1)
 
 
 class ActionRaiseLadder(ActionBase):
@@ -100,7 +99,7 @@ class ActionRaiseLadder(ActionBase):
 
         # Note that the measured angle increases as the ladder is raised ("raised" meaning the ladder becoming vertical)
         # The angle should be between around 10 and 52
-        msg = [100]*9
+        msg = [100]*8
         if not self.left_raised and self.feedback_data.bucketLadderAngleL > self.description["raised_angle"]:
             self.left_raised = True
         else:
@@ -131,7 +130,7 @@ class ActionLowerLadder(ActionBase):
     def execute(self):
         rospy.loginfo("action lowerladder executing...")
 
-        msg = [100]*9
+        msg = [100]*8
         if not self.left_lowered and self.feedback_data.bucketLadderAngleL < self.description["lowered_angle"]:
             self.left_lowered = True
         else:
