@@ -4,35 +4,22 @@ import rospy
 import time
 from math import sin
 
-
-# Old msg format:
-'''
-0: raise/lower ladder
-1:
-2:
-3:
-4:
-5:
-6:
-7: raise/lower collection floor
-8:
-'''
-
-# New msg format:
+# Msg format:
 '''
 0: front left wheel
 1: front right wheel
 2: back left wheel
 3: back right wheel
-4: raise/lower ladder - left actuator
-5: raise/lower ladder - right actuator
-6: rotate ladder chain
-7: raise/lower collection bin floor
-8: ir sensor servo motor
+4: raise/lower ladder - both actuator
+5: rotate ladder chain
+6: raise/lower collection bin floor
+7: ir sensor servo motor
+8: webcam servo motor
 '''
+IR_SERVO_DEFAULT_ANGLE = 270
+WEBCAM_SERVO_DEFAULT_ANGLE = 0
 
-
-IR_DITANCE_THRESHOLD  = 30 #Change later after measurement, distance in cm
+IR_DISTANCE_THRESHOLD = 30 #Change later after measurement, distance in cm
 IR_SERVO_ANGLE_HOP = 5  #Change later, in degrees for now
 BUCKET_LIMIT_CONTACT_TIME_LOWER_THRESH = 0.5  #0.5 seconds - unit is in nanoseconds
 BUCKET_LIMIT_CONTACT_TIME_UPPER_THRESH = 2  #2 seconds - unit is in nanoseconds
@@ -53,7 +40,7 @@ class ActionRaiseBin(ActionBase):
         time.sleep(self.description["update_delay"])
         '''
 
-        msg = [100]*7 + [100 - self.description["speed"]] + [100 + (0.15*self.description["speed"])]
+        msg = [100]*7 + [100 - self.description["speed"]] + [IR_SERVO_DEFAULT_ANGLE, WEBCAM_SERVO_DEFAULT_ANGLE]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
@@ -77,12 +64,12 @@ class ActionLowerBin(ActionBase):
         time.sleep(self.description["update_delay"])
         '''
 
-        msg = [100]*7 + [100 + self.description["speed"]]
+        msg = [100]*7 + [100 + self.description["speed"]] + [IR_SERVO_DEFAULT_ANGLE, WEBCAM_SERVO_DEFAULT_ANGLE]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return (self.feedback_data.depositBinLowered == True)
+        return (self.feedback_data.depositBinLowered == True or self.gpio_data.construction_bin_contact == 1)
 
 
 class ActionRaiseLadder(ActionBase):
@@ -105,11 +92,15 @@ class ActionRaiseLadder(ActionBase):
             self.left_raised = True
         else:
             msg[4] = 100 + self.description["speed"]
+            msg[7] = IR_SERVO_DEFAULT_ANGLE
+            msg[8] = WEBCAM_SERVO_DEFAULT_ANGLE
 
         if not self.right_raised and self.feedback_data.bucketLadderAngleR > self.description["raised_angle"]:
             self.right_raised = True
         else:
             msg[4] = 100 - self.description["speed"]
+            msg[7] = IR_SERVO_DEFAULT_ANGLE
+            msg[8] = WEBCAM_SERVO_DEFAULT_ANGLE
 
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
@@ -136,11 +127,15 @@ class ActionLowerLadder(ActionBase):
             self.left_lowered = True
         else:
             msg[4] = 100 - self.description["speed"]
+            msg[7] = IR_SERVO_DEFAULT_ANGLE
+            msg[8] = WEBCAM_SERVO_DEFAULT_ANGLE
 
         if not self.right_lowered and self.feedback_data.bucketLadderAngleR < self.description["lowered_angle"]:
             self.right_lowered = True
         else:
             msg[4] = 100 + self.description["speed"]
+            msg[7] = IR_SERVO_DEFAULT_ANGLE
+            msg[8] = WEBCAM_SERVO_DEFAULT_ANGLE
 
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
@@ -159,6 +154,7 @@ class ActionDig(ActionBase):
     def __init__(self, description):
         #the dig action description has fields: name, update_delay, duration, speed
         super().__init__(description)
+        self.in_progress = False
         self.initial_time = int(time.time()) #gets the time when the action was started
         self.last_bucket_contact_time = None
         self.ir_servo_angle = 0  #Initial angle - change to whatever starting reference angle is 
@@ -166,11 +162,19 @@ class ActionDig(ActionBase):
 
     def execute(self):
         rospy.loginfo("action dig executing...")
-        self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
+        if not self.in_progress:
+            self.ir_servo_angle = 0
+            self.in_progress = True
+        else:
+            self.ir_servo_angle = self.ir_servo_angle + IR_SERVO_ANGLE_HOP
+            if self.ir_servo_angle >= 90:
+                self.in_progress = False
+
         rospy.loginfo("")
-        msg = [100]*8
-        msg[6] = 100 - self["speed"]
-        msg[8] = self.ir_servo_angle
+        msg = [100]*9
+        msg[5] = 100 - self["speed"]
+        msg[7] = self.ir_servo_angle
+        msg[8] = WEBCAM_SERVO_DEFAULT_ANGLE
         #self.pub.publish(MotorCommand(msg)) - commented out so buckets do not move during test
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you update the motors
         self.check_sensors()
@@ -181,7 +185,7 @@ class ActionDig(ActionBase):
         rospy.loginfo("IR sensor angle: %d" % self.ir_servo_angle)
         height = self.ir_data * sin(self.ir_servo_angle)
         rospy.loginfo("IR sensor data: %d" % self.ir_data)
-        if height < IR_DITANCE_THRESHOLD:
+        if height > IR_DISTANCE_THRESHOLD:
             self.stop_digging = True
             rospy.loginfo("IR sensor detected something within threshold, stopping dig action")
         

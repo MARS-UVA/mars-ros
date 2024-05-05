@@ -8,6 +8,20 @@
     <arg name="autonomy" default="false" />
 
 
+    <arg name="rpc" default="false" />
+    <arg name="realsense_cameras" default="false" /> 
+    <arg name="apriltags" default="true" />
+
+    <!-- ARGUMENTS -->
+    <arg name="webcam_enabled" default="true" />
+    <arg name="naive_autonomy" default="true" />
+    <arg name="autonomy_motor_current_mode" default="true" />
+    <arg name="autonomy_twist_mode" default="true" />
+    <arg name="debug_mode" default="true" />
+    <arg name="simulation_mode" default="false" />
+    <arg name="apriltag_ids" default="2 5 4" />
+    <arg name="apriltag_camera_device_id" default="2" />
+    <arg name="apriltag_camera" default="/usb_cam" /> <!-- usb_cam for webcam on robot or control station, /camera/rgb for simulation -->
     <!-- hero communication node -->
     <group if="$(eval hero)">
         <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
@@ -18,6 +32,8 @@
     <!-- actions -->
     <group if="$(eval actions)">
         <node name="actions" pkg="actions" type="actions_node.py" output="screen" />
+        <node name="gpio_read" pkg="actions" type="gpio_read.py" output="screen" />
+        <node name="ir_adc_node" pkg="actions" type="ir_adc_node.py" output="screen" />
     </group>
 
     <group if="$(eval feedback_cameras)">

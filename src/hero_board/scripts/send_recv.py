@@ -14,7 +14,8 @@ from enum import Enum
 
 NODE_NAME = "hero_send_recv"
 DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
-AUTONOMY_CONTROL_TOPIC = "cmd_vel" # subscribing
+AUTONOMY_TWIST_CONTROL_TOPIC = "/cmd_vel" # subscribing
+AUTONOMY_MOTOR_CONTROL_TOPIC = "/motor/cmd_vel"
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 
 NUM_MOTOR_CURRENTS = 11 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
@@ -29,7 +30,8 @@ class Special_signal(Enum):
     IR_STOP = 0xA1
 
 manual_sub = None
-auto_sub = None
+auto_twist_sub = None
+auto_actions_sub = None
 current_state = SetStateRequest.IDLE
 
 serial_manager = None
@@ -94,7 +96,7 @@ def rad_per_sec_to_motor_power(a):
 def process_autonomy_motor_values(command):
     # command type is geometry_msgs/Twist
     # see https://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html
-
+    rospy.loginfo(command)
     linear = command.linear.x
     angular = command.angular.z
     b = 0.457 #width of vehicle base
@@ -124,7 +126,7 @@ def get_state_service(req):
     return GetStateResponse(current_state)
 
 def set_state_service(req):
-    global auto_sub, manual_sub, current_state
+    global auto_twist_sub, auto_actions_sub, manual_sub, current_state
     # print("hero set_state_service... req.state={}, current_state={}".format(req.state, current_state))
 
     to_change = req.state
@@ -134,9 +136,12 @@ def set_state_service(req):
 
     if to_change == SetStateRequest.DIRECT_DRIVE:
         rospy.loginfo('changing to drive state DIRECT_DRIVE')
-        if auto_sub:
-            auto_sub.unregister()
-            auto_sub = None
+        if auto_twist_sub:
+            auto_twist_sub.unregister()
+            auto__twist_sub = None
+        if auto_actions_sub:
+            auto_actions_sub.unregister()
+            auto_actions_sub = None
         manual_sub = rospy.Subscriber(DIRECT_DRIVE_CONTROL_TOPIC, MotorCommand, process_manual_motor_values)
         return SetStateResponse('changing to manual control')
 
@@ -146,14 +151,18 @@ def set_state_service(req):
             manual_sub.unregister()
             manual_sub = None
         stop_motors_non_emergency()
-        auto_sub = rospy.Subscriber(AUTONOMY_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
+        auto_twist_sub = rospy.Subscriber(AUTONOMY_TWIST_CONTROL_TOPIC, Twist, process_autonomy_motor_values)
+        auto_actions_sub = rospy.Subscriber(AUTONOMY_MOTOR_CONTROL_TOPIC, MotorCommand, process_manual_motor_values)
         return SetStateResponse('changing to autonomy control')
     
     elif to_change == SetStateRequest.IDLE:
         rospy.loginfo('changing to drive state IDLE')
-        if auto_sub:
-            auto_sub.unregister()
-            auto_sub = None
+        if auto_twist_sub:
+            auto_twist_sub.unregister()
+            auto_twist_sub = None
+        if auto_actions_sub:
+            auto_actions_sub.unregister()
+            auto_actions_sub = None
         if manual_sub:
             manual_sub.unregister()
             manual_sub = None
