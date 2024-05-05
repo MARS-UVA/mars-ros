@@ -215,10 +215,10 @@ if __name__ == "__main__":
                     floats_combined = struct.unpack("%df"%(TOTAL_NUM_FLOATS), packet_data[0:(TOTAL_NUM_FLOATS*4)]) # each float is 4 bytes
                     # val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert
                         
-                    val.forwardLWheel = floats_combined[0]
-                    val.rearLWheel = floats_combined[1]
-                    val.forwardRWheel = floats_combined[2]
-                    val.rearRWheel = floats_combined[3]
+                    val.forwardLWheelCurrent = floats_combined[0]
+                    val.rearLWheelCurrent = floats_combined[1]
+                    val.forwardRWheelCurrent = floats_combined[2]
+                    val.rearRWheelCurrent = floats_combined[3]
 
                     val.bucketLadderChainCurrent = floats_combined[4]
 
