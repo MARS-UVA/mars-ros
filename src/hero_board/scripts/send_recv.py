@@ -204,6 +204,8 @@ if __name__ == "__main__":
             to_send = var_len_proto_recv(to_send_raw) #0xff, opcode (00, 01, 10, 11), length of package
             val = HeroFeedback()
             for packet in to_send:
+                rospy.loginfo("feedback packet length: %s", FEEDBACK_PACKET_LENGTH)
+
                 packet_opcode = packet[0]
                 packet_data = packet[1]
                 if packet_opcode != Opcode.FEEDBACK:
@@ -211,6 +213,7 @@ if __name__ == "__main__":
                     continue
                             
                 if len(packet_data) == FEEDBACK_PACKET_LENGTH:
+                    # rospy.loginfo("processing values")
                     # unpack bytes as encoded binary data -- in this case, the binary data is an array of floats
                     floats_combined = struct.unpack("%df"%(TOTAL_NUM_FLOATS), packet_data[0:(TOTAL_NUM_FLOATS*4)]) # each float is 4 bytes
                     # val.currents = [max(0, min(255, int(c*30.0))) for c in floats_combined[0:NUM_MOTOR_CURRENTS]] # because the rpc message uses bytes instead of floats, convert
@@ -227,6 +230,7 @@ if __name__ == "__main__":
                     # averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
                     val.bucketLadderLeftActuator = floats_combined[5]
                     val.bucketLadderRightActuator = floats_combined[6]
+                    rospy.loginfo("writing 'hero feedback' values: %s", val)
 
                     pub.publish(val)
                     
