@@ -2,6 +2,8 @@ import Jetson.GPIO as GPIO
 import time
 import rospy
 from hero_board.msg import MotorCommand
+from actions.msg import LadderAngle
+import math
 
 # later on we can change this code to account for both encoder pins
 
@@ -15,6 +17,10 @@ isExtending = False # If actuator is extending. Get this value from some other p
 pos = 0 # absolute position for the linear actuator in inches 
 # 0 when not extended, 8 when fully extended
 # for this code to work: start running linear actator from a fully retracted state
+angle = 0 # angle of the ladder chain
+
+PIVOT_TO_ACTUATOR_SIDE = 12 # distance from pivot point to the side of the actuator in inches
+PIVOT_TO_BASE_SIDE = 13 # distance from pivot point to the side of the base in inches
 
 def read_extending_status(data):
     global isExtending
@@ -29,12 +35,17 @@ def main():
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(leftActuator, GPIO.IN)
     GPIO.setup(rightActuator, GPIO.IN)
+    global auto_motor_sub
     auto_motor_sub = rospy.Subscriber("/motor/cmd_vel", MotorCommand, read_extending_status)
+    global direct_motor_sub
     direct_motor_sub = rospy.Subscriber("/motor/output", MotorCommand, read_extending_status)
+    global angle_pub
+    angle_pub = rospy.Publisher("/ladder_angle", LadderAngle, queue_size=1) 
 
     print("Starting demo now! Press CTRL+C to exit")
     # curr_value = GPIO.HIGH
     global highVoltagePulses
+    global angle
     try:
         while True:
             #add to count every time a rising edge is detected
@@ -57,7 +68,8 @@ def updatePosition():
     else:
         pos -= (highVoltagePulses * pulsesToInches)
         highVoltagePulses = 0
-
+    angle = math.acos((PIVOT_TO_ACTUATOR_SIDE^2 + PIVOT_TO_BASE_SIDE^2 - pos^2) / (2 * PIVOT_TO_ACTUATOR_SIDE * PIVOT_TO_BASE_SIDE))
+    angle_pub.publish(angle)
 # todo: a function used to calibrate the position value
 # set position to 0 when actuator is fully retracted
 # or set position to 8 when fully extedned
