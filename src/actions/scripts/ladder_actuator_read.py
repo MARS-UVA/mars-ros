@@ -63,4 +63,6 @@ def updatePosition():
 # or set position to 8 when fully extedned
 
 if __name__ == '__main__':
+    rospy.init_node("ladder_actuator_read", anonymous=True)
     main()
+    rospy.spin()
