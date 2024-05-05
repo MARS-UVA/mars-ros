@@ -3,11 +3,28 @@
 
     <arg name="hero" default="true" />
     <arg name="actions" default="true" />
+<<<<<<< Updated upstream
     <arg name="feedback_cameras" default="false" />
     <arg name="autonomy_cameras" default="false" />
     <arg name="autonomy" default="false" />
 
 
+=======
+    <arg name="rpc" default="false" />
+    <arg name="realsense_cameras" default="false" /> 
+    <arg name="apriltags" default="true" />
+
+    <!-- ARGUMENTS -->
+    <arg name="webcam_enabled" default="true" />
+    <arg name="naive_autonomy" default="true" />
+    <arg name="autonomy_motor_current_mode" default="true" />
+    <arg name="autonomy_twist_mode" default="true" />
+    <arg name="debug_mode" default="true" />
+    <arg name="simulation_mode" default="false" />
+    <arg name="apriltag_ids" default="2 5 4" />
+    <arg name="apriltag_camera_device_id" default="2" />
+    <arg name="apriltag_camera" default="/usb_cam" /> <!-- usb_cam for webcam on robot or control station, /camera/rgb for simulation -->
+>>>>>>> Stashed changes
     <!-- hero communication node -->
     <group if="$(eval hero)">
         <!-- this bash script just contains 'sudo chmod 666 /dev/ttyUSB0' -->
