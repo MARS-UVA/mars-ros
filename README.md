@@ -10,7 +10,7 @@ These packages are installed on the team's robot.
 
 ## Usage on Robot
 To run ROS nodes on the robot and connect to them from the control station, navigate to the root directory of this project and run 
-`./start1.sh` in one terminal and `./start2.sh` in another.
+`source start1.sh` in one terminal and `source start2.sh` in another. Note that you must run `start2.sh` with `source` instead of via `./start2.sh` in order to connect to the ROS core on the Jetson after the script runs.
 
 ## Direct Usage: Launch Files
 Once these ROS packages are built and sourced, any nodes in them can be run like any other ROS node. However, we recommend using the code via the launch files we have created.

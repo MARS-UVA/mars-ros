@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 <<instructions
 Run this script on the control station when you want to connect the control station 

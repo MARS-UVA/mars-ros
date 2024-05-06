@@ -202,9 +202,12 @@ if __name__ == "__main__":
             
             to_send_raw = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(to_send_raw) #0xff, opcode (00, 01, 10, 11), length of package
+            rospy.loginfo("to send: %s", list(to_send))
             val = HeroFeedback()
+
+            rospy.loginfo("feedback packet length: %d, to_send length: %d", FEEDBACK_PACKET_LENGTH, len(to_send))
+
             for packet in to_send:
-                rospy.loginfo("feedback packet length: %s", FEEDBACK_PACKET_LENGTH)
 
                 packet_opcode = packet[0]
                 packet_data = packet[1]
