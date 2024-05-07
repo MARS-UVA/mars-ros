@@ -4,7 +4,9 @@
 Run this script on the control station when you want to connect the control station 
 to the Jetson (the computer onboard the robot). This should be run AFTER start1.sh.
 
-Instructions: ./start2.sh or ./start2.sh <jetson's IP address>
+Instructions: source start2.sh 
+					or 
+			  source start2.sh <jetson's IP address>
 instructions
 
 # Define the IP address of the Jetson
@@ -29,6 +31,6 @@ gnome-terminal -- bash -c "source mars/mars-ros/devel/setup.bash; export ROS_MAS
 gnome-terminal -- bash -c "cd mars/mars-ui-web; source ../mars-ros/devel/setup.bash; npm start"
 
 # Configure the existing terminal so that we can see information about ROS nodes and topics on the Jetson
-source mars/mars-ros/devel/setup.bash
+source mars/mars-ros/devel/setup.zsh
 export ROS_MASTER_URI=http://nano:11311
-export ROS_IP=control_station_IP
+export ROS_IP=$control_station_IP

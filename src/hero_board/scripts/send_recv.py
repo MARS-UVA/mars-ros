@@ -197,6 +197,7 @@ if __name__ == "__main__":
         while not rospy.is_shutdown():
             # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
             if pub.get_num_connections() == 0: # don't publish if there are no subscribers
+                rospy.loginfo("not publishing hero feedback")
                 time.sleep(0.01)
                 continue
             
