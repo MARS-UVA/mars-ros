@@ -9,10 +9,14 @@ RUN git clone https://github.com/MARS-UVA/mars-ros.git mars-ros
 WORKDIR /mars-ros
 
 RUN git pull
+RUN git fetch origin
+RUN git checkout fix-dependencies
 
 # Install python3-serial using pip3
 RUN apt install -y python3-pip && \
     pip3 install pyserial
+
+RUN pip3 install pylibi2c
 
 # Install ROS development tools
 RUN apt install -y python3-catkin-tools 
