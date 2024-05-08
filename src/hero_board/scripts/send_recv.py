@@ -197,16 +197,12 @@ if __name__ == "__main__":
         while not rospy.is_shutdown():
             # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
             if pub.get_num_connections() == 0: # don't publish if there are no subscribers
-                rospy.loginfo("not publishing hero feedback")
                 time.sleep(0.01)
                 continue
             
             to_send_raw = serial_manager.read_in_waiting()
             to_send = var_len_proto_recv(to_send_raw) #0xff, opcode (00, 01, 10, 11), length of package
-            rospy.loginfo("to send: %s", list(to_send))
             val = HeroFeedback()
-
-            rospy.loginfo("feedback packet length: %d, to_send length: %d", FEEDBACK_PACKET_LENGTH, len(to_send))
 
             for packet in to_send:
 
@@ -232,9 +228,8 @@ if __name__ == "__main__":
                     # angle calculation will need to change based on new robot dimensions
                     # averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
                     # averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
-                    val.bucketLadderLeftActuator = floats_combined[5]
-                    val.bucketLadderRightActuator = floats_combined[6]
-                    rospy.loginfo("writing 'hero feedback' values: %s", val)
+                    val.bucketLadderActuatorCurrent = floats_combined[5]
+                    val.constructionBinActuatorCurrent = floats_combined[6]
 
                     pub.publish(val)
                     

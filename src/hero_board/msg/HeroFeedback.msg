@@ -7,5 +7,5 @@ float32 rearRWheelCurrent
 
 float32 bucketLadderChainCurrent
 
-float32 bucketLadderLeftActuator
-float32 bucketLadderRightActuator
+float32 bucketLadderActuatorCurrent
+float32 constructionBinActuatorCurrent

@@ -16,7 +16,7 @@
     <arg name="debug_mode" default="true" />
     <arg name="simulation_mode" default="false" />
     <arg name="apriltag_ids" default="2 5 4" />
-    <arg name="apriltag_camera_device_id" default="2" />
+    <arg name="apriltag_camera_device_id" default="2" /> <!-- 2 on control station, 0 on robot -->
     <arg name="apriltag_camera" default="usb_cam" /> <!-- usb_cam for webcam on robot or control station, /camera/rgb for simulation -->
 
     <!-- hero communication node -->
