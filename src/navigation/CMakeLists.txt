@@ -7,6 +7,8 @@ project(navigation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+## all of these must be in your package.xml file as build dependencies so that caktin knows to build these first
+## otherwise, some of your dependencies might not have been build when you try to start compiling this package
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -15,7 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   geometry_msgs
   message_generation
-  hero_board
 )
 
 ## System dependencies are found with CMake's conventions

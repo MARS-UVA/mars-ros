@@ -8,6 +8,9 @@ RUN apt update && apt install -y git
 RUN git clone https://github.com/MARS-UVA/mars-ros.git mars-ros
 WORKDIR /mars-ros
 
+RUN git pull
+RUN git checkout origin/change-hero-feedback
+
 # Install python3-serial using pip3
 RUN apt install -y python3-pip && \
     pip3 install pyserial
@@ -28,4 +31,4 @@ RUN sed --in-place --expression \
 	/ros_entrypoint.sh
 
 # Start the mars-ros main launch file when the container runs
-CMD [ "/bin/bash", "-c", "roslaunch navigation malvi_config.launch" ]
+CMD [ "/bin/bash", "-c", "roslaunch navigation malvi_config.launch hero:=true apriltags:=false" ]
