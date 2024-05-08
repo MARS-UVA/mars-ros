@@ -66,6 +66,9 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf_conversions</exec_depend>
+  <exec_depend>apriltag_ros</exec_depend>
+  <exec_depend>cv_camera</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

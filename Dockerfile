@@ -9,14 +9,13 @@ RUN git clone https://github.com/MARS-UVA/mars-ros.git mars-ros
 WORKDIR /mars-ros
 
 RUN git pull
-RUN git checkout origin/change-hero-feedback
 
 # Install python3-serial using pip3
 RUN apt install -y python3-pip && \
     pip3 install pyserial
 
 # Install ROS development tools
-RUN apt install -y python3-catkin-tools
+RUN apt install -y python3-catkin-tools 
 
 # Update rosdep and install ROS dependencies from mars-ros/src
 RUN rosdep update
