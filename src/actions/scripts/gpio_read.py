@@ -3,14 +3,16 @@ import Jetson.GPIO as GPIO
 from actions.msg import DigitalFeedbackGpio
 
 pub = None
+
+#Limit Switches:
 channel_bucket = 12 
 channel_bin = 16 
+
 feedback = DigitalFeedbackGpio()
 
 def setup_node():
     global pub
     pub = rospy.Publisher("gpio", DigitalFeedbackGpio, queue_size=0)
-    rospy.init_node("gpio_read", anonymous = True)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(channel_bucket, GPIO.IN)
     GPIO.setup(channel_bin, GPIO.IN)
@@ -19,14 +21,21 @@ def publish():
     global pub
     gpio_state_bucket = GPIO.input(channel_bucket)
     gpio_state_bin = GPIO.input(channel_bin)
-    feedback.bucket_spinning = gpio_state_bucket
-    feedback.construction_bin_raised = gpio_state_bin
+    feedback.bucket_contact = gpio_state_bucket
+    #if gpio_state_bucket == 1:
+    feedback.publish_timestamp = rospy.Time.now()
+    feedback.construction_bin_contact = gpio_state_bin
+    #if gpio_state_bin == 1:
+    #feedback.construction_bin_raised_timestamp = rospy.Time.now()
     pub.publish(feedback)
-    rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_spinning, feedback.construction_bin_raised))
+    rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_contact, feedback.construction_bin_contact))
 
 if __name__ == "__main__":
+    rospy.init_node("gpio_read", anonymous = True)
+    rospy.loginfo("Starting gpio reader...")
     setup_node()
+    rospy.loginfo("Passed setup")
     while not rospy.is_shutdown():
         publish()
-    rospy.spin()
+        rospy.spin()
     GPIO.cleanup()

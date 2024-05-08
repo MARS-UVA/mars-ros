@@ -3,6 +3,7 @@ from hero_board.msg import HeroFeedback, MotorCommand
 import rospy
 import time
 from std_msgs.msg import Int32
+from actions.msg import DigitalFeedbackGpio
 
 class ActionBase:
 
@@ -14,7 +15,8 @@ class ActionBase:
 
         self.feedback_data = None
         self.ir_sub = rospy.Subscriber("/ir_adc_readings", Int32, self.ir_callback)
-        self.sub = rospy.Subscriber("/motor/feedback", HeroFeedback, self.callback)
+        self.gpio_sub = rospy.Subscriber("/gpio", DigitalFeedbackGpio, self.gpio_callback)
+        self.motor_sub = rospy.Subscriber("/motor/feedback", HeroFeedback, self.motor_callback)
 
         # For now, all the actions publish motor commmands as direct drive commands, mainly 
         # because the hero board isn't set up for autonomy messages (messages that rely on feedback)
@@ -22,8 +24,11 @@ class ActionBase:
 
     def ir_callback(self, data):
         self.ir_data = data
+
+    def gpio_callback(self, data):
+        self.gpio_data = data
     
-    def callback(self, data):
+    def motor_callback(self, data):
         self.feedback_data = data
         # print("callback setting data to " + str(list(self.feedback_data.currents)))
 
@@ -64,5 +69,5 @@ class ActionBase:
 
         self.cleanup()
 
-        self.sub.unregister()
+        self.motor_sub.unregister()
         rospy.loginfo("Action finished executing")

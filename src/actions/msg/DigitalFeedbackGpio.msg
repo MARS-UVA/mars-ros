@@ -1,2 +1,3 @@
-bool bucket_spinning
-bool construction_bin_raised
+bool bucket_contact
+bool construction_bin_contact
+time publish_timestamp
