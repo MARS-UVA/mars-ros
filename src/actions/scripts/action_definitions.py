@@ -88,9 +88,9 @@ class ActionRaiseLadder(ActionBase):
         self.left_raised = False
         self.right_raised = False
 
-        if self.description["raised_angle"] > 51:
-            self.left_raised = True
-            self.right_raised = True
+        # if self.description["raised_angle"] > 51:
+        #     self.left_raised = True
+        #     self.right_raised = True
 
     def execute(self):
         rospy.loginfo("action raiseladder executing...")
@@ -121,9 +121,9 @@ class ActionLowerLadder(ActionBase):
         self.left_lowered = False
         self.right_lowered = False
 
-        if self.description["lowered_angle"] < 10:
-            self.left_lowered = True
-            self.right_lowered = True
+        # if self.description["lowered_angle"] < 10:
+        #     self.left_lowered = True
+        #     self.right_lowered = True
 
     def execute(self):
         rospy.loginfo("action lowerladder executing...")
