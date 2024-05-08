@@ -10,12 +10,6 @@ if [ -f "devel/setup.bash" ]; then
     source devel/setup.bash
 elif [ -f "devel_isolated/setup.bash" ]; then
     source devel_isolated/setup.bash
-elif [ -f "devel/setup.bash" ]; then
-    # echo "Sourcing devel/setup.bash"
->>>>>>> better setup.sh
-    source devel/setup.bash
-elif [ -f "devel_isolated/setup.bash" ]; then
-    source devel_isolated/setup.bash
 else
     echo "Could not find a ROS setup.bash file! ROS commands may not work."
 fi
