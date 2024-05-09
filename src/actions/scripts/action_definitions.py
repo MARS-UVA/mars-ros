@@ -25,12 +25,13 @@ from math import sin
 2: back left wheel
 3: back right wheel
 4: raise/lower ladder - left actuator
-5: raise/lower ladder - right actuator
-6: rotate ladder chain
-7: raise/lower collection bin floor
-8: ir sensor servo motor
+5: rotate ladder chain
+6: raise/lower collection bin floor
+7: ir sensor servo motor
+8: webcam servo
 '''
-
+WEBCAM_ANGLE = 0
+IR_ANGLE = 0
 
 IR_DITANCE_THRESHOLD  = 30
 IR_SERVO_ANGLE_HOP = 5  #Change later, in degrees for now
@@ -50,7 +51,7 @@ class ActionRaiseBin(ActionBase):
         time.sleep(self.description["update_delay"])
         '''
 
-        msg = [100]*7 + [100 - self.description["speed"]] + [100 + (0.15*self.description["speed"])]
+        msg = [100]*6 + [100 - self.description["speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
@@ -74,7 +75,7 @@ class ActionLowerBin(ActionBase):
         time.sleep(self.description["update_delay"])
         '''
 
-        msg = [100]*7 + [100 + self.description["speed"]]
+        msg = [100]*6 + [100 + self.description["speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
@@ -154,6 +155,7 @@ IR sensor action description:
 class ActionDig(ActionBase):
     def __init__(self, description):
         super().__init__(description)
+        rospy.loginfo("initializing dig action")
         self.initial_time = int(time.time()) #gets the time when the action was started
         self.ir_servo_angle = 0  #Initial angle - change to whatever starting reference angle is 
         #the dig action description has fields: name, update_delay, duration, speed
@@ -162,7 +164,7 @@ class ActionDig(ActionBase):
     def execute(self):
         rospy.loginfo("action dig executing...")
         self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
-        msg = [100]*8
+        msg = [100]*9
         msg[6] = 100 - self["speed"]
         msg[8] = self.ir_servo_angle
         self.pub.publish(MotorCommand(msg))
