@@ -8,6 +8,7 @@ from actions.msg import DigitalFeedbackGpio
 class ActionBase:
 
     def __init__(self, description):
+        rospy.loginfo("initializing an action")
         self.description = description
 
         rospy.wait_for_service("/get_state")
