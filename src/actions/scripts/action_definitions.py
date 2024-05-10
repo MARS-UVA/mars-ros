@@ -52,7 +52,7 @@ class ActionRaiseBin(ActionBase):
         '''
 
         msg = [100]*6 + [100 - self.description["speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
-        self.pub.publish(MotorCommand(msg))
+        #self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -76,7 +76,7 @@ class ActionLowerBin(ActionBase):
         '''
 
         msg = [100]*6 + [100 + self.description["speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
-        self.pub.publish(MotorCommand(msg))
+        #self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -109,7 +109,7 @@ class ActionRaiseLadder(ActionBase):
         else:
             msg[4] = 100 - self.description["speed"]
 
-        self.pub.publish(MotorCommand(msg))
+        #self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -140,7 +140,7 @@ class ActionLowerLadder(ActionBase):
         else:
             msg[4] = 100 + self.description["speed"]
 
-        self.pub.publish(MotorCommand(msg))
+        #self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -165,17 +165,19 @@ class ActionDig(ActionBase):
         rospy.loginfo("action dig executing...")
         self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
         msg = [100]*9
-        msg[6] = 100 - self["speed"]
+        msg[6] = 100 - self.description["speed"]
         msg[8] = self.ir_servo_angle
-        self.pub.publish(MotorCommand(msg))
+        rospy.loginfo("dig sending command %s", list(msg))
+        #self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
         self.ir_scan()
 
     def ir_scan(self):
         #Control servo to spin to a certain point
-        height = self.ir_data * sin(self.ir_servo_angle)
-        if height < IR_DITANCE_THRESHOLD:
-            self.stop_digging = True
+        if(self.ir_data is not None):
+            height = self.ir_data * sin(self.ir_servo_angle)
+            if height < IR_DITANCE_THRESHOLD:
+                self.stop_digging = True
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
