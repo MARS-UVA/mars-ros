@@ -14,7 +14,7 @@ JETSON_IP=${1:-"192.168.0.102"}
 
 # SSH into the Jetson and start the ROS nodes there
 sshpass > /dev/null # try to run sshpass, but don't print out the text that you would normally see
-if [ $? = 127 ] # check the last error code to see if it corresponds to the command not being installed
+if [ $? = 127 ] # check the last error code to see if it corresponds to the command not being installedgit fetch
 then
 	echo "mars2324" | sudo -S apt install sshpass
 fi
