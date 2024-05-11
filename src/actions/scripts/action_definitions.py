@@ -82,6 +82,22 @@ class ActionLowerBin(ActionBase):
     def is_completed(self):
         return (self.feedback_data.depositBinLowered == True)
 
+class ActionDump(ActionBase):
+    def __init__(self, description):
+        self.raise_bin_action = ActionRaiseBin(ActionBase)
+        self.lower_bin_action = ActionLowerBin(ActionBase)
+
+    def execute(self):
+        #todo: go front for 1 meter
+        self.lower_bin_action.execute()
+        sleep(7.5)
+        self.raise_bin_action.execute()
+        #todo: go back for 1 meter
+
+    def is_completed(self):
+        return self.lower_bin_action.is_completed() and self.raise_bin_action.is_completed()
+
+
 
 class ActionRaiseLadder(ActionBase):
     def __init__(self, description):
