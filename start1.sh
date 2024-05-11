@@ -20,4 +20,4 @@ then
 fi
 
 # sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged main:3"
-sshpass -p <password> ssh -tt jetson@$JETSON_IP "cd mars/mars-ros; git fetch; git switch final-autonomy-changes; source devel/setup.bash; roslaunch navigation malvi_config.launch apriltag_camera_device_id:=0"
+sshpass -p <password> ssh -tt jetson@$JETSON_IP "cd mars/mars-ros; git fetch; source devel/setup.bash; roslaunch navigation malvi_config.launch apriltag_camera_device_id:=0"
