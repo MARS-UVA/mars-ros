@@ -52,7 +52,7 @@ class ActionRaiseBin(ActionBase):
         '''
 
         msg = [100]*6 + [100 - self.description["speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
-        #self.pub.publish(MotorCommand(msg))
+        self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -76,7 +76,7 @@ class ActionLowerBin(ActionBase):
         '''
 
         msg = [100]*6 + [100 + self.description["speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
-        #self.pub.publish(MotorCommand(msg))
+        self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -125,7 +125,7 @@ class ActionRaiseLadder(ActionBase):
         else:
             msg[4] = 100 - self.description["speed"]
 
-        #self.pub.publish(MotorCommand(msg))
+        self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -156,7 +156,7 @@ class ActionLowerLadder(ActionBase):
         else:
             msg[4] = 100 + self.description["speed"]
 
-        #self.pub.publish(MotorCommand(msg))
+        self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"])
 
     def is_completed(self):
@@ -184,7 +184,7 @@ class ActionDig(ActionBase):
         msg[6] = 100 - self.description["speed"]
         msg[8] = self.ir_servo_angle
         rospy.loginfo("dig sending command %s", list(msg))
-        #self.pub.publish(MotorCommand(msg))
+        self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
         self.ir_scan()
 
