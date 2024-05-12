@@ -88,19 +88,63 @@ class ActionLowerBin(ActionBase):
 
 class ActionDump(ActionBase):
     def __init__(self, description):
-        self.raise_bin_action = ActionRaiseBin(ActionBase)
-        self.lower_bin_action = ActionLowerBin(ActionBase)
+        super().__init__(description)
+        # self.raise_bin_action = ActionRaiseBin(ActionBase)
+        # self.lower_bin_action = ActionLowerBin(ActionBase)
+        self.move_forward_completed = False
+        self.lower_bin_completed = False
+        self.dump_completed = False
+        self.raise_bin_completed = False
+        self.move_backward_completed = False
+        self.initial_time = int(time.time())
 
     def execute(self):
-        #todo: go front for 1 meter
-        self.lower_bin_action.execute()
-        sleep(7.5)
-        self.raise_bin_action.execute()
-        #todo: go back for 1 meter
+        rospy.loginfo("action dump executing...")
+        #moving forward and backward parts should be taken out once navigation is implemented
+        
+        if (not self.move_forward_completed):
+            rospy.loginfo("moving forward...")
+            msg = [100 + self.description["forward_speed"]]*4 + [100]*3 + [IR_ANGLE, WEBCAM_ANGLE]
+            self.pub.publish(MotorCommand(msg))
+            current_time = time.time()
+            if (current_time - self.initial_time >= self.description["forward_duration"]):
+                self.move_forward_completed = True
+                self.initial_time = int(time.time())     
+        
+        elif (not self.lower_bin_completed):
+            rospy.loginfo("lowering bin...")
+            msg = [100]*6 + [100 + self.description["lower_bin_speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
+            self.pub.publish(MotorCommand(msg))
+            current_time = time.time()
+            if (current_time - self.initial_time >= self.description["lower_bin_duration"] or self.gpio_data.construction_bin_contact):
+                self.lower_bin_completed = True
+                self.initial_time = int(time.time()) 
+                
+        elif (not self.dump_completed):
+            time.sleep(7.5)
+            self.dump_completed = True
+        
+        elif (not self.raise_bin_completed):
+            rospy.loginfo("raising bin...")
+            msg = [100]*6 + [100 - self.description["raise_bin_speed"]] + [IR_ANGLE, WEBCAM_ANGLE]
+            self.pub.publish(MotorCommand(msg))
+            current_time = time.time()
+            if (current_time - self.initial_time >= self.description["raise_bin_duration"]):
+                self.raise_bin_completed = True
+                self.initial_time = int(time.time()) 
+            
+        elif (not self.move_backward_completed):
+            rospy.loginfo("moving backward...")
+            msg = [100 - self.description["backward_speed"]]*4 + [100]*3 + [IR_ANGLE, WEBCAM_ANGLE]
+            self.pub.publish(MotorCommand(msg))
+            current_time = time.time()
+            if (current_time - self.initial_time >= self.description["backward_duration"]):
+                self.move_forward_completed = True
+            
+        time.sleep(self.description["update_delay"])
 
     def is_completed(self):
-        return self.lower_bin_action.is_completed() and self.raise_bin_action.is_completed()
-
+        return (self.move_forward_completed and self.lower_bin_completed and self.raise_bin_completed and self.move_backward_completed)
 
 
 class ActionRaiseLadder(ActionBase):
