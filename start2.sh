@@ -32,6 +32,7 @@ gnome-terminal -- bash -c "source mars/mars-ros/devel/setup.bash; export ROS_MAS
 gnome-terminal -- bash -c "cd mars/mars-ui-web; source ../mars-ros/devel/setup.bash; npm start"
 
 # Configure the existing terminal so that we can see information about ROS nodes and topics on the Jetson
-source mars/mars-ros/devel/setup.zsh
+cd mars/mars-ros
+source devel/setup.zsh
 export ROS_MASTER_URI=http://nano:11311
 export ROS_IP=$control_station_IP
