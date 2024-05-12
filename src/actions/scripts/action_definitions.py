@@ -121,8 +121,13 @@ class ActionDump(ActionBase):
                 self.initial_time = int(time.time()) 
                 
         elif (not self.dump_completed):
-            time.sleep(7.5)
-            self.dump_completed = True
+            rospy.loginfo("dumping...")
+            msg = [100]*7 + [IR_ANGLE, WEBCAM_ANGLE]
+            self.pub.publish(MotorCommand(msg))
+            current_time = time.time()
+            if (current_time - self.initial_time >= self.description["dump_duration"]):
+                self.dump_completed = True
+                self.initial_time = int(time.time())
         
         elif (not self.raise_bin_completed):
             rospy.loginfo("raising bin...")
@@ -139,7 +144,7 @@ class ActionDump(ActionBase):
             self.pub.publish(MotorCommand(msg))
             current_time = time.time()
             if (current_time - self.initial_time >= self.description["backward_duration"]):
-                self.move_forward_completed = True
+                self.move_backward_completed = True
             
         time.sleep(self.description["update_delay"])
 

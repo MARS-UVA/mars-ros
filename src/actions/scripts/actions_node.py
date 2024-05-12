@@ -35,6 +35,9 @@ def start_action_callback(req):
     elif name == "dig":
         rospy.loginfo("Starting ActionDig")
         start_action_in_background(action_definitions.ActionDig(data))
+    elif name == "dump":
+        rospy.loginfo("Starting ActionDump")
+        start_action_in_background(action_definitions.ActionDump(data))
     else:
         rospy.logwarn("Received action name that was not recognized! name=%s" % name)
 
