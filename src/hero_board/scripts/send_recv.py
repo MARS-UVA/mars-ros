@@ -4,6 +4,7 @@ import rospy
 import struct
 import time
 import traceback
+from actions.msg import DigitalFeedbackGpio
 from hero_board.msg import HeroFeedback, MotorCommand
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
 from serial_manager import SerialManager
@@ -17,6 +18,9 @@ DIRECT_DRIVE_CONTROL_TOPIC = "/motor/output" # subscribing
 AUTONOMY_TWIST_CONTROL_TOPIC = "/cmd_vel" # subscribing
 AUTONOMY_MOTOR_CONTROL_TOPIC = "/motor/cmd_vel"
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
+GPIO_FEEDBACK_TOPIC = "/gpio"
+
+SAFE_CURRENT_THRESHOLD = 60.0
 
 NUM_MOTOR_CURRENTS = 4 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
 NUM_ACTUATOR_FEEDBACK_VALUES = 3 # 2 angles for bucket ladder angle, one from each actuator
@@ -41,6 +45,10 @@ serial_manager = None
 
 averaged_converted_angle_L = 45.0 # By setting these intial values to a constant, the readings will start off inaccurate
 averaged_converted_angle_R = 45.0
+
+bucket_chain_current = None
+bucket_ladder_contact = False
+construction_bin_contact = False
 
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -83,6 +91,24 @@ def stop_motors_non_emergency():
 def process_manual_motor_values(command): 
     # command type is hero_board::MotorCommand
     vals = command.values
+
+    # modify vals to provide some safety checks:
+
+    # if the bucket ladder current spikes, slow bucket rotations
+        # this comes from the serial info that we get from the HERO
+    if bucket_chain_current > SAFE_CURRENT_THRESHOLD:
+        vals[5] = 100
+    # if the bucket ladder limit switch is hit, raise bucket ladder just a little instead of moving the ladder as intended
+        # this comes from GPIO feedback
+    #if bucket_ladder_contact:
+       # vals[4] = 104
+    # if the construction bin limit switch is hit and you're trying to open the bin, don't keep opening the bin
+        # this comes from GPIO feedback
+    #if construction_bin_contact and vals[6] > 100:
+        #vals[6] = 100
+    # if the bucket ladder is down, don't drive unless you're spinning
+        # this comes from ladder angle feedback
+
     rospy.loginfo("writing 'direct_drive' values: %s", list(vals))
     serial_manager.write(var_len_proto_send(Opcode.DIRECT_DRIVE, vals))
 
@@ -175,6 +201,9 @@ def set_state_service(req):
     else:
         rospy.logwarn('tried to change drive state to an unknown state')
 
+def save_gpio_feedback(feedback):
+    bucket_contact = feedback.bucket_contact
+    construction_bin_contact = feedback.construction_bin_contact
 
 if __name__ == "__main__":
     try:
@@ -193,6 +222,10 @@ if __name__ == "__main__":
         # ros publisher queue can be used to limit the number of messages
         rospy.loginfo("starting hero status publisher")
         pub = rospy.Publisher(HERO_FEEDBACK_TOPIC, HeroFeedback, queue_size=5)
+
+        # 
+        hero_feedback = rospy.Subscriber(GPIO_FEEDBACK_TOPIC, DigitalFeedbackGpio, save_gpio_feedback)
+
         in_ir_stream = False
         while not rospy.is_shutdown():
             # to_send_raw = ser.read(ser.inWaiting()) # I moved this line down after the if statement. Is that a problem?
@@ -224,6 +257,7 @@ if __name__ == "__main__":
                     val.rearRWheelCurrent = floats_combined[3]
 
                     val.bucketLadderChainCurrent = floats_combined[4]
+                    bucket_chain_current = val.bucketLadderChainCurrent
 
                     # angle calculation will need to change based on new robot dimensions
                     # averaged_converted_angle_L = convert_ladder_pot_to_angle(averaged_converted_angle_L, floats_combined[NUM_MOTOR_CURRENTS + 0])
