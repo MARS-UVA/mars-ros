@@ -19,4 +19,4 @@ then
 	echo "mars2324" | sudo -S apt install sshpass
 fi
 
-sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged hero:2"
+sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged main:3"
