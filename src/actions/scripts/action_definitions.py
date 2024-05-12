@@ -1,5 +1,6 @@
 from action_base import ActionBase
 from hero_board.msg import MotorCommand
+from hero_board.msg import HeroFeedback
 import rospy
 import time
 from math import sin
@@ -15,7 +16,7 @@ from math import sin
 5:
 6:
 7: raise/lower collection floor
-8:
+8:is_completed(
 '''
 
 # New msg format:
@@ -35,6 +36,9 @@ IR_ANGLE = 0
 
 IR_DITANCE_THRESHOLD  = 30
 IR_SERVO_ANGLE_HOP = 5  #Change later, in degrees for now
+CHAIN_CURRENT_THRESHOLD  = 40
+SLIGHT_ROTATION = 2
+
 class ActionRaiseBin(ActionBase):
     def __init__(self, description):
         super().__init__(description)
@@ -181,12 +185,13 @@ class ActionDig(ActionBase):
         rospy.loginfo("action dig executing...")
         self.ir_servo_angle = (self.ir_servo_angle + IR_SERVO_ANGLE_HOP) % 180
         msg = [100]*9
-        msg[6] = 100 - self.description["speed"]
-        msg[8] = self.ir_servo_angle
+        msg[5] = 100 + self.description["speed"]
+        msg[7] = self.ir_servo_angle
         rospy.loginfo("dig sending command %s", list(msg))
         self.pub.publish(MotorCommand(msg))
         time.sleep(self.description["update_delay"]) #delay for the specified amount of time before you
         self.ir_scan()
+        self.check_hitting_ebox()
 
     def ir_scan(self):
         #Control servo to spin to a certain point
@@ -195,7 +200,16 @@ class ActionDig(ActionBase):
             if height < IR_DITANCE_THRESHOLD:
                 self.stop_digging = True
 
+    def check_hitting_ebox(self):
+        rospy.loginfo("Bucket limit switch status: %d" % self.gpio_data.bucket_contact)
+        if self.gpio_data.bucket_contact == 1:
+            msg[4] = 100 + SLIGHT_ROTATION
+            self.pub.publish(MotorCommand(msg))
+
+    def is_chain_stuck(self):
+        return bucketLadderChainCurrent > CHAIN_CURRENT_THRESHOLD
+
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
         current_time = time.time()
-        return (current_time - self.initial_time >= self.description["duration"]) or self.stop_digging
+        return (current_time - self.initial_time >= self.description["duration"]) or self.stop_digging or self.is_chain_stuck()
