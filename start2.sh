@@ -14,7 +14,8 @@ JETSON_IP=${1:-"192.168.0.102"}
 
 # Set environment variables that will allow the control station to find the Jetson on the network
 cd
-control_station_IP=$(hostname -I)
+control_station_IP=$(hostname -I | awk '{print $1}')
+# control_station_IP=${1:-"192.168.0.101"}
 nvidia_count=`grep nano /etc/hosts -c`
 
 if [ $nvidia_count -gt 0 ]
