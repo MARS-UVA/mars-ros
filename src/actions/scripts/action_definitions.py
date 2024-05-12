@@ -201,6 +201,7 @@ class ActionDig(ActionBase):
                 self.stop_digging = True
 
     def check_hitting_ebox(self):
+        msg = [100]*9
         rospy.loginfo("Bucket limit switch status: %d" % self.gpio_data.bucket_contact)
         if self.gpio_data.bucket_contact == 1:
             msg[4] = 100 + SLIGHT_ROTATION
@@ -210,7 +211,7 @@ class ActionDig(ActionBase):
         self.pub.publish(MotorCommand(msg))
 
     def is_chain_stuck(self):
-        return bucketLadderChainCurrent > CHAIN_CURRENT_THRESHOLD
+        return self.feedback_data.bucketLadderChainCurrent > CHAIN_CURRENT_THRESHOLD
 
     def is_completed(self):
         #the way we check that the action is completed is if we've been digging for the specified duration
