@@ -28,7 +28,7 @@ def publish():
     #if gpio_state_bin == 1:
     #feedback.construction_bin_raised_timestamp = rospy.Time.now()
     pub.publish(feedback)
-    rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_contact, feedback.construction_bin_contact))
+    # rospy.loginfo("bucket state: %s, bin state: %s" % (feedback.bucket_contact, feedback.construction_bin_contact))
 
 if __name__ == "__main__":
     rospy.init_node("gpio_read", anonymous = True)
