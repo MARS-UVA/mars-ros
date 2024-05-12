@@ -4,7 +4,7 @@ import rospy
 import struct
 import time
 import traceback
-from actions.msg import DigitalFeedbackGpio, LadderAngle
+from actions.msg import DigitalFeedbackGpio
 from hero_board.msg import HeroFeedback, MotorCommand
 from hero_board.srv import GetState, GetStateResponse, SetState, SetStateRequest, SetStateResponse
 from serial_manager import SerialManager
