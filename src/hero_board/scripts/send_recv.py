@@ -20,7 +20,7 @@ AUTONOMY_MOTOR_CONTROL_TOPIC = "/motor/cmd_vel"
 HERO_FEEDBACK_TOPIC = "/motor/feedback" # publishing (data like motor currents and arm position read by the hero board)
 GPIO_FEEDBACK_TOPIC = "/gpio"
 
-SAFE_CURRENT_THRESHOLD = 10.0
+SAFE_CURRENT_THRESHOLD = 60.0
 
 NUM_MOTOR_CURRENTS = 4 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
 NUM_ACTUATOR_FEEDBACK_VALUES = 3 # 2 angles for bucket ladder angle, one from each actuator
