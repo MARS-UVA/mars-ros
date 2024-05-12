@@ -100,12 +100,12 @@ def process_manual_motor_values(command):
         vals[5] = 100
     # if the bucket ladder limit switch is hit, raise bucket ladder just a little instead of moving the ladder as intended
         # this comes from GPIO feedback
-    if bucket_ladder_contact:
-        vals[4] = 104
+    #if bucket_ladder_contact:
+       # vals[4] = 104
     # if the construction bin limit switch is hit and you're trying to open the bin, don't keep opening the bin
         # this comes from GPIO feedback
-    if construction_bin_contact and vals[6] > 100:
-        vals[6] = 100
+    #if construction_bin_contact and vals[6] > 100:
+        #vals[6] = 100
     # if the bucket ladder is down, don't drive unless you're spinning
         # this comes from ladder angle feedback
 
