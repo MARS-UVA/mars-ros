@@ -37,5 +37,5 @@ if __name__ == "__main__":
     rospy.loginfo("Passed setup")
     while not rospy.is_shutdown():
         publish()
-        rospy.spin()
+    rospy.spin()
     GPIO.cleanup()
