@@ -8,12 +8,14 @@ from actions.msg import DigitalFeedbackGpio
 class ActionBase:
 
     def __init__(self, description):
+        rospy.loginfo("initializing an action")
         self.description = description
 
         rospy.wait_for_service("/get_state")
         self.get_state = rospy.ServiceProxy("/get_state", GetState)
 
         self.feedback_data = None
+        self.ir_data = None
         self.ir_sub = rospy.Subscriber("/ir_adc_readings", Int32, self.ir_callback)
         self.gpio_sub = rospy.Subscriber("/gpio", DigitalFeedbackGpio, self.gpio_callback)
         self.motor_sub = rospy.Subscriber("/motor/feedback", HeroFeedback, self.motor_callback)

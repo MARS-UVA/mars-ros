@@ -4,7 +4,6 @@
     <!-- NODES -->
     <arg name="hero" default="true" />
     <arg name="actions" default="true" />
-    <arg name="rpc" default="false" />
     <arg name="realsense_cameras" default="false" /> 
     <arg name="apriltags" default="true" />
 

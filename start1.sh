@@ -14,9 +14,10 @@ JETSON_IP=${1:-"192.168.0.102"}
 
 # SSH into the Jetson and start the ROS nodes there
 sshpass > /dev/null # try to run sshpass, but don't print out the text that you would normally see
-if [ $? = 127 ] # check the last error code to see if it corresponds to the command not being installed
+if [ $? = 127 ] # check the last error code to see if it corresponds to the command not being installedgit fetch
 then
 	echo "mars2324" | sudo -S apt install sshpass
 fi
 
-sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged main:3"
+# sshpass -p nvidiauva ssh -tt nvidia@$JETSON_IP "docker run --rm -it --network host --volume=/dev:/dev --privileged main:3"
+sshpass -p <password> ssh -tt jetson@$JETSON_IP "cd mars/mars-ros; git fetch; git switch final-autonomy-changes; source devel/setup.bash; roslaunch navigation malvi_config.launch apriltag_camera_device_id:=0"
