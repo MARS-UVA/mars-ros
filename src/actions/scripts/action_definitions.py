@@ -204,7 +204,10 @@ class ActionDig(ActionBase):
         rospy.loginfo("Bucket limit switch status: %d" % self.gpio_data.bucket_contact)
         if self.gpio_data.bucket_contact == 1:
             msg[4] = 100 + SLIGHT_ROTATION
-            self.pub.publish(MotorCommand(msg))
+        else:
+            msg[4] = 100 - SLIGHT_ROTATION
+            #msg[4] = 100 - self.description["speed"]
+        self.pub.publish(MotorCommand(msg))
 
     def is_chain_stuck(self):
         return bucketLadderChainCurrent > CHAIN_CURRENT_THRESHOLD
