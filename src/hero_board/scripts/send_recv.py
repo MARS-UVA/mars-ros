@@ -22,8 +22,8 @@ GPIO_FEEDBACK_TOPIC = "/gpio"
 
 SAFE_CURRENT_THRESHOLD = 60.0
 
-NUM_MOTOR_CURRENTS = 4 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
-NUM_ACTUATOR_FEEDBACK_VALUES = 3 # 2 angles for bucket ladder angle, one from each actuator
+NUM_MOTOR_CURRENTS = 10 # how many motor currents the hero sends back over serial. One byte corresponds to one motor current. 
+NUM_ACTUATOR_FEEDBACK_VALUES = 2 # 2 angles for bucket ladder angle, one from each actuator
 NUM_BOOLS = 0 # 2 bools total for bucket pressing upper and lower limit switch
 
 TOTAL_NUM_FLOATS = NUM_MOTOR_CURRENTS + NUM_ACTUATOR_FEEDBACK_VALUES
@@ -96,8 +96,8 @@ def process_manual_motor_values(command):
 
     # if the bucket ladder current spikes, slow bucket rotations
         # this comes from the serial info that we get from the HERO
-    if bucket_chain_current > SAFE_CURRENT_THRESHOLD:
-        vals[5] = 100
+    #if bucket_chain_current > SAFE_CURRENT_THRESHOLD:
+       # vals[5] = 100
     # if the bucket ladder limit switch is hit, raise bucket ladder just a little instead of moving the ladder as intended
         # this comes from GPIO feedback
     #if bucket_ladder_contact:
@@ -264,6 +264,11 @@ if __name__ == "__main__":
                     # averaged_converted_angle_R = convert_ladder_pot_to_angle(averaged_converted_angle_R, floats_combined[NUM_MOTOR_CURRENTS + 1])
                     val.bucketLadderActuatorCurrent = floats_combined[5]
                     val.constructionBinActuatorCurrent = floats_combined[6]
+                    val.averageForwardLWheelCurrent = floats_combined[7]
+                    val.averageRearLWheelCurrent = floats_combined[8]
+                    val.averageForwardRWheelCurrent = floats_combined[9]
+                    val.averageRearRWheelCurrent = floats_combined[10]
+                    val.averageBucketLadderChainCurrent = floats_combined[11]
 
                     pub.publish(val)
                     
