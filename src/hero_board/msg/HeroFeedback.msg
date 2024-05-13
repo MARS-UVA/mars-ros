@@ -6,6 +6,12 @@ float32 forwardRWheelCurrent
 float32 rearRWheelCurrent
 
 float32 bucketLadderChainCurrent
-
 float32 bucketLadderActuatorCurrent
 float32 constructionBinActuatorCurrent
+
+float32 averageForwardLWheelCurrent
+float32 averageRearLWheelCurrent
+float32 averageForwardRWheelCurrent
+float32 averageRearRWheelCurrent
+
+float32 averageBucketLadderChainCurrent
